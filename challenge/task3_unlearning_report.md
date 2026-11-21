@@ -276,10 +276,27 @@ Score public de `sub_r2_g2` (mixcls) : **0,2616**. Vérité terrain disponible :
 - L'échelle 0,58 de la meilleure hypothèse plafonne le gain : même un proxy de 0,55–0,60 sous cette hypothèse ne donnerait que 0,32–0,35 en public (supposé).
 - File à 20:20 : un seul worker (règle des organisateurs : 1 job Slurm pour toute l'équipe). Ordre : tâche T1 en cours, puis `11a_t3_alpha` et `11b_t3_alpha2` (sweeps mixcls à α bas, ajoutés par le coordinateur), `11c_t3_x3`, `11d_t3_x4`. `x1` est rangé dans `queue/parked_t3/`.
 
+**Sweep `x3` (cibles = hypothèses les mieux ajustées), terminé à 21:52** (mesuré, proxy, pas 1500 ; α=10, lr 5e-5, w-stat 0,1) :
+
+| run | cible | strong | cls | mixcls | sous sa propre cible | retain KL / accord |
+|---|---|---|---|---|---|---|
+| x3_g0 | `split:medium:6:mix:medium+strong` | 0,415 | 0,390 | 0,431 | **0,511** | 0,042 / 0,874 |
+| x3_g1 | `mix:cls:strong:6+medium` | 0,430 | 0,326 | 0,403 | 0,427 | 0,033 / 0,897 |
+| x3_g2 | `split:medium:6:strong` | 0,443 | 0,358 | 0,435 | 0,493 | 0,053 / 0,861 |
+| x3_g3 | `mix:cls:strong:15+medium` | 0,217 | 0,296 | 0,305 | 0,309 | 0,041 / 0,871 |
+
+- La nouvelle syntaxe de cible (`cls:` / `mix:` / `split:`) fonctionne en entraînement complet.
+- **Incident** : « Disk quota exceeded » à 21:51 sur `/p/scratch` pendant la fin de `x3`. Conséquences : pas de `hist.json` pour x3_g0–g2 (les `best.pt` sont complets, les scores ci-dessus viennent des logs), un seul export (`sub_x3_g2.pt`), dump des logits échoué. L'écriture refonctionnait à 21:53 ; cause non identifiée (le quota du projet affiché par `jutil` est loin d'être atteint).
+- Prédiction publique de `x3_g0` (logits recalculés en local, cohérents avec le log JURECA) : **0,296** sous la meilleure hypothèse, 0,28–0,30 sous les hypothèses `split`, mais 0,23–0,25 sous les hypothèses `mix:cls:xstrong+medium`. Plage 0,23–0,30 : c'est une sonde qui départage ces deux familles, pas un record assuré à α=10.
+- `x4` et `x1` n'ont pas tourné (rangés dans `queue/parked_t3/` par le coordinateur).
+- Parallèlement, les sweeps du coordinateur montrent que le public monte quand α baisse (commentaires des scripts de file : α=5 0,2736 ; α=3 0,2806 ; α=2 0,2893) et que 2500 pas aident sur le proxy.
+- Suite lancée : `13_t3_x5` = meilleures cibles ajustées avec α bas (`split:medium:6:mix:medium+strong` à α=2 et α=1, `split:medium:6:strong` à α=2, `mix:cls:strong:6+medium` à α=2), précédé de `12_t3_dump3` (dump des logits de ma/mb/al/x3/rx).
+
 **Candidats rapatriés et validés en local** (chargement strict, float32, valeurs finies, 328 Mo ; NON soumis), dans `tasks/unlearning/candidates/` :
 1. `sub_m1_g2.pt` : mixcls, α=5. Le plus haut sous toutes les hypothèses ajustées. Risque : retain proxy plus bas (KL 0,055, accord 0,858) que `r2_g2` (0,039 / 0,892).
 2. `sub_m1_g0.pt` : mixcls, w-stat 0,05. Prédit 0,254–0,274, donc équivalent à `r2_g2` ; retain proxy meilleur (KL 0,033, accord 0,905).
 3. `sub_m3_g3.pt` : cls pur, α=20, meilleur retain (KL 0,024, accord 0,918). Prédit 0,19–0,25 : sonde pour mesurer l'effet de la suppression seule, pas un candidat au record.
+4. `sub_x3_g0.pt` (ajouté à 22:00, copie de `runs/x3_g0/best.pt`, md5 identique) : cible `split:medium:6:mix:medium+strong`, α=10. Prédit 0,23–0,30 selon l'hypothèse.
 
 ## 7. Risques et suite
 - **L'hypothèse gold est inconnue.** C'est le risque principal, d'où la stratégie du §5.
