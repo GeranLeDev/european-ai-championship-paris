@@ -1,0 +1,39 @@
+{
+ "pixelseal": {
+  "s_full": 0.5,
+  "K_full": 1,
+  "s_part": 0.15,
+  "K_part": 1,
+  "box_t": 0.35,
+  "box_d": 0,
+  "rect": true,
+  "runs": [
+   "pixelseal_research/runs/hires_c",
+   "pixelseal_research/runs/frozen_a"
+  ]
+ },
+ "trustmark": {
+  "s_full": 0.35,
+  "K_full": 0,
+  "s_part": 0.85,
+  "K_part": 0,
+  "box_t": 0.6,
+  "box_d": 0,
+  "rect": true,
+  "runs": [
+   "runs/trustmark_mix"
+  ]
+ },
+ "stegastamp": {
+  "s_full": 0.8,
+  "K_full": 0,
+  "s_part": 0.2,
+  "K_part": 0,
+  "box_t": 9.0,
+  "box_d": 0,
+  "rect": false,
+  "runs": [
+   "runs/stegastamp_mix"
+  ]
+ }
+}
