@@ -18,7 +18,7 @@ Sur JURECA, exporter d'abord les variables uv de `infra/jureca_gpu.md` (sinon le
 | `repos/` | Code officiel en submodules (videoseal/Pixel Seal, model-equality-testing, SCRUB) + `_smoke/` (tests et benchmark). Lire `repos/README.md`. |
 | `repos/_smoke/out/` | Résultats : benchmark de 6 watermarks sur 100 images COCO (`bench_100.log`). |
 | `repos/data/coco_val100/` | 100 images COCO val2017 de test. |
-| `infra/jureca_gpu.md` | Accès au cluster GPU (JuDoor, MFA, SSH, Slurm, projet `training2666`). |
+| `infra/jureca_gpu.md` | Accès au cluster GPU (JuDoor, MFA, SSH, Slurm, projet `training2666` ; chacun utilise son propre login). |
 | `CLAUDE.md` | Consignes pour Claude Code (priorités, où chercher). |
 
 Non versionné (re-téléchargé par `setup.sh`) : `.venv/`, `repos/videoseal/ckpts/`, `repos/data/cifar10_hf/`.

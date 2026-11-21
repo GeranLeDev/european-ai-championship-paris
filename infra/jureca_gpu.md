@@ -10,13 +10,13 @@ Source : `~/Downloads/GPU-usage-paris.pdf` (slides des organisateurs CISPA).
 ## Accès (à faire tôt : la clé SSH met jusqu'à 15 min à s'activer)
 1. Créer un compte sur https://judoor.fz-juelich.de/login (bouton Register).
 2. Activer le MFA (TOTP : FreeOTP ou Google Authenticator). Il sera demandé à chaque connexion SSH.
-3. Signer la *usage agreement* de JURECA (JURECA-DC_GPU) et rejoindre le projet hackathon (`training2666`, « CISPA EU AI Championship 26-27 1 », déjà rattaché au compte geran1 le 21/11).
+3. Signer la *usage agreement* de JURECA (JURECA-DC_GPU) et rejoindre le projet hackathon (`training2666`, « CISPA EU AI Championship 26-27 1 »).
 4. Créer une clé `ssh-keygen -t ed25519` (**id-rsa interdit**). Uploader la clé avec une clause `from="<plages IP>"` : JuDoor propose les plages du réseau d'où l'on se connecte. **Il faut l'uploader depuis le Wi-Fi d'Epitech**, sinon la clé sera refusée sur place. Un VPN ou un partage 4G demande une autre clause.
 5. Ajouter dans `~/.ssh/config` :
    ```
    Host juelich
      Hostname jureca.fz-juelich.de
-     User geran1
+     User <votre_login_judoor>
      IdentityFile ~/.ssh/id_ed25519
      MACs hmac-sha2-256-etm@openssh.com
      ControlMaster auto
