@@ -1,0 +1,690 @@
+and I think from that we can expand it over here.
+Yes, great.
+Hello everyone, so welcome to the European AI Championship.
+It's really a pleasure to be here with you.
+We are really excited that also you came here today
+and you are here to work on this, I would say, challenging tasks.
+you learn more about cutting edge of AI research.
+And in other words, for me personally, I think something special.
+That you could be somewhere else, you know, just too long and having fun with the city,
+but you are here to learn more about AI, this exciting topic.
+And this is also for us today, that you are here with us today.
+And today, I have any questions?
+Okay, so we can have everyone.
+Without further ado, we'll have a short introduction.
+So, how we talk about our science is that we are researchers who travel the world to work on this
+company, and I personally am a computer assistant in Germany, I was a postdoc at factory in Toronto,
+and also a PhD in the US at the University of Chicago.
+And then also I work for Microsoft, Google, and both the students in London, and then
+I think you are on AI, and this is my passion, so I'm here today to work with you, and so
+here to have fun with you.
+Thank you.
+And this is for me.
+I am currently a professor at the Technical University of Munich, and I am the director
+director of the ISAC Institute, which is a research institute on applied and integrated
+security and AI security.
+And also for me, I've been at various places, I've worked with various people, I've been
+before at Insta as well, and for that I've been in Toronto where I was doing research
+at the forefront of AI.
+And I think this background really inspired our work here for the background as well.
+Before we get started, we want to show you a small video which is showing our hackathon from the previous page.
+Because it's for us the second time that we now run the European Tablative.
+And last year we also kicked out of Paris, same like we are doing this year.
+So exactly one year ago we have been in Paris and this was our event back then.
+There is a lot of time to turn into some of the past.
+In other cases, it's about the .
+And everybody is excited about .
+There's lots of time to bring those solutions.
+And by the end, we are developing the key and best thought of the past.
+We are here to work with this and so we have to work with this just to discuss.
+So we have this time, one of the structures we have to provide on it.
+We can provide the information for the information,
+and I think that's a good question.
+and it's made AI systems more real and more because we have a very pleasant thing.
+So it's something that people want us to do.
+I think we are starting to see here and it's such an important moment.
+This space is more and more kind of our life.
+And we can bring our memories to be more.
+We want to be able to be safe, to be with us, to be friendly.
+And the task of us over here is actually not that.
+So it's really about educating people and learning with it.
+Some fun.
+Other fun things are very separate.
+I think there is a lot of people who are experiencing there.
+How do we approach it?
+How do we communicate between them?
+How do we work?
+So I think it's really about how everyone can approach it.
+How do we approach it?
+How do we approach it?
+We also thought that there was a lot more about this aspect of
+and then the third is a happy show,
+and we'll see a couple of things.
+All right, and this can be you 24 hours from now.
+So we are excited to see what people here will achieve,
+and to give you their history.
+So last year, I would have been encouraged.
+which we also went to Vienna, Stockholm, Munich, Barcelona and Warsaw.
+So we went to six Loller Cups and at every Loller Cup we had people like you competing.
+And last year we also had an additional final.
+So we usually won the Rotterdam, they did with us and Germany.
+And then afterwards the best teams were still competing.
+So today we are competing against each other here.
+And before we dive into what you're competing about,
+we would like to introduce you also some of the masterminds behind the technical part of the event today.
+Will you start with them on that?
+Yes, they can raise their hands where they are.
+I think they will feel in there.
+So all of us, we are still as members during the webinar, so come to us and ask any questions.
+and we are here to help you, we are here to also mentor you and enable you to learn more about something that we are
+and as we are in the group, we work on these aspects of how to create AI security, I bet more of us, more of the better group, trust in the group
+and how to be responsible for creating this process on this hackathon
+and we'll start with some sharing of the action about CISPRED
+So personally, I am a good member of the SYSPA.
+I would say someone had a good SYSPA with us.
+But we know the SYSPA, SYSPA actually is a research center in Germany, which is focused on the IISQ.
+So here we are a product product in the US.
+It's less than two hours by the job, and it's very much more than a community
+because there are more than a certain amount of people who are around 66 information
+and all the digital technology members who work on this topic of security.
+And here we are raising a CISP program.
+We are getting the CSI, which actually is the personal ranking for CISP in terms of security.
+So CISP is number one in the world, even for other places, especially in the US.
+So if you want a great research environment, then one of you go to the CISP.
+Another place that I want to highlight today is from the ISA because since October 1, I actually stopped from CISCRED to UNIC and I became a professor there but at the same time I'm leading this institute here with around 250 people working on different aspects of science, including AI.
+and we are closely affiliated with the University of Munich
+and we do a lot of the co-ed research and if you have any interest
+in these kind of topics after today, you can also reach out about
+the PhD opportunities, internship thesis, we are very open to that so just
+I'd love to ask you a little bit more.
+And we can possibly ask another speaker.
+Thank you.
+and that's also today's main goal.
+So, this is very special.
+The best team takes...
+Winners take all.
+First place is 10,000 euros.
+The best team is here.
+So, thanks to Meta for providing sponsorship,
+and also the membership, and also the membership.
+Thank you.
+Thank you so much.
+you apply, please use this link and then you can specify that you apply from the European
+Championship and then you will get the special.
+Yes, you will come to a special pool and the important thing is that the deadline is on
+November 30. So if today you realize that you like this kind of work, that you can supply
+quickly and indicate the hackathon as the source where you come from, then we know where to
+put you and we know how to do this basically.
+And I think it's really nice to see that internships are also nice ways
+where you can find out what you're going to do in life.
+So for example, I go to a internship with companies.
+I was in the Netherlands with Uber.
+So you can try this platform with you and you can find out
+maybe even on a go-to internship with exams.
+And that's the concept of it.
+So, if you are here, if you want to learn about which to use and use, how to use them, please join the Discord.
+And over there, if you have any problems in the hackathon, just write down the channel channel for the given task.
+And then our mentors will come to you and we will write on Discord how to tackle the given problem.
+so that you can progress with the task and you can have fun with this whole discussion
+so please join the score
+if you if you always call this code
+please start this
+your code and join the score now
+otherwise you will miss important bits for the task and you might follow the answer
+So it is really content that you have to join this Discord channel and get on board.
+This is just to make sure that the API wants to be able to help the process.
+We have resources to help the process.
+And now we'll just walk you very quickly through the schedule.
+I think you've also been communicating on the schedule.
+Like now we're in a plenary session and after that basically the hackathon begins to have to be on board.
+We'll have dinner together and then you have the phone night to work on this task until tomorrow morning.
+morning we'll have some breakfast together and then like a bit less than 20 hours from now we'll have the
+microphone and then we'll have people do the presentations and we'll determine the final minutes
+of the microphone and without further ado
+Can you compare the slides to the QR code?
+Are we good? Any questions?
+We will come to that, but I think after Kiyosol, right?
+So, during the hackathon, you will be seeing the scoreboard.
+And so I think the best would be now if we move on to the, I would say, one of the most exciting parts,
+because we have to thank Kiyosol and for those who don't know Kiyosol,
+he is one of the leading minds of our history actually when it comes to watermarking.
+So he and his team at Meta Day do amazing work on this topic.
+And we were so lucky to have him join here today to give a talk about his work.
+And I would recommend you to pay very close attention because one of our tasks is actually based on their work.
+So if you understand now what you're doing, if you're asking a lot of questions, then you'll have better chances to win today.
+And I would like to give a huge applause to Claire for taking a Saturday to be with us and teach us something.
+Is it good?
+Yes?
+Anywhere is the director?
+Thank you.
+Alright, can we go?
+Yeah, good.
+So thanks a lot for the invitation.
+So as you said, I have to be so excited.
+I feel like the typical water working is so exciting that I want to share it with you.
+So I'm a research scientist at Metam, and so I will talk about, I think, one part more
+more about research and one more about how we use what-and-a-kine production.
+So the talk will be split into four parts. The first part will be versus motivation,
+why do we care about what we're doing. The second part will be how we actually do
+is in practice, maybe. Three parts, more exciting stuff about how we do what-and-a-kine generation
+type, and finally some discussions about things that we'll see in the future of what-and-a-kine.
+Ok, first part, why do we care about it?
+So I think, as you may know, Genet comes with some risks, like opinion, swelling, scan,
+fraud, attack, and so on.
+But there is one example that I really like, which is mushrooms.
+So it's not here, but...
+So why am I talking about mushrooms?
+So in Amazon now, you have books that are completely pre-it-generated.
+and some of these books are motion guides
+so I don't know if you let the mushrooms in the forest
+if you don't do it, you will ask
+and if you do, you can buy these kind of books
+and the issue is that since they are very generated
+you just understand that the source of food
+and this is what happened to a true guy
+who went to the hospital because he had
+knowledge of these mushrooms
+So, what I like about the mushroom example is that it shows that the fact that we are not able to distinguish what's fake and what's real has a real-life implications, along with these reasons.
+And if you think about how do we detect if something is real or not, like we have a lot of ways of doing it.
+The first one is what I call passive detection because it's passive, we can't actively modify the content.
+and first it's super hard, so the way you do it is that you track this player
+you track and it's working like this
+so, I think it's just that we don't have the animation so it stays here, it's okay for you
+this
+it's just that it's like
+how did the animation don't work
+so it's just switching states
+I can erase this
+let me explain
+sorry, sorry for that
+that's fine
+so yeah, what I was saying is that
+the way to do it is
+you will train classifiers
+to take images that are real or fake
+are real or fake, and these classifiers will say yes or no, it's real or not.
+And if you think about this task, since the gerontimole vector goal is precisely to fool
+humans, in the future it may become impossible if the gerontimole synchrodeal.
+So not good enough for us.
+What we could do as well is when you share an image, you don't share only an image, you
+also share what we call metadata, the stuff that we add to the image that will be based
+30 dates, the location and so on.
+And what you can do as well is
+put something that tells if the image is
+AI generated on it.
+And so what's very nice about it is that
+a lot of companies are present together to
+put standards around this.
+So, photography providers,
+social networks, Gmail providers as well.
+But the issue with metadata
+is that if you take
+screenshots of your image
+you lose it.
+So you lose the trace that it's AI generated.
+What could be the group? Something else. The thing that I'm showing here is what a female can do.
+So the idea is that the time that you will generate an image, you will start a small
+kigakrypton image, which is a vector representation of your image. And when you have an image
+that you think is AI generated, you will just query the database and see if there is an action.
+The issue is that since you have billions of bridges in this database, if you want to do the search, it's going to be either very long or very bad.
+And so at the scale of AI-generated images, it doesn't really work.
+So the reason we have here is the last option, which is what I'm working.
+And what I'm working for is hide information inside an image.
+This information can be like a binary message, you can pick up it as 256 cases.
+And you do it without changing perceptual image.
+So you add up to something that's exactly the same image.
+This image can be modified when it's transferred from user to user, so like compressed or crossed, etc.
+And the goal of the tool is to be able to retrieve this information even in this context.
+It was used a lot in the past actually for IP protection, so for instance if you download the videos with videos or so on,
+most of the time was over, which is such that if you share the video online, they know that it's going to be for you.
+So the question is how do we use it for AI generated images, and also how do we use it?
+So, something important to load the auto-autonomy for images is that it's required by Doe.
+So if you generate images through OpenAI, Gemini, or whatever, they are well-trained because it's required by Doe.
+For instance, by the new AIX.
+But also, there is a new load that is found by SD942, and there is one something in Korea.
+When we talk about photorexion we have three main criteria.
+The first one would be imperceptibility, meaning that we want the image to look exactly the same.
+The segment is the capacity or the payload, meaning that we want to be able to write bits.
+And the last one is robustness, which means that we want to be able to retrieve information even if the image is visible.
+and it's actually a very nice product because you have three axes to optimize
+directly and let's not have use of it.
+Last slide of the introductory part.
+When you think about what working for PNA generated images can be done at different
+patterns of the process.
+So I'm going to skip these two parts.
+The first part will be possible watermarking, which means that what we do is that we generate
+the image and then we add the watermark.
+So it's super easy to do because it doesn't modify the narrative process and so that's
+what's used in production everywhere.
+But you will also use a sample that's called a generation time watermarking, which means
+that you will just change the sampling process of the watermarking model to prepare the watermark.
+And you could also do it in the weights, so generation time watermarking in model, and
+So if you do it in the way, what it means is that you can just share the model and every image that you will generate with the model will be one of them.
+So in the talk, I will talk about how you do it, what motivates each other in this case and what is your difference.
+Ok, so let's get into the custom automarking which is the most important math.
+And this is what you should remember. It's super simple but if you know this, you know everything about the network.
+So, the idea is to hide a message inside an image and to extract it.
+So what we do in practice is that we train two neural networks. The first one is gradient value and the second one is for spectra.
+And once we do that during training, we'll have a set of losses.
+The first loss will be between the first image, the original one, and the what-to-mouth image.
+And so this loss will make sure that the two images will be very similar.
+And then you have a what-to-mouth loss, which will compare the two messages.
+And this loss will make sure that what you extract is actually the same message.
+And what's very very nice about these methods is that to be reversed to new transformations,
+that is online, for instance from Ration or Crows, you just have to put it there in the
+below, youtube.networks. And so this works very well. Now that you know how to embed
+information inside the image, how do we use it for detection, usually? So let's say I have
+a message which is full of one that I embed in all the images that I generate. What I will do is,
+This is when I see an image on my own and want to know if it's a reality or not.
+I'm going to extract the message and for instance here there will be one or two big errors.
+But most of the message will be correct.
+Now if I have a natural image, the message will be approximately random,
+centered around half of 32 here, so it's this table.
+And I will see that the image is not very as random.
+In practice what we do is simply called hypothesis is best.
+So we're gonna take this little cursive, which is 17 over 22, and say okay, it's in the back room, so it's here.
+But for the right part, I will take out the solution, and I say if they had no idea.
+And what's very nice is that we can set that precise to the threshold to a given false positive rate.
+So I'm gonna talk about the false positive rate in just a moment.
+So if we, let's say we have an algorithm that says just pH and receive all the time.
+Then my true positive rate, which is the number of energies that I correctly played, would be 1.
+But this algorithm has no value because it's gonna say everything's accurate.
+I know you've seen Simplonand in the series, but there is one episode where it creates a hot dog detector.
+I just say hot dog, hot dog.
+So it's not very clear to it, but if you guys have a good algorithm, it can be very good at one take.
+That's very nice.
+And so what we care about as well is false policy rates, which is how many of the natural images will correct the path.
+And so ideally we want these false policy rates to be at zero, and in practice we can't do it.
+So the fact that we want to control precisely what will mean the false policy rate is very nice.
+So we're at our case, we're going to say, for instance, if the bit accuracy is higher like this, then we'll set the images there.
+Since the first work that I presented was from a paper called Hidden, you had the letter
+words around the same idea, trying to improve the methods.
+Hidden is the first one that I presented.
+I think the first paper to do a better extractor and try to do that.
+You had a better word from AdoD, which was recommended to the watermark at every resolution
+possible.
+There is a work from folks at Google, which evaluated their watermarks, but they didn't
+The paper is very active, you don't have any information inside it, but if you look at it, it's nice images
+So we have a paper and video watermarking which is using the same idea on video and recently we had an image watermarking model called KITOSEL which we presented after.
+Another important work I think is for you is Watermarking, which is trying to switch
+the bit of the focus of watermarking, trying to see, instead of just creating and extracting
+better recipes, trying to see precisely where the watermark is.
+So all of these factors are trying to either bring new capabilities, like localization,
+or escape just the number of bits and improve the robustness of the network.
+So what I did at the beginning was everything that you needed to know about what an original
+and it was a line. So this is what you need to know about what an original.
+So in practice what we do is very different from what they just presented because we wanted
+to try to make it work. One such trick is the trick of the first part. So to be able
+to extract images at every resolution what we do is that we resize the image before.
+There is something else that we do at the OpenAge Center, which is that we modulate the one on the signal to make sure that nobody can see it.
+Then we resize back the distortion and add it back to the image.
+And then we have the orientation.
+In our case, we don't have the perceptual mask between the two images.
+We just have the instrumentator.
+instrumental in which we need to make sure that even with the mask that we use, there
+is nothing that can be liked by the operator.
+So this is where we have something, which is called the adjustment-small-difference
+map.
+And the idea is to say, when you have a dimension, you know where you can modify the pixels in
+a way that will not be seen, and you know where you can modify the pixels in a way that
+will be seen.
+So for instance, here if I change the pixels in the sky, you will be able to see it super fast because it's super fast.
+So over here we want the quantity to be plus to zero.
+But if I show you like the pixels here, and I'm going to say yes, I can hide information here.
+That's what the quantity will be doing. And the quantity will be super different than zero.
+So in practice what we do is that we are going to take the distortion that's predicted by the autority model.
+If we don't state it with the JNG, we're going to have these with patterns that are very lagging.
+And if we state it with the JNG, we're going to have something else very hard to present.
+In practice also, if you think about what I presented before, it's a task that's very hard because you have three goals.
+models, we have the ambassador, the extractor and the discriminator and the fact that we
+have that in models make it quite hard to do now. So if you try to train these models,
+it's very hard for the particular stuff at the beginning. So what we do is that we have
+a scale factor that we multiply the quantum arc with at the beginning. And this scale
+factor will be super high at the beginning of the training. So if you look at, so I
+I show here two counts. The first count is the PSNR, which is what we measure the
+imperceptibility of the image and the higher expatter. So at the beginning of the training,
+it's going to be very low. And the other count I show is the bit accuracy, which is how many bits
+we're able to correctly embed and detect and extract. And the goal is for it to go at 100%.
+And so in the first stage of the training, the image will be super high, but we'll find that it's super high,
+makes it easy for the X factor and the diameter to track it.
+Then we add a discriminator, which includes the quality of the image.
+And then we lower the atomic strength, which is the multiplicative factor,
+and so it will increase the PSN hour to a level where it's completely invisible.
+And so this gives us the efficiency models that you can download if you want.
+And this is an example of an image. So on the left you have the original, on the middle you have the watermark, and on the right you have the difference in terms of pixels.
+So as you can see, because the difference is very like the edges and the extra areas of the mirror, you can see it.
+And so here I will show you that there is too many divers, I am not sure if you can make the difference.
+So I talked about pixel seal, I will talk more about watermarking I think and I will come back to the desk of watermarking and if you think about it, if you have one image and extract one message for the image, it doesn't solve all of the issues that you can have when you transmit images.
+And when it is like editing what can happen is in baiting. So let's say you have this horse and you want to change it to a zebra.
+Then you will end up with something where the watermark, let's say like the AI generation model changes to the zebra will have the watermark only on the zebra.
+But when I want the watermark only on one part of the image.
+And even the question of knowing if the image on the right should be detected or not is a true question
+because how do the pixels don't come from like, how do the pixels are not what I want?
+And so I think that this saying that we should change the way we see what it should be
+there is also something else which is that if you have, let's say I generate two dots
+one with Gemini, one with Meta AI, and I compound them into a new image, what should I say?
+Should I say it's GnC with Google or should I say it's GnC with Meta or both?
+And similarly, if you just have this very small problem of the image, I'm not sure the
+right-hand is going to be robust enough because we've got some job.
+So I think this comes down to a single fact, which is that if you just want to predict
+on the image, the text is not normal.
+So what we tried to do in the past, is try to change the way we see what is working and
+not seen as amazing and extracting messages, but seen as a segmentation text.
+So instead of just saying yes or no, or repeat the message, we want to have a presentation
+map that will say this pixel is what or not and this pixel is not, and to write different
+and I won't go into the details of everything about this method
+but there is one interesting thing which is that the augmentation class
+which was the one where we put the augmentation will change
+and so in this class, in addition to applying crops or jpeg or whatever
+we also sample random asks
+and what we're gonna do is that we're switching
+putting out what are these masks
+I'm going to display this just now
+so what's important about these masks
+is that it gives us both the augmentation
+but also the true labels
+because what we need in the end is the
+the true segmentation mask
+where we are not busy
+so what we are going to do is for the structure
+And for the extraction, we're going to have a model that predicts both the segmentation
+map and we also want something else to predict the message but that's maybe less important.
+What we want is this segmentation map.
+And so for the buses, there's going to be one part which is going to be the detection
+for it.
+And for this, we're going to compare the true detection mask that we had sampled with the
+thing that's predicted by an extractor.
+and then we also have a decoding loss
+we should make sure that the message that we put will also be extracted
+ok so what I've shown you is how to detect
+like have an election mask
+and how to embed messages
+but now there is also the question of how do we embed different messages inside the image
+like multiple messages
+and so the way we did it is
+so you take a batch of images during your training
+And you have different segmentation masks.
+And for each of the segmentation masks, you're going to embed a different message.
+So you end up with k images, k for the different facilities that you have.
+And you just take the objects of the different segmentation masks and you paste them on the same image.
+So here for instance it was like a butterfly image, and we paste it to the wheel, everything.
+and you end up with an image which has both the same information mask
+and for each pixel of the image a different growth group message
+so you can optimize to both
+and in the end the extractor will be able to have one message that is different for every pixel
+and the last point which is really less important
+is once you have the message for every pixel you need to press your name together
+and so this is how we do it. There is an algorithm called dbscan and you just have all of your messages
+you feed it to dbscan and dbscan will tell you you have two messages
+one that corresponds to these pixels and one that corresponds to these other pixels.
+So this is the result slide. I know that you had a lot of presentations from researchers
+resultors but the result is always something like this and they say yes we are good we
+have the bold numbers. So we are good but we don't have bold numbers. And here it's
+the same and our current is better so it's nice. So this is some examples of what you
+have. Here it's one image. What we're gonna do is let's say we paint only this part. So
+So it was a very likely impact model so you can see that the image is very bad here
+and so if you detect the watermark, you will see that this is the original watermark image
+this is the infected one and so the agronome will be able to predict all of this is watermarked with a given message
+so here we have a bit of accuracy of 32 and 22 and the message here is not true, there is no watermark
+meaning that this part has been limited.
+So I've talked about post-track watermark algorithms, now we're going to
+chariota watermark algorithms, which I find more interesting
+because it's less than my practice.
+And the reason why we are interested in this type of
+algorithms is because there are some attacks that you can do on the
+watermark extractors. The first kind of attacks is
+is called the white box attack. Meaning that you know everything about the extractor and
+the weights and you can backpock through the extractor and everything. And if you are in
+this case it's extremely easy to attack. The other kind of attack is a black box attack
+where you talk on your game. And in this case it's how to attack which is impossible. And
+so if you use an example of black box attacks. The first one is called DQ. And the idea
+is to take an image, you add caution marks to the image, and then you use a diffusion
+model to remove the caution marks. And what's very interesting is that since the diffusion
+model is trying to put back the image into the real image space, it's going to remove
+the artifacts that are left by the watermark, and you're going to add up this thing that's
+less watermark than you want. You also have algorithms that are called VAE regeneration
+attacks or neural compression. So for instance, JPEG is not neural, but you now have neural
+JPEG. So what's very nice about these algorithms is that they are able to compress information
+better than what you have with JPEG, for instance. And because they are able to compress information
+very, they are also able to remove the automat and recover. And so these are the two kinds
+of attacks that are a bit of a problem.
+And so when we see that they remove the watermark, they are not completely moving
+in it, so if you have enough matrix, you will be able to be tricked to watermark, but it's still a bit of a name.
+So what people are trying to do in the future is to say, ok, these first-stop
+automating algorithms are nice, but they are only to open the pixel cells in cache.
+So it's like, what we can do is we can change the semantics of the image.
+So, you have a boundary, you can say, oh, I know that even in the boundary I want to have some clouds, maybe a flag or something.
+And try to change the image.
+The issue is that if you want to apply this, let's say you send an image on Instagram, and then you bottom-up it on Instagram,
+you don't want the image to change.
+That's a good reason, when you show the image, you have clouds in the image that pictures or the flag or something.
+But if you think about generative algorithms, that will not occur if the image that's generated is a bit different.
+One of the first methods to do it was called stable signature.
+And so what we did in this work, the idea was to quite check the weights of one part of the different model.
+So I'm going to explain very quickly my course.
+So when you have a diffusion model, what you do is that you start with a Gaussian noise,
+and it's completely random, and you will update this Gaussian noise with a diffusion model
+that will try to remove the Gaussian noise from your image.
+And you remove it by the conditional text that will tell you that you want to get closer to an image that matches the text.
+And in practice what we do is that we do it in the space that's everywhere
+so we can think of it just as a small resolution image or a new image
+but something that comes from a lot of time period
+So in the end what we do is that we take the small resolution data
+and we go scale it with something that's called a decoder
+and so what we need in this signature is just
+change this decoder by continuing it a bit before the distribution
+such that every time that it generates an image, it has a given message through the watermark distractor that you had set before
+and so what you can do now, is just when you share the true model, you just change the color
+and every image that will be generated by the model will be watermarked
+I think the main issue with this method is that it needs to be, like, it doesn't work with all the watermark distractors
+and the performance of the watermark model doesn't have great
+So there was another work that is more written in which just instead of changing the weights of the decoder, it trains another model that takes the last noise and predicts a one-one noise and then you decode as before.
+There is another work that's super interesting from people from the US.
+And here what they do is that instead of saying we want to change the last latent of the weights,
+we're going to change the illusion noise of the distribution model.
+So instead of using this caution noise, they take the caution noise,
+they go to create space at some start, then go back to the illusion noise,
+so they end up with something that's a bit different.
+So in practice it doesn't look like this, it's really like a version of it, it's really different, there is no circle here.
+And then you use the diffusion model to go back to the image.
+And that's basically it.
+And what's nice about diffusion model is that you can both remove this but also use it to inverse the diffusion process.
+So here you take the image, you can read the human process, and you end up with a noise
+that will look like the noise that you did initially.
+And if you see that there is a match, you're going to see that it's error generated.
+There is one last category of generation-type not working algorithm, which is a bit different,
+which works for models that unfolds autoregressive models, so like transformers, like LNMs.
+But instead of creating words, they are creating the images of the image from the one.
+And there are some methods to watermark the text.
+So I won't go into the notes here because you know the time, it's so interesting.
+It's a fascinating topic, really.
+So for instance, I can't believe what the AI is like, everyone is watermarking the text in Europe because it's a fantasy level.
+And the way it works is, instead of sampling with the natural sampling that you have in your LNM,
+You do it with the Waton activity and it doesn't change anything about the quality and effect that you generate
+and that you can get Waton. And you can apply the same kind of approaches for images.
+So we worked on this last summer and I think some of you will do that as well.
+So in a matter of two months we went all of this paper that came out at the same time about the same kind of ideas.
+So in Watermark, as you were doing for tests, but for image, do not image patches, and you end up with something that changes the semantics of the image that has been generated.
+And there is one example here. So what we're going to see is that on the left, we have an image that has been generated without Watermarking,
+and on the right, you have an image that has, so the start is exactly the same.
+But at half of the generation process we have .
+So I need to add a little bit of this.
+So what you see is that it really changes the semantics of the image.
+So you see the length was really flat and it starts.
+So here you decode the patch by patch.
+And what you see is that it starts drifting away from the direction from the line.
+And here it will add some waves.
+and you can put a shadow here and stuff
+so these algorithms are super nice because they really change the way you generate the mesh
+and because they change the way you generate the mesh, they will be super robust to the two kinds of effects that are presented before
+which are the adversarial attacks and neuro-compression attacks
+so the way you see it is here is that fossil algorithms that are not connected
+it would be like 2% and here it would be more like 30%
+and so I think that I've gone through everything that
+all the important ideas in the watermarking
+are in the watermarking future
+and now I will go over what's important practice
+and some important problems that we face
+so first, watermarking is used everywhere now
+you know a lot of what it is, so you are creating it for a project, for an AI, for an AI, for an AI, for an AI.
+And if you look at the algorithms that are used for images, for images, for most of the time, there are post-site algorithms.
+And the reason is what is the case when the methods at our generation time offer better results.
+So we'll talk about it, and I will try to convince you of this.
+There is one thing which is very nice, before going into the answer of this, which is that
+for instance there is one member of our team who printed an image generated on the mail
+so it's in T-shirts, and so if you scan the T-shirt, you'll have to know that it's generated by us
+so it gets into an output impression of the T-shirt.
+And it was also good for CID. So if you... So CID has a new vector, I think it's called CID.
+And you have a lot of images generated by AI on the metro for instance.
+You can really just scan the images, send them to the CID vector and tell you what it is.
+So it's quite robust.
+I think that the...
+So I was saying it's not robust to an adversarial attack
+like these two, like a complex attack.
+So, I think we need to reconsider the trainers to be able to understand
+why it's the case that the architect that we use are post-partum-art-marked algorithms.
+And so these are the three criteria that I presented to you from the region of the top.
+I think that now we should monitor this, so it's a multidimensional possibility.
+In practice you have a lot of questions that are maybe my concern now,
+because let's say the speed of the algorithm, so for instance,
+I took the effort for training, you have issues of speed,
+and the complexity of the model, so for instance if you want to have a model that's inside the camera,
+you need it to be based on, and there's also the question of the activity,
+is that if you have a model, you want to be able to reuse it across the company and not
+to be specific on algorithmic prices.
+And so if you think about the triggering method that I presented before, which was the one
+that embedded the word part in the noise of the automobiles, like first, if you try to
+do this in a manner of the way, it will tell you, no, don't touch our models, we want to
+control what we do. And so, like, organizationally speaking, it's super long to do for the team that
+does what we want to change the way the simple we like. And then there's also the fact that if you want to
+involve the field process, it's going to be too slow. So, practice. This method is very nice, but
+it's very hard to put in practice very soon, which is that you control your data. So if you want to
+what or not real can you do it on your cameras
+that won't be in the atmosphere
+so this is a very nice
+it has good applications as well
+I'm not saying that it is
+useless but it's just that
+in practice it's much harder
+to use
+there is also the question of
+suradaptivity that I talked about before
+first
+if you have a guarantee model
+like let's say
+I use stable diffusion I want to
+to a stable different end to, or to an interesting model,
+is the method that they create a product
+where something that was changing the machine noise,
+and that it doesn't work for the new model,
+it's going to be a big.
+So the method that you give them
+must be able to work across the action models.
+Also, as I said, the whole thing will
+back soon or back to what this,
+because it will have to stick to the process
+of creating models, which is already super, super hard.
+in this paper plate queue and exchange procession.
+So, all of this points out
+the process of the right parameters that are used in practice.
+There is also a point that I am quite interested in,
+which is that in watermarking,
+I think for me, there is a clear distinction between
+purpose-ness and security.
+So, this one for me, this is from a report that
+It came from 2005, I think it's a French name that we were there.
+So it's called Watermark Security in the material practice.
+And in this paper, they say,
+the degradation is due to a peaceful content processing,
+like compression, filtering, etc.
+And security is the inability by unauthorized users to access,
+to remove or read the watermark.
+I think it's important to note because in practice,
+it's going to be 99.9% minimum score
+that would be incontumptional and very soon people would actually attack the lotomark intentionally
+so it's maybe more important to care about robustness in lotomarking
+and everything that's secretive is important
+but from the lotomark point of view it's first robustness and then secrecy
+And so if you think about it this way, it's also the case that we are not tantropes to
+implement abstract methods to take out the text, but we are all aware of them to the rest
+of the world, so it's fine.
+And then there are some other problems as well that are pretty hard to tackle and that
+are not similar to papers correctly.
+The first one is background flexibility. So let's say I have developed a new model, a system 2.
+I need to be able to make it work with the first one, to not be able to detect multiple outcomes.
+So what do we do? Do we detect with both extractors or do we try to know what's the extractor and what's the goal?
+So this is a very interesting question.
+Another interesting question is how do we share the results across companies?
+So once you have a data with me, as we say, Watermark with Compact 1, Watermark with Compact 2,
+I give a single extractor to follow.
+And maybe the last question that's interesting is how do we provide
+like either replication APIs or function rules
+so for instance we have a disk website and this site is a search multi-touch
+and it's a data account
+and the first one is you have an API in access or a website
+I think the first issue with this is that it's very hard to protect
+because if you have an API that can say just yes no
+it's actually quite easy to remove the other map
+So not as easy as if you have all the variables, but if you can do enough plays, you can move
+the what or not with an image that will look exactly the same.
+So it's a good idea.
+And for open source extractors, solutions we release the weights.
+This is an even harder question and we don't even know if that's possible.
+So the very interesting question is to know if we could just give the structure to the
+the initial condition on all the places where it's important to go to results.
+Currently, if you do this kind of stuff,
+everybody can reboot or embed watermark so it's not very useful.
+Ok, so I think it's the end of the presentation.
+The main takeaways are that watermarking is increasingly important.
+It has been a great deal in memory of a lot of computers.
+It's a great thing to see the connections of generic methods.
+I also talk about the image that is also the case for text and audio.
+I hope to have convinced you that generation time, what we're talking about is a very, very nice topic.
+And it's the end of the week that's why I hope to really change the semantics of the image to embed information.
+and it makes it more secure to address the problem
+and then you have these post-hoc approaches which are not flexible and far as well to practice
+and there are many new forms to explore in the design
+so maybe just to date for the next question
+but I'll begin to date for another question
+and I'll go to the end of the next one
+Thank you so much for the attention.
+Thank you so much for the presentation here.
+I think we have time for three more short questions.
+So please raise your hand and open the microphone.
+I thank you for the presentation.
+I have one quick question.
+I do not understand.
+We are using the system and models to do very efficient watermarks
+as you said very robust but at the same time detectable
+it means that you can do the same thing but reverse
+something that delete the watermark and make it undetectable
+in the future at least it will be possible and it's possible actually right now
+so what do you make up for that? What's the goal of all of this?
+if at the end it's possible to do the same thing but reverse it?
+So the embedder and the X-factor will be changed. So if you just train a new player and get you embed a new other one, it won't impact the first one.
+And let me answer your question. What I mean is that it's not easy when you already have the embedder to train something that can improve it.
+But if you have the watermarked image and also the not AI image then you have the data to train a model to change the
+by distribution to make it a layer.
+So what you're saying is, let's say I have like 1 billion AI-jointed images, 1 billion anti-jointed images, I train a model, then I use this model to
+like to remove the watermark, maybe like this.
+Yeah, something like that.
+So this is an attack that's from people in different papers,
+they do this in their attacks, it transfers to a certain extent.
+I think the real question that you have to ask yourself is
+is it better than the black box attack that they present in people?
+So if you can remove the weather without doing this,
+to an extent that's not a bit different level,
+So, you can try to do this but it's just going to take a lot of resources for nothing.
+In practice, it depends on the algorithm that you have.
+In practice, if you try to train these kind of detectors for the stuff that you have,
+in practice, in CERT and in ACERA, it won't work.
+In practice, if you do it for training, it will work.
+So, it depends really on the algorithm that you're processing.
+Okay, thank you.
+I saw another race.
+Can anybody want to tell me?
+Yes, hi.
+I think the most dangerous part is making
+real images actually
+multiplied so that people
+think they are AI-generators.

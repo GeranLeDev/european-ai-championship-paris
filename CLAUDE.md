@@ -1,6 +1,7 @@
 # European AI Championship Paris — hackathon 24h (21-22 nov. 2026, Epitech KB)
 
-- Hacking : sam. 15:00 → dim. 12:00 (démo jury). Équipes de 3-4. Organisé par CISPA + PoC Innovation, partenaires Meta/Epitech.
+- Hacking : sam. 14:30 → dim. 12:00 (pitch 6 min pour le top 6 du leaderboard).
+- **ÉNONCÉ OFFICIEL : `challenge/00_tasks.md` (3 tâches : localisation de watermark, model equality testing, unlearning ViT) + `challenge/01_organizer_audio.md` (consignes orales). À lire avant tout travail.** Équipes de 3-4. Organisé par CISPA + PoC Innovation, partenaires Meta/Epitech.
 - Papiers de prépa : voir `papers/README.md`. Avant de travailler sur un challenge lié au watermarking, à l'audit d'API LLM ou au machine unlearning, lire le fichier correspondant dans `papers/context/` :
   - watermarking image/vidéo → `papers/context/06_organizer_talk_watermarking.md` (talk de l'organisateur : priorités du jury) puis `01_pixel_seal.md` ; fiches de la lignée : `05_hidden`, `07_watermark_anything`, `08_video_seal`, `09_synthid_image`, `10_trustmark`, `11_editguard`, `12_stable_signature`, `13_tree_ring`, `14_distseal` (index dans `papers/README.md`)
   - audit / identification de modèle derrière une API, tests statistiques → `papers/context/02_model_equality_testing.md`

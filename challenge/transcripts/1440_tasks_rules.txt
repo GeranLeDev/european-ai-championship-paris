@@ -1,0 +1,310 @@
+So what is the setup for this task is that we divide the given image into 4 by 4 pixels.
+So images and resolutions are 512 by 512, and then the grid of these images is 128 by 128.
+So you have basically these 4 by 4 pixels, and your task is that for each of these small cells,
+you have to you have to give a label if this cell is watermarked or not so does this cell contain
+stegastamp watermark does it contain pixel seal or trust mark and this ground proof for this label
+is one if at least 50 percent of this distance one more than two or at least two are watermarked
+and then if the if you think that they're given a set of the watermark then
+just you put like a zero we need clean cell no water part itself now how do we
+really score your solutions so we use method which is called intersection of
+our union you have this nice equation so you have the basically basic stuff so
+So C here in this equation denotes the class.
+So as I mentioned, class one watermarked part,
+and then zero, which means clean unwatermarked cell.
+Now, P dot C, this denotes the set of cells
+you predict as class C, for example, as class one,
+being watermarked.
+G set C is the ground truth.
+So set of cells do not belong to the given class.
+So I sub C intersection, so basically we count how many cells were truly watermarked and that you label them as being watermarked.
+And also we have union, this is U sub C. So all the basically cells that have either labeled as C by U or also had ground truth being C.
+And then actually we compute this IFOU, this is the union.
+And then this is done per class.
+Next we do per image.
+So per image means that for both classes,
+just average the score.
+And final score is that basically we just have
+a mean over all the section over union for all the images.
+And maybe also I see a lot of you taking photos.
+We will be uploading the slides to this part.
+So you will have all of that for you to review the entire time.
+So don't get stressed.
+It looks like a lot at the beginning,
+but you will have access to it during the whole 24 hours,
+and you're going to get to it.
+And we're here to help you with questions.
+And then what's given by us.
+So we provide 1,530 images in total.
+And they are split equally across this key watermark.
+So .
+We have for the training.
+So you can just see how this looks.
+510 images.
+And then we have also ground-proof masks,
+so each cells are .
+And also the method.
+And also the embedded message .
+And then what we also give to you is 1,020 images.
+And then this only image.
+And you have to basically classify each cell
+as .
+And then we move on.
+OK, maybe you can have a question.
+Yeah.
+any questions about this task? One question. Otherwise we are here for 24 hours so any
+question we can take. And ideally you ask your questions on Discord and the task channels
+because if any of you has this question I'm sure like a hundred other people have that question too
+so we can all like get on board basically. So the next task is from a similar problem family
+but it's a kind of a different perspective because all of us nowadays we use kind of
+subscriptions to models like Claude or so on but when we pay for a model we actually want to know
+is the model that we get from the company the model that we're paying for are they just
+substituting our model with maybe a cheaper version and like the question is now how to
+find out and like the first question is a bit of a philosophical one like in which type is a model
+like the real one that people are asking for and how we see that and how we define it is basically
+that models for example which are the same model as the base model but then have some decoding
+difference like for example the watermark being added to the outputs they will be still considered
+the same model they just like give slightly different outputs but if now somebody like
+gives you a i don't know like a cloth like oppos instead of a thought fable then you might get mad
+and it's a different model of course.
+So this is what we want you to find out in this task here.
+So we really distinguish between what's a different model
+and what's just a different deployment.
+And therefore we give you 33 different models
+or access to them.
+And we like consider that if somebody swaps out
+the base model, you see a different architecture
+or if somebody gives you a quantized version,
+like let's say instead of a full model,
+you just get access to a four bit version.
+Or if the model has been manipulated in any way,
+like soon downstream of that like Laura,
+then there would be a different model.
+But if just somebody has the same model
+and the decoding is different,
+you add a watermark or you have a different system prompt
+that tells the model to do something else,
+then basically those would still be the same model identities.
+And now your task will basically be to find that out.
+And so like given these 33 models,
+you're supposed to basically label them as different.
+And how we're gonna score this year is that,
+of course now if you have 33 models,
+like if every model with every model can form a pair,
+for each of those pairs,
+you should label them as either being the same pair
+or not the same.
+They got the same model or not the same.
+And then we're operating with scores
+that you probably all know from university,
+like true positives and false positives.
+So true positives, if you say they are the same family
+and they are really, for example,
+a false positive is that you say it's the same model family,
+but they actually are not.
+And like using this formula
+then basically to bring true positives
+and false positives and like true negatives
+and false negatives into relation,
+we score you on that.
+And yeah, beyond that basically,
+we also take into account that you figure out
+like which models belong to which model families.
+And this goes on with a small score
+because it's kind of simpler,
+like finding out is that model at least from this family.
+And so this gives you like a small boost
+and then the rest is really about like deciding
+on the model pairs.
+And how we got to operationalize that is that
+you can send queries with a prompt to an endpoint
+and this gives you generated text only.
+And to make the task a bit more challenging
+and more interesting, we limited how many responses
+you can get from each endpoint to a hundred.
+So ultimately choose your queries wisely
+because you cannot get like an unlimited amount
+of generations.
+And we also limit basically how much you can get
+into the model and how much you can get out.
+So at most you can put 1,024 tokens per prompt
+and you will get at most 256 generates tokens.
+And yeah, at the same time, you could also only request
+for such queries at the time.
+This is basically to have the task a bit harder
+and to make you really engineer what kind of queries
+you want to ask to this model.
+But if you happen to do an invalid request,
+let's say like you're wrongly formatted,
+then we won't count it and we won't punish you for that
+basically.
+And yeah, so what you have to submit at the end is a CSV
+file where you have one line for every endpoint.
+So, and then this is basically like, which, like,
+is it the same family or is it not the same family?
+And then for like the, for the relationship with the other
+models, are they the same model or are they not?
+And you're supposed to make one submission every 30 minutes.
+So it might maybe help you to build some local set up
+where you can tune faster.
+And the important thing is here,
+like during all our tasks,
+we do what machine learners always do.
+We do some train and validation splits.
+So validation split is basically some data
+that you will have access to during the whole event.
+In our case, it's like the solutions you submit,
+parts of that will be used to show your score
+on our scoreboard during the event.
+But then there's a test set,
+which is a fraction of the data you also submit.
+And this test set is what you will be finding
+scored at the end of the event.
+So don't try to overfit your values
+to like what you see during the event,
+but try to really develop general solutions.
+Are there any questions to this second task
+or to this general evaluation logic?
+All right, otherwise let's move on
+the last task named unlearning and unlearning is for us a super relevant problem because each and
+every one of you probably has a lot of private data and it sometimes happens that we accidentally
+or not so accidentally but without thinking about it upload the data somewhere online
+and with this data now being available online or being uploaded to a model provider we cannot
+avoid that the data is used to train these models and then your data is in the models
+and research among which research from our own group shows that models which have seen your data
+might memorize that and might output it. And so that's of course a privacy risk and therefore
+unlearning is extremely relevant. Also the European GDPR gives each and every one of us a right to be
+forgotten so you have the right for your personal data to be deleted and unlearning is a potential
+solution or at least a technical attempt to implement unlearning for machine learning models.
+And what we will give you is a pre-trained model with a hundred class basically data set.
+And we will give you samples that the model was trained on and that you are supposed to forget.
+And the important part is that we will like calculate you on two metrics on a high level.
+The one metric is how good are you at forgetting the data points.
+But this metric alone is of course not enough because the problem is like you can't forget anything, right?
+leave your model or like make your model output random labels, then you're forgotten.
+But it's not a useful model anymore.
+So like the company who trained that model for billions of dollars, they would want to
+retain this model and be good in other tasks.
+So while you forget the data that you should forget, you should still keep the model at
+a high utility.
+And this is what the retain score is about.
+This is basically how well the model still performs on the task that it's supposed to
+do.
+And we are going to score you on your forget abilities with the retain abilities.
+And we're going to make a hard cut.
+Basically, if you tune the model such that it forgets like down to less than 70% of what
+it had before, then the solution is going to be rejected in any ways.
+But if you manage to be over 70% basically as a retain score, then we'll multiply that
+with the forget score and you will be scored on that.
+I won't go too much into detail here on the metric.
+You can look into that in more detail,
+but it's basically that.
+So how much is the model not good anymore
+on the data that you asked it to forget
+versus how good it is still on the data
+that you asked it to retain.
+And yeah, ultimately you will be given the model,
+you will be given the data to forget,
+the task template to work with,
+and then you will submit the model at the end
+and we will be evaluating that on your behalf
+to see how well it performs.
+And so...
+So regarding compute, actually we have a script for you.
+So Maitry prepared the script and I think that this is a masterpiece, so you don't have to do too much.
+And also we will send you this code so that you can bootstrap from the code and easily start working with the GPUs.
+Because that's one highlight here of the hackathon.
+We acquired like compute grant from the Jülich Compute Center.
+So Jülich was so kind to offer this huge infrastructure for them with many GPUs.
+We have in total around 200 GPUs.
+So we have around 100 participants in the hackathon.
+So roughly each of you should have access to a GPU, which
+is 800, most of them are 800 GPUs.
+So there are plenty of resources to use and solve the tasks.
+So I think that you can skip this part,
+and you can use the script that should be prepared for you
+to just easily use these resources.
+And I think what is really important is that we just go back to the scoreboard.
+So basically, we have these three tasks.
+And then on the scoreboard, you can see how well you perform against other teams.
+So this is for you information.
+Should I improve my solution?
+How much?
+But remember, this scoreboard just helps you analyze your solution.
+And then you don't have overfit on your training set
+to these solutions.
+So we had many times the problem that a given team
+just optimized for the scoreboard.
+And actually then at the end of the championship,
+they were at the bottom of the list.
+So think about the solution.
+Do we have validation set?
+This is for you, to inform you if you go the right direction.
+So we will show you this scoreboard for the whole hackathon,
+24 hours.
+You can control how good you are in your solution.
+If you do it fairly and you just optimize
+for the solution, then you have also overall .
+This is really for you the info.
+And then the hackathon, actually, what's happening
+is that we stopped the scoreboard.
+And actually, then we will see only one team member
+from our team will see the results.
+And then you also have to prepare presentations.
+So each of the teams prepare presentations
+to just show how you solve the task.
+And this is really the crux, meaning the most important part
+is that at the end of the hackathon,
+you want to really see that you understand this topic.
+Your solution, actually, is really yours.
+So if you do not answer our questions, be prepared.
+You have to be able to explain what's happening in your code,
+how you solve the task.
+This is the way how you learn.
+And this is what we want to see after 24 hours.
+So all of the teams come with the presentations
+and the slides of how you solve the tasks.
+And all of us can ask questions.
+Because if I work on a task for 24 hours,
+and I would like to understand how the other teams
+So the same task, right?
+So everybody can ask, we will just, I would say,
+grill six best teams.
+So one of our team members will see what are the best teams,
+six best teams, on the validation set.
+And actually, six best teams will be then randomly selected
+during the presentations.
+And we'll invite you to the stage here
+to present your solutions.
+And then after this whole thing, we'll meet with the whole mentoring team.
+And then after we will consider the scores, the validation set, and
+the scores for your explanations of your solutions.
+And then we'll decide on the team order, and
+then we'll actually give the next award.
+Any questions?
+Okay.
+It's the worst thing.
+It's the worst thing.
+Guys, please, let's let him ask questions.
+I don't know if you could send us the presentation.
+Yes. After the...
+We will upload it to Discord after the presentation.
+After the presentation, yes.
+Okay.
+So, I would say that have fun, good luck,
+and we'll be here for 24 hours.
+In the meantime, you can of course already look into all the tasks, into the descriptions, etc.
+And then you can submit and the team lead is responsible for giving this token to all of your team members
+because you share one token as a team.
+Thank you.
+I think so.
+Thanks.
+Have fun.
+Have fun.
+Thank you.
+Thank you.
+Thank you.
+Thank you.
+Thank you.
+Thank you.
+Thank you.
+Thank you.
