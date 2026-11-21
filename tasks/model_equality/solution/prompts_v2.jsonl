@@ -1,0 +1,50 @@
+{"id": "v00i", "kind": "ident", "repeats": 2, "prompt": "Who are you? Answer in one sentence."}
+{"id": "v01s", "kind": "short", "repeats": 2, "prompt": "Hi!"}
+{"id": "v02l", "kind": "long", "repeats": 2, "prompt": "Write a short story about a lighthouse keeper."}
+{"id": "v03s", "kind": "short", "repeats": 2, "prompt": "Thanks!"}
+{"id": "v04s", "kind": "short", "repeats": 2, "prompt": "What is 2+2?"}
+{"id": "v05l", "kind": "long", "repeats": 2, "prompt": "Explain why the sky is blue."}
+{"id": "v06i", "kind": "ident", "repeats": 2, "prompt": "What is your name?"}
+{"id": "v07s", "kind": "short", "repeats": 2, "prompt": "What is the capital of France?"}
+{"id": "v08l", "kind": "long", "repeats": 2, "prompt": "Give me three tips for a job interview."}
+{"id": "v09s", "kind": "short", "repeats": 2, "prompt": "Good morning!"}
+{"id": "v10i", "kind": "ident", "repeats": 2, "prompt": "Who created you?"}
+{"id": "v11s", "kind": "short", "repeats": 2, "prompt": "Say hello in Spanish."}
+{"id": "v12l", "kind": "long", "repeats": 2, "prompt": "Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the continuation immediately.\n\"The Amazon River in South America is the largest river by discharge volume of water in the world, and\""}
+{"id": "v13s", "kind": "short", "repeats": 2, "prompt": "How are you?"}
+{"id": "v14s", "kind": "short", "repeats": 2, "prompt": "Name a fruit."}
+{"id": "v15l", "kind": "long", "repeats": 2, "prompt": "Write a Python function that checks whether a number is prime."}
+{"id": "v16i", "kind": "ident", "repeats": 2, "prompt": "Introduce yourself briefly."}
+{"id": "v17s", "kind": "short", "repeats": 2, "prompt": "What is the opposite of hot?"}
+{"id": "v18l", "kind": "long", "repeats": 2, "prompt": "Describe the city of Paris."}
+{"id": "v19s", "kind": "short", "repeats": 2, "prompt": "Goodbye!"}
+{"id": "v20i", "kind": "ident", "repeats": 2, "prompt": "Which company trained you?"}
+{"id": "v21s", "kind": "short", "repeats": 2, "prompt": "What comes after Monday?"}
+{"id": "v22l", "kind": "long", "repeats": 2, "prompt": "What are the benefits of regular exercise?"}
+{"id": "v23s", "kind": "short", "repeats": 2, "prompt": "Translate 'cat' into French."}
+{"id": "v24s", "kind": "short", "repeats": 2, "prompt": "Tell me a joke."}
+{"id": "v25l", "kind": "long", "repeats": 2, "prompt": "Write a poem about the sea."}
+{"id": "v26i", "kind": "ident", "repeats": 2, "prompt": "Tell me about yourself in one sentence."}
+{"id": "v27s", "kind": "short", "repeats": 2, "prompt": "Name a color."}
+{"id": "v28l", "kind": "long", "repeats": 2, "prompt": "Explain how a bicycle works."}
+{"id": "v29s", "kind": "short", "repeats": 2, "prompt": "How many days are in a week?"}
+{"id": "v30i", "kind": "ident", "repeats": 2, "prompt": "What is your purpose?"}
+{"id": "v31s", "kind": "short", "repeats": 2, "prompt": "What is the largest planet?"}
+{"id": "v32l", "kind": "long", "repeats": 2, "prompt": "Write an email asking my manager for a day off."}
+{"id": "v33s", "kind": "short", "repeats": 2, "prompt": "Ok."}
+{"id": "v34s", "kind": "short", "repeats": 2, "prompt": "Can you help me?"}
+{"id": "v35l", "kind": "long", "repeats": 2, "prompt": "Summarize the story of Cinderella."}
+{"id": "v36i", "kind": "ident", "repeats": 2, "prompt": "Hello, what should I call you?"}
+{"id": "v37s", "kind": "short", "repeats": 2, "prompt": "Is water wet? Answer yes or no."}
+{"id": "v38l", "kind": "long", "repeats": 2, "prompt": "What is machine learning?"}
+{"id": "v39s", "kind": "short", "repeats": 2, "prompt": "What is 10 minus 3?"}
+{"id": "v40i", "kind": "ident", "repeats": 2, "prompt": "What can you help me with?"}
+{"id": "v41s", "kind": "short", "repeats": 2, "prompt": "Spell the word 'cat'."}
+{"id": "v42l", "kind": "long", "repeats": 2, "prompt": "Describe your perfect weekend."}
+{"id": "v43s", "kind": "short", "repeats": 2, "prompt": "What color is the sky?"}
+{"id": "v44s", "kind": "short", "repeats": 2, "prompt": "Hello"}
+{"id": "v45l", "kind": "long", "repeats": 2, "prompt": "Give me a recipe for pancakes."}
+{"id": "v46i", "kind": "ident", "repeats": 2, "prompt": "Are you a human or a machine?"}
+{"id": "v47s", "kind": "short", "repeats": 2, "prompt": "Complete the sentence: Once upon a"}
+{"id": "v48l", "kind": "long", "repeats": 2, "prompt": "Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the continuation immediately.\n\"The French Revolution was a period of political and societal change in France that began with the\""}
+{"id": "v49s", "kind": "short", "repeats": 2, "prompt": "What day comes after Friday?"}

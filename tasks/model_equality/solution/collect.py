@@ -29,6 +29,7 @@ TASK_ID = "33-model-equality"
 BASE_URL = f"{SERVER_URL}/{TASK_ID}/v1"
 MAX_PARALLEL = 4
 MAX_TOKENS = 256
+STOP_FILE = HERE / "data" / "STOP"          # `touch data/STOP` = stop cleanly (no paid answer is lost)
 
 
 def api_key(args):
@@ -61,25 +62,26 @@ def resolve_endpoints(spec, budget):
     return [e.strip() for e in spec.split(",") if e.strip()]
 
 
-def plan(prompts, endpoints, done, cap, left):
+def plan(prompts, endpoints, done, cap, left, order="repeat"):
     """Round-robin by repeat then prompt then endpoint (a run that stops early stays balanced)."""
     used = {e: sum(1 for (ep, _, _) in done if ep == e) for e in endpoints}
     jobs, skipped = [], 0
     max_rep = max(p["repeats"] for p in prompts)
-    for rep in range(max_rep):
-        for p in prompts:
-            if rep >= p["repeats"]:
+    if order == "prompt":       # prompt-major: all repeats of prompt 1, then prompt 2... (any prefix is analysable)
+        seq = [(rep, p) for p in prompts for rep in range(p["repeats"])]
+    else:
+        seq = [(rep, p) for rep in range(max_rep) for p in prompts if rep < p["repeats"]]
+    for rep, p in seq:
+        for e in endpoints:
+            if (e, p["id"], rep) in done:
                 continue
-            for e in endpoints:
-                if (e, p["id"], rep) in done:
-                    continue
-                if used[e] < cap and (left is None or left.get(e, 0) > 0):
-                    used[e] += 1
-                    if left is not None:
-                        left[e] -= 1
-                    jobs.append((e, p["id"], rep, p["prompt"]))
-                else:
-                    skipped += 1
+            if used[e] < cap and (left is None or left.get(e, 0) > 0):
+                used[e] += 1
+                if left is not None:
+                    left[e] -= 1
+                jobs.append((e, p["id"], rep, p))
+            else:
+                skipped += 1
     return jobs, skipped, used
 
 
@@ -88,21 +90,36 @@ def run_jobs(sess, jobs, out_path, parallel, extra):
     out = open(out_path, "a", encoding="utf-8")
 
     def one(job):
-        ep, pid, rep, prompt = job
+        ep, pid, rep, p = job
         tries = 0
         while ep not in exhausted and tries < 50:
+            if STOP_FILE.exists():            # graceful stop: in-flight requests finish and are saved, no new one starts
+                return
             tries += 1
-            body = {"model": ep, "max_tokens": MAX_TOKENS, "messages": [{"role": "user", "content": prompt}]}
+            # a prompt is either one user message ("prompt") or a full user/assistant conversation ("messages")
+            body = {"model": ep, "max_tokens": p.get("max_tokens", MAX_TOKENS),
+                    "messages": p.get("messages") or [{"role": "user", "content": p["prompt"]}]}
             body.update(extra)
             try:
-                r = sess.post(f"{BASE_URL}/chat/completions", json=body, timeout=180)
+                # connect timeout short (nothing is counted if we cannot connect), read timeout very long: a reply that
+                # the server has already counted must not be dropped by an impatient client.
+                r = sess.post(f"{BASE_URL}/chat/completions", json=body, timeout=(20, 900))
             except Exception as exc:  # network
-                print(f"unreachable ({type(exc).__name__}), retry in 30 s", flush=True)
+                print(f"{ep} {pid} r{rep}: network error ({type(exc).__name__}), retry in 30 s", flush=True)
                 time.sleep(30)
                 continue
             if r.status_code == 200:
-                b = r.json()
-                ch = b["choices"][0]
+                try:
+                    b = r.json()
+                    ch = b["choices"][0]
+                    ch["message"]["content"]
+                except Exception:             # counted by the server but unreadable: keep the raw body, do not re-ask
+                    with lock:
+                        out.write(json.dumps({"endpoint": ep, "id": pid, "repeat": rep, "response": "",
+                                              "raw": r.text[:5000], "bad": True, "t": time.time()}) + "\n")
+                        out.flush()
+                        os.fsync(out.fileno())
+                    return
                 rec = {"endpoint": ep, "id": pid, "repeat": rep, "response": ch["message"]["content"],
                        "finish_reason": ch.get("finish_reason"), "usage": b.get("usage"), "budget": b.get("budget"),
                        "extra_keys": sorted(set(b) - {"choices", "usage", "budget"}), "t": time.time()}
@@ -111,6 +128,7 @@ def run_jobs(sess, jobs, out_path, parallel, extra):
                 with lock:
                     out.write(json.dumps(rec, ensure_ascii=False) + "\n")
                     out.flush()
+                    os.fsync(out.fileno())
                     counter[0] += 1
                     if counter[0] % 20 == 0 or counter[0] == len(jobs):
                         print(f"{counter[0]}/{len(jobs)} ({ep} budget {b.get('budget')})", flush=True)
@@ -150,7 +168,7 @@ def cmd_collect(args):
     left = None if budget is None else {e: budget.get(e, 0) for e in endpoints}
     if left is not None and any(e.startswith("ref-") for e in endpoints):
         left = {e: (10**9 if e.startswith("ref-") else v) for e, v in left.items()}   # ref has no limit
-    jobs, skipped, used = plan(prompts, endpoints, done, args.max_per_endpoint, left)
+    jobs, skipped, used = plan(prompts, endpoints, done, args.max_per_endpoint, left, args.order)
     per_ep = {}
     for j in jobs:
         per_ep[j[0]] = per_ep.get(j[0], 0) + 1
@@ -209,6 +227,8 @@ def main():
     ap.add_argument("--allow-scored", action="store_true")
     ap.add_argument("--max-per-endpoint", type=int, default=100)
     ap.add_argument("--parallel", type=int, default=4)
+    ap.add_argument("--order", default="repeat", choices=["repeat", "prompt"],
+                    help="'prompt' = send all repeats of prompt 1 first, then prompt 2... (staged budget)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--no-network", action="store_true")
     ap.add_argument("--key-file", default=None)

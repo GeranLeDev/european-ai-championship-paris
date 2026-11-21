@@ -43,3 +43,5 @@ tasks/*/release/
 tasks/*/submission.pt
 tasks/*/extra/
 tasks/*/extra/
+samples_task1/
+samples_task1.zip

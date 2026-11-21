@@ -7,6 +7,7 @@
   - audit / identification de modèle derrière une API, tests statistiques → `papers/context/02_model_equality_testing.md`
   - machine unlearning, membership inference attacks → `papers/context/03_scrub_unlearning.md`
 - Code officiel des 3 papiers installé dans `repos/` (un venv uv par repo, smoke tests dans `repos/_smoke/`) : lire `repos/README.md` avant de l'utiliser (pièges d'installation et API).
+- **RÈGLE ORGANISATEURS JURECA (sinon révocation de l'accès GPU) : toute l'équipe = AU PLUS 1 job Slurm à la fois (en cours + en attente), 1 nœud = 4 GPU. Vérifier `squeue -h -u geran1,boulay1,chaibamensou1,kourdoughli1` avant tout sbatch. Ne pas demander des durées de 16-18 h. On utilise UN worker (`queue/worker.sh`) qui exécute `queue/pending/*.sh` l'un après l'autre ; ne jamais lancer de 2e job.**
 - Compute GPU (cluster JURECA, A100 40 GB, Slurm, soumission leaderboard `id,label` en probabilité [0,1]) : lire `infra/jureca_gpu.md` avant de lancer un entraînement ou une soumission.
 - **PRIORITÉ : les 3 papiers initiaux (01, 02, 03) sont le cœur du projet.** Le MVP doit s'appuyer d'abord sur eux (méthodes, code officiel, chiffres).
 - BONUS seulement : `papers/context/04_complementary_papers.md` (attaques de watermark, fingerprinting LLM, évaluation de l'unlearning ; infos issues des abstracts). À utiliser uniquement pour compléter un point faible d'un des 3 papiers, jamais comme base du MVP, et ne pas le charger par défaut.
