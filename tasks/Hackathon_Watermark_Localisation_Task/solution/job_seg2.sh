@@ -10,9 +10,9 @@ run() { # gpu name method extra-args
     > $O/$2.log 2>&1 || echo "FAILED $2" >> $O/failed.txt
 }
 rm -f $O/failed.txt
-run 0 trustmark  trustmark  --use-what 0 &
-run 1 pixelseal  pixelseal  --use-what 0 &
-run 2 stegastamp stegastamp --use-what 0 &
-run 3 all_realonly all --real-only 1 --eval-every 250 &
+run 0 trustmark  trustmark  --arch feat &
+run 1 pixelseal  pixelseal  --arch feat &
+run 2 stegastamp stegastamp --arch pix &
+run 3 pixelseal_b pixelseal --arch feat --seed 1 --bb-lr 0.03 &
 wait
 [ ! -f $O/failed.txt ]

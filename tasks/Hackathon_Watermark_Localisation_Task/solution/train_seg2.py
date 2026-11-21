@@ -7,7 +7,7 @@ synthetic validation set (gap synthetic -> real = fidelity of the generator).
 Robust to interruptions: time budget, atomic checkpoints, automatic resume from <out>/last.pt.
 Usage: python solution/train_seg2.py --method trustmark --device cuda --data release --out output/seg2/trustmark --minutes 60
 At the end writes <out>/pred.npz (probabilities for train fold, held-out fold and test)."""
-import argparse, json, os, sys, time
+import argparse, copy, json, os, sys, time
 from pathlib import Path
 import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "solution"))
@@ -45,6 +45,57 @@ class SegNet(nn.Module):
             h = u(torch.cat([F.interpolate(h, size=skip.shape[2:], mode="bilinear", align_corners=False), skip], 1))
         return self.head(h)[:, 0]
 
+    def run(self, items, dev): return self(make_input(items, dev, self.use_what))
+
+
+class FeatSeg(nn.Module):
+    """Official extractor of the method (TrustMark ResNet-50 / PixelSeal ConvNeXt), fine-tuned, run at several input
+    scales; its feature pyramid and its per-position agreement with the known message feed a segmentation head.
+    (A head on the frozen TrustMark features starts learning within 200 iterations where the raw-pixel U-Net does not.)"""
+    def __init__(self, wm, method, scales=(256, 512), c=64):
+        super().__init__()
+        self.method, self.scales = method, scales
+        self.bb = copy.deepcopy(wm.net if method == "trustmark" else wm.det).float()
+        for p in self.bb.parameters(): p.requires_grad_(True)
+        with torch.no_grad():
+            chans = [f.shape[1] for f in self.pyramid(torch.zeros(1, 3, 64, 64, device=next(self.bb.parameters()).device))[0]]
+        self.red = nn.ModuleList([nn.ModuleList([nn.Sequential(nn.Conv2d(k, c, 1, bias=False), nn.BatchNorm2d(c), nn.ReLU(inplace=True)) for k in chans]) for _ in scales])
+        self.body = nn.Sequential(Block(len(scales) * (len(chans) * c + 1) + 1, 192), Block(192, 128)); self.out = nn.Conv2d(128, 1, 1)
+
+    def pyramid(self, x):
+        feats = []
+        if self.method == "trustmark":
+            n = self.bb; h = n.maxpool(n.relu(n.bn1(n.conv1(x * 2 - 1))))
+            for k in ("layer1", "layer2", "layer3", "layer4"):
+                h = getattr(n, k)(h); feats.append(h)
+            pp = torch.einsum("bchw,oc->bohw", h, n.fc.weight) + n.fc.bias[None, :, None, None]
+        else:
+            d = self.bb; h = x * 2 - 1
+            for i in range(4):
+                h = d.convnext.downsample_layers[i](h); h = d.convnext.stages[i](h); feats.append(h)
+            emb = d.pixel_decoder.output_upscaling(h); lin = d.pixel_decoder.linear
+            pp = (torch.einsum("bchw,oc->bohw", emb, lin.weight) + lin.bias[None, :, None, None])[:, 1:]
+        return feats, pp
+
+    def forward(self, x, ag, s):
+        hs = []
+        for red, sc in zip(self.red, self.scales):
+            xs = x if sc == x.shape[-1] else F.interpolate(x, size=(sc, sc), mode="bilinear", align_corners=False, antialias=True)
+            feats, pp = self.pyramid(xs)
+            hs += [F.interpolate(r(f), size=(128, 128), mode="bilinear", align_corners=False) for r, f in zip(red, feats)]
+            hs.append(F.interpolate((torch.tanh(pp.float()) * s[:, :, None, None]).mean(1, keepdim=True), size=(128, 128), mode="bilinear", align_corners=False))
+        hs.append(ag[:, None, None, None].expand(-1, 1, 128, 128))
+        return self.out(self.body(torch.cat([h.float() for h in hs], 1)))[:, 0]
+
+    def train(self, mode=True):                              # the extractor keeps its normalisation statistics
+        super().train(mode); self.bb.eval(); return self
+
+    def run(self, items, dev):
+        x = torch.from_numpy(np.stack([it["img"] for it in items])).to(dev).permute(0, 3, 1, 2).float() / 255
+        ag = torch.tensor([it["agree"] for it in items], device=dev, dtype=torch.float32)
+        s = torch.from_numpy(np.stack([it["bits"] for it in items])).to(dev).float() * 2 - 1
+        return self(x, ag, s)
+
 
 def make_input(items, dev, use_what):
     x = torch.from_numpy(np.stack([it["img"] for it in items])).to(dev).permute(0, 3, 1, 2).float() / 255
@@ -81,7 +132,7 @@ def predict(model, items, dev, use_what, bs=16):
     model.eval(); out = []
     for i in range(0, len(items), bs):
         with torch.autocast("cuda", dtype=torch.float16, enabled=dev.startswith("cuda")):
-            out.append(torch.sigmoid(model(make_input(items[i:i + bs], dev, use_what)).float()).cpu().numpy())
+            out.append(torch.sigmoid(model.run(items[i:i + bs], dev).float()).cpu().numpy())
     return np.concatenate(out) if out else np.zeros((0, 128, 128), np.float32)
 
 
@@ -109,6 +160,7 @@ def main():
     ap.add_argument("--bs", type=int, default=16); ap.add_argument("--n-real", type=int, default=4, help="real train-fold images per batch")
     ap.add_argument("--lr", type=float, default=1e-3); ap.add_argument("--use-what", type=int, default=0); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=4); ap.add_argument("--eval-every", type=int, default=500); ap.add_argument("--n-synval", type=int, default=20)
+    ap.add_argument("--arch", default="pix", choices=("pix", "feat")); ap.add_argument("--bb-lr", type=float, default=0.1, help="lr multiplier of the extractor")
     ap.add_argument("--gen-device", default="", help="device of the watermark models (default: --device)")
     ap.add_argument("--real-only", type=int, default=0, help="1 = no synthetic data (does the real train fold alone carry a learnable cue?)")
     ap.add_argument("--width", type=float, default=1.0); ap.add_argument("--p-real-cover", type=float, default=0.2); ap.add_argument("--no-test", action="store_true")
@@ -129,9 +181,16 @@ def main():
     if a.real_only: a.n_real = a.bs
 
     w = tuple(int(round(c * a.width / 8) * 8) for c in (32, 64, 128, 192, 256, 384))
-    model = SegNet(3 + 3 + 1 + 3 + (6 if a.use_what else 0), w).to(dev)
-    if dev.startswith("cuda"): model = model.to(memory_format=torch.channels_last)
-    opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=1e-4)
+    if a.arch == "feat":
+        assert len(methods) == 1 and a.method in ("trustmark", "pixelseal"), "--arch feat needs one method with a torch extractor"
+        model = FeatSeg(gs[0].wm, a.method).to(dev)
+        groups = [dict(params=[p for n, p in model.named_parameters() if n.startswith("bb.")], scale=a.bb_lr),
+                  dict(params=[p for n, p in model.named_parameters() if not n.startswith("bb.")], scale=1.0)]
+    else:
+        model = SegNet(3 + 3 + 1 + 3 + (6 if a.use_what else 0), w).to(dev); model.use_what = a.use_what
+        if dev.startswith("cuda"): model = model.to(memory_format=torch.channels_last)
+        groups = [dict(params=list(model.parameters()), scale=1.0)]
+    opt = torch.optim.AdamW(groups, lr=a.lr, weight_decay=1e-4)
     scaler = torch.amp.GradScaler(enabled=dev.startswith("cuda"))
     step, spent, hist = 0, 0.0, []
     last = out / "last.pt"
@@ -154,12 +213,12 @@ def main():
         el = spent + time.time() - t0
         if el >= budget or step >= a.max_steps: break
         lr = a.lr * min(1.0, (step + 1) / warm) * (0.02 + 0.98 * 0.5 * (1 + np.cos(np.pi * min(1.0, el / budget))))
-        for gparam in opt.param_groups: gparam["lr"] = lr
+        for gparam in opt.param_groups: gparam["lr"] = lr * gparam.get("scale", 1.0)
         items = (pre.get(a.bs - a.n_real) if pre else []) + [flip_item(tr[j], int(rng.integers(4))) for j in rng.integers(0, len(tr), a.n_real)]
         model.train()
         y = torch.from_numpy(np.stack([it["mask"] for it in items])).to(dev).float()
         with torch.autocast("cuda", dtype=torch.float16, enabled=dev.startswith("cuda")):
-            logit = model(make_input(items, dev, a.use_what))
+            logit = model.run(items, dev)
         loss = F.binary_cross_entropy_with_logits(logit.float(), y) + miou_loss(logit, y)
         opt.zero_grad(set_to_none=True); scaler.scale(loss).backward(); scaler.unscale_(opt)
         nn.utils.clip_grad_norm_(model.parameters(), 5.0); scaler.step(opt); scaler.update()
