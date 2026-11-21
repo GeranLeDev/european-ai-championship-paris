@@ -11,7 +11,7 @@
 ## Leaderboard (public)
 - Task1 watermark: 0.4584 public (submission_baseline.pt, soumis 19:20). Suite: recherche rectangles (queue t1) -> submission_rect.pt.
 - Task2 model equality: 0.0 (singletons). Pipeline: tasks/model_equality/solution (rapport challenge/task2_*). Étape suivante: calibration gratuite sur ref-01..09 (agent relancé, non confirmé), puis collecte ep (DÉPENSE TOUT LE BUDGET, irréversible) => demander OK user.
-- Task3 unlearning: BEST 0.3043 (sub_st_g3 mixcls α=3, 4000 pas). st_g1 α1.5 4000p 0.3025, ma_g0 α2 1500p 0.2893, ma_g1 0.2806, m1_g2 0.2736, r2_g2 0.2616, r2_g1 0.2384, cls 0.20-0.21, medium 0.0798. => plus de pas = gain; fp16 OK.
+- Task3 unlearning: BEST 0.3045 (sub_lg_g0 mixcls α=3, 8000 pas, best ckpt 7000) — RECOMMANDÉ pour le final (meilleur retain). lg_g1 0.3019, st_g3 0.3043, st_g1 0.3025, ma_g0 0.2893, m1_g2 0.2736, r2_g2 0.2616, r2_g1 0.2384, cls 0.20-0.21, medium 0.0798. Plateau atteint ~0.30 public; T3 terminée (nœud rendu à T1).
 ## Clé API: .env (HACKATHON_API_KEY), jamais commitée. Soumettre: python scripts/submit.py <task_id> <file> (31-unlearning, 33-model-equality, 34-watermark-localisation-image). Cooldown ~10 min (T3), 30 min (T2).
 ## JURECA: ssh juelich (ControlMaster 12h; si fermé, user relance ssh juelich + MFA). Dossier: /p/scratch/training2666/geran1/IncomingPHd/
 - RÈGLE: 1 seul job Slurm pour toute l équipe. 1 worker (ipwork3, 15902415, limite 4h depuis 19:17) lit queue/pending/*.sh (ordre lexical), logs queue/logs/, fin -> queue/done|failed. Quand il se termine, en relancer UN seul (sbatch --time=04:00:00 queue/worker.sh) après avoir vérifié qu aucun job équipe ne tourne.

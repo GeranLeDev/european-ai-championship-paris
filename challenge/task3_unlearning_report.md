@@ -247,6 +247,22 @@ Lecture des 3 scores publics :
   - g1 : α=2, 8000 pas ;
   - g2 : α=3, lr 1e-4, 4000 pas ;
   - g3 : α=3, 6000 pas, seed 1.
+**Nouveaux scores publics** : `sub_st_g3` = **0,3043** et `sub_st_g1` = 0,3025. Plus de pas vaut mieux qu'un α plus bas.
+
+**Dernier sweep, `09_t3_long`** (cible mixcls, w-stat 0,1) :
+
+| run | α | pas (meilleur à) | lr | mixcls | strong | cls | KL retain | accord |
+|---|---|---|---|---|---|---|---|---|
+| **lg_g0** | 3 | 8000 (7000) | 5e-5 | **0,618** | 0,513 | 0,563 | **0,047** | **0,861** |
+| lg_g1 | 2 | 8000 (6800) | 5e-5 | 0,618 | 0,519 | 0,556 | 0,057 | 0,854 |
+| lg_g3 | 3 (seed 1) | 6000 (5200) | 5e-5 | 0,605 | 0,501 | 0,551 | 0,050 | 0,861 |
+| lg_g2 | 3 | 4000 | 1e-4 | 0,583 | 0,485 | 0,532 | 0,059 | 0,835 |
+
+**Recommandation finale** : `output/sub_lg_g0.pt`, puis `sub_lg_g1.pt`.
+- Config : `--method td --blocks 12 --target mixcls --alpha 3 --lr 5e-5 --w-stat 0.1 --steps 8000 --bs-f 64 --bs-r 64`.
+- Le gain plafonne vers 7000 pas.
+- Le nœud est ensuite rendu à la Task 1 : plus aucune tâche t3 en file.
+
 - Pour récapituler et exporter :
   ```bash
   cd /p/scratch/training2666/geran1/IncomingPHd/unlearning && source .venv/bin/activate
