@@ -108,21 +108,22 @@ def main():
     ap.add_argument("--bs", type=int, default=16); ap.add_argument("--n-real", type=int, default=4, help="real train-fold images per batch")
     ap.add_argument("--lr", type=float, default=1e-3); ap.add_argument("--use-what", type=int, default=0); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=4); ap.add_argument("--eval-every", type=int, default=500); ap.add_argument("--n-synval", type=int, default=20)
+    ap.add_argument("--gen-device", default="", help="device of the watermark models (default: --device)")
     ap.add_argument("--real-only", type=int, default=0, help="1 = no synthetic data (does the real train fold alone carry a learnable cue?)")
     ap.add_argument("--width", type=float, default=1.0); ap.add_argument("--p-real-cover", type=float, default=0.2); ap.add_argument("--no-test", action="store_true")
     a = ap.parse_args()
     torch.manual_seed(a.seed); rng = np.random.default_rng(a.seed)
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
-    dev = a.device; t_start = time.time()
+    dev = a.device; gdev = a.gen_device or dev; t_start = time.time()
     kw = dict(coco=ROOT / "extra" / "val2017", gen_dirs=[ROOT / "extra" / "diffusiondb"])
     methods = list(METHODS) if a.method == "all" else [a.method]       # "all" = one shared model for the 3 methods
-    gs = [Generator(m, a.data, dev, seed=10_000 + a.seed, p_real=0.0, **kw) for m in methods]
+    gs = [Generator(m, a.data, gdev, seed=10_000 + a.seed, p_real=0.0, **kw) for m in methods]
     print(f"{methods}: covers coco {len(gs[0].coco)} generated {len(gs[0].gen)} coco images with object masks {len(gs[0].inst)}", flush=True)
     real = [r for g in gs for r in real_items(g, a.data)]
     tr = [r for r in real if not r["val"]]; va = [r for r in real if r["val"]]
     synval = [] if a.real_only else [g.sample(k) for g in gs for k in TYPES for _ in range(a.n_synval)]
     print(f"real train fold {len(tr)}, held-out {len(va)}, synthetic val {len(synval)}, setup {time.time() - t_start:.0f}s", flush=True)
-    pre = None if a.real_only else Prefetch(lambda i: Generator(methods[i % len(methods)], a.data, dev, seed=a.seed * 100 + i, p_real=a.p_real_cover, **kw),
+    pre = None if a.real_only else Prefetch(lambda i: Generator(methods[i % len(methods)], a.data, gdev, seed=a.seed * 100 + i, p_real=a.p_real_cover, **kw),
                                             n_threads=max(a.threads, len(methods)))
     if a.real_only: a.n_real = a.bs
 

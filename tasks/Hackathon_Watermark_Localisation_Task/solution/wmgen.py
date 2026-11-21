@@ -159,12 +159,22 @@ class Generator:
             y = x.copy(); y[y0:y1, x0:x1] = self.wm.embed(np.ascontiguousarray(x[y0:y1, x0:x1]), bits)
             m = old.copy(); m[y0:y1, x0:x1] = 1
         else:
-            xw = self.wm.embed(x, bits)
+            xw = self.embed_whole(x, bits)
             if kind == "irreg":
                 new = self.blob("irreg"); y = np.where(new[..., None] == 1, xw, x); m = new | old
             else:
                 hole = self.blob("hole"); y = np.where(hole[..., None] == 1, x, xw); m = (1 - hole) | (old & hole)
         return self.finish(y, bits, m, kind)
+
+    def embed_whole(self, x, bits):
+        """Whole-image embed. On the real 'full' images the embedding frame is not exactly the 512 image (measured:
+        re-embedding the same message does not shrink as it does on a pristine embed; a shift of 8 px or a 90 % zoom
+        is enough to explain it while the decoder still reads the message), so the frame is jittered by reflect padding."""
+        r = self.rng
+        if r.random() < 0.3: return self.wm.embed(x, bits)
+        l, t, rr, b = (int(v) for v in r.integers(0, 33, 4))
+        xp = np.pad(x, ((t, b), (l, rr), (0, 0)), mode="reflect")
+        return np.ascontiguousarray(self.wm.embed(np.ascontiguousarray(xp), bits)[t:t + 512, l:l + 512])
 
     def side(self, y, bits):
         """Side information computable at test time: re-embedding residual (int8, +-32) and global decoder agreement."""
