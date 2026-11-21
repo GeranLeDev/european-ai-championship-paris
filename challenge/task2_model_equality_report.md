@@ -2,6 +2,140 @@
 
 _Rédigé le 21/11 ~17h. Aucune requête envoyée au serveur (pas de clé API). Code : `tasks/model_equality/solution/`._
 
+## 0. Résultats sur les ref et plan ep (21/11, 22h05) — à lire en premier
+
+_Aucune requête `ep-*` envoyée, aucune soumission. Budget ep : 0/100 sur les 33 endpoints._
+_Les sections 2 à 4 décrivent le pipeline v1 (quiz), remplacé par le pipeline v2 décrit ici._
+
+### 0.1 Ce qui est mesuré
+
+| Jeu | Pipeline | Réponses / endpoint | MCC famille | MCC modèle | **Score** |
+|---|---|---|---|---|---|
+| ref-01..09 (étiquetés, 1 famille) | v1 quiz (`analyze.py`) | 50 | 0 | 0 | **0,000** à tous les seuils 0,02-0,40 |
+| ref-01..09 | v2 (`fingerprint.py`, z = 3,0) | 100 | 0 (1 seule famille) | 0,524 | **0,472** |
+| Simulateur local, 2 familles, 18 endpoints | v2, mêmes réglages | 100 | 1,000 | 0,734 | **0,760** |
+
+- Le score ref ne peut pas dépasser 0,9 : avec une seule vraie famille, MCC famille vaut 0 par définition.
+- **v1 échoue** : le modèle des ref est un SmolLM (il se nomme lui-même). Il ne suit pas le format du quiz à 16 questions (réponses décalées, question recopiée). AUC « même modèle / modèle différent » : 0,25.
+- **v2 sur ref**, erreurs restantes : fp8 (ref-02) et LoRA 0,3 (ref-09) sont fusionnés avec la base. 11 paires dites « même » à tort, 0 paire dite « différente » à tort.
+  - Bien classés : system prompt, persona, watermark, T = 1,0 (rattachés à la base) ; LoRA 0,7 et LoRA 1,5 (séparés, et séparés entre eux).
+  - Plafond sur ref si seul fp8 reste invisible : 0,66. C'est ce que donne z = 2,0 sur les ref, mais ce seuil n'est pas retenu (voir 0.3).
+- **v2 au simulateur** (Qwen2.5-0.5B : 12 endpoints ; SmolLM2-360M : 6 ; avec greedy, beam, int4, LoRA entraîné) : fusionnés à tort : fp8 avec la base, et LoRA 0,3 avec LoRA 0,7. int4, LoRA 1,0 et LoRA 1,5 sont séparés.
+- Sensibilité au seuil z, budget complet : 2,5 → ref 0,472 / sim 0,777 ; 3,0 → 0,472 / 0,760 ; 3,5 → 0,472 / 0,760 ; 4,0 → 0,298 / 0,416.
+- **Limite de la mesure** : les règles et les seuils ont été choisis en regardant ces deux jeux (27 endpoints). Il n'y a pas de jeu de validation indépendant.
+  - Seul contrôle hors échantillon : les 22 derniers prompts ref, collectés après le choix des seuils, donnent 0,298 à eux seuls (44 réponses : LoRA 0,7 n'est plus détecté) ; les 28 premiers donnent 0,472.
+
+### 0.2 Pipeline v2 (`build_prompts_v2.py`, `fingerprint.py`)
+
+- **Prompts** : 50 prompts × 2 répétitions = 100 réponses par endpoint, en 5 blocs de 10 prompts de même composition : 2 « identité » (« Who are you? »), 5 courts (« Hi! », « What is 2+2? »), 3 longs (histoire, explication).
+  - Tout préfixe du fichier est un échantillon équilibré : le budget se dépense par étapes (`collect.py --order prompt --max-per-endpoint n`).
+- **Familles** :
+  - noyaux = endpoints qui se donnent le même nom dans les réponses d'identité (« SmolLM … Hugging Face », « Qwen … Alibaba Cloud ») ;
+  - les autres endpoints (system prompt remplacé, persona, LoRA fort) rejoignent la famille dont les membres répondent le plus comme eux, prompt par prompt.
+- **Modèles dans une famille** :
+  - mots d'identité de la famille absents (taux < 25 % de la médiane) → system prompt ou persona → **modèle de base** ;
+  - deux répétitions identiques sur ≥ 50 % des prompts → greedy ou beam → **modèle de base** ;
+  - pour les autres : test apparié par prompt sur 5 traits de style (log-longueur, nombre de phrases, « ! », « ? », sauts de ligne), prompts courts et longs séparément. z = plus grand |écart moyen| / erreur standard ;
+  - clustering (average linkage) sur z, coupure à 3,0. Le plus gros groupe est la base ; chaque autre groupe est un modèle distinct.
+- Pourquoi ça marche : sur ref et au simulateur, la température et le watermark déplacent peu ces traits (z ≤ 2,2 contre la base à 100 réponses). Un LoRA ou une quantization 4 bits les déplacent (z = 3,7 à 8,7).
+- Écarté après mesure :
+  - similarités de texte (sac de mots, trigrammes, Hamming) : ne séparent ni les familles ni les modèles sur ces petits modèles ;
+  - message d'erreur « trop long » : il ne donne pas le nombre de tokens ;
+  - `finish_reason` vaut toujours `stop`, même à 256 tokens ; ni `usage` ni `logprobs` ;
+  - latence : 26,9 à 27,9 s pour les 7 ref testés (plain, fp8, system prompt, LoRA 0,7 et 1,5, persona, watermark), une requête à la fois, sortie de 256 tokens. Aucun signal. Un refus (HTTP 400) prend environ 7 s.
+
+**Empreinte du tokenizer par la limite de 1 024 tokens (`tokprobe.py`) — signal de famille insensible aux déguisements**
+- Mesuré sur ref : le serveur compte les tokens d'entrée avec le tokenizer de l'endpoint, sur le message brut (sans gabarit de chat ni system prompt caché).
+- Les 9 ref (plain, fp8, system prompt, persona, watermark, T = 1,0, LoRA 0,3 / 0,7 / 1,5) donnent tous la même frontière : 51 répétitions du texte « words » et 35 du texte « mixed ».
+  - C'est exactement le tokenizer de SmolLM2 calculé en local (51 et 35 ; Qwen2.5 : 53 et 40).
+- Méthode : on envoie k répétitions d'un texte, k décroissant. Les refus sont gratuits ; la première requête acceptée (`max_tokens=1`) arrête la recherche. **Coût : 1 réponse par endpoint et par texte.**
+- Usage : `fingerprint.py --tok data/ep_tok.jsonl` construit les familles à l'intérieur de chaque groupe de tokenizer. Deux familles qui partagent un tokenizer (deux tailles du même modèle) restent à séparer par le nom.
+- Au simulateur, avec des groupes de tokenizer exacts (simulés à partir de la vérité, donc optimiste) : MCC famille 1,00 dès 50 réponses, et score à 50 réponses 0,54 ± 0,11 au lieu de 0,48 ± 0,15.
+
+### 0.3 Courbe score / budget (ref gratuits et simulateur)
+
+Score moyen ± écart-type sur 200 tirages de n/2 prompts (2 répétitions gardées, même composition par bloc). « Préfixe » = les n/2 premiers prompts, c'est-à-dire ce que donnerait le plan réel.
+
+| n réponses / endpoint | ref : tirages | ref : préfixe | simulateur : tirages | simulateur : préfixe |
+|---|---|---|---|---|
+| 10 | 0,25 ± 0,17 | 0,298 | 0,15 ± 0,15 | 0,059 |
+| 20 | 0,30 ± 0,15 | 0,298 | 0,29 ± 0,17 | 0,059 |
+| 30 | 0,33 ± 0,09 | 0,298 | 0,34 ± 0,16 | 0,059 |
+| 40 | 0,34 ± 0,08 | 0,472 | 0,39 ± 0,16 | 0,059 |
+| 50 | 0,36 ± 0,10 | 0,472 | 0,48 ± 0,15 | 0,454 |
+| 60 | 0,41 ± 0,10 | 0,472 | 0,58 ± 0,12 | 0,516 |
+| 80 | 0,46 ± 0,06 | 0,472 | 0,68 ± 0,08 | 0,760 |
+| 100 | 0,472 | 0,472 | 0,760 | 0,760 |
+
+- **Il n'y a pas de plateau avant 80 réponses.** La statistique z croît comme √n : un LoRA moyen (0,7) est à z = 3,7 avec 100 réponses, donc sous le seuil une fois sur deux avec 50.
+- Avec 50 réponses, on garde les cas nets (LoRA fort, system prompt, persona, greedy/beam) et on perd une partie des cas moyens.
+- Sous 40 réponses, le résultat dépend du tirage des prompts (préfixe simulateur : 0,059).
+
+### 0.4 Ce qui se transfère des ref aux ep, et ce qui ne se transfère pas
+
+- **Se transfère (par construction)** : le seuil z. Sous « mêmes poids, même contexte », z est le maximum de 10 statistiques de Student : il reste vers 2 quel que soit le modèle. Mesuré : ≤ 2,2 sur ref, ≤ 2,0 au simulateur.
+- **Ne se transfère pas** :
+  - la séparation des familles par le nom : les ref n'ont qu'une famille. Elle n'est validée qu'au simulateur (2 familles, 18/18 corrects à 100 réponses ; à 50 réponses, 1 endpoint mal rattaché, un LoRA 1,5 qui a perdu son nom). L'empreinte du tokenizer (0.2) couvre ce risque quand les familles ont des tokenizers différents ;
+  - la puissance : elle dépend de ce que change le LoRA des ep. Sur ref il allonge les réponses, au simulateur il ajoute des « ! ». Un LoRA qui ne touche à aucun des 5 traits est invisible ;
+  - la règle « nom absent → system prompt » : elle suppose que le modèle de base se nomme. Si une famille ep ne se nomme pas, la règle se désactive (médiane < 0,3) et un system prompt peut être pris pour un modèle différent.
+- **Garde-fous du plan** :
+  - le rapport de `fingerprint.py` affiche pour chaque endpoint son rôle, ses taux et son z à la base, et marque `AMBIGUOUS` ceux à moins de 1 du seuil ;
+  - avant toute soumission, lire les mots d'identité de chaque famille et les marges de rattachement (les marges < 0,05 sont à vérifier à la main) ;
+  - vérifier que les z d'une famille sont bimodaux (un paquet vers 2, des valeurs isolées au-dessus de 3,5). Si tout est entre 2 et 4, ne pas trancher sans la passe 2.
+
+### 0.5 Plan ep par étapes — **rien n'est lancé, accord utilisateur requis**
+
+```bash
+cd tasks/model_equality/solution
+export MET_API_KEY="$(grep '^HACKATHON_API_KEY=' ../../../.env | cut -d= -f2-)"
+PY=../../../repos/model-equality-testing/.venv/bin/python
+
+# Contrôle gratuit (GET /models seulement, aucun POST)
+$PY collect.py --endpoints ep --allow-scored --prompts prompts_v2.jsonl --out data/ep_v2.jsonl --order prompt --max-per-endpoint 50 --dry-run
+
+# PASSE 0 : empreinte du tokenizer, 2 réponses / endpoint (66 au total), familles
+$PY tokprobe.py --endpoints ep --allow-scored
+
+# PASSE 1 : 50 réponses / endpoint (25 premiers prompts x 2), 1 650 requêtes
+$PY collect.py --endpoints ep --allow-scored --prompts prompts_v2.jsonl --out data/ep_v2.jsonl --order prompt --max-per-endpoint 50
+$PY fingerprint.py data/ep_v2.jsonl --prefix ep- --tok data/ep_tok.jsonl --out submission_p1.csv     # rapport + liste « pass 2 »
+
+# PASSE 2 : seulement les endpoints listés par le rapport (familles avec un endpoint AMBIGUOUS)
+$PY collect.py --endpoints <liste du rapport> --allow-scored --prompts prompts_v2.jsonl --out data/ep_v2.jsonl --order prompt --max-per-endpoint 98
+$PY fingerprint.py data/ep_v2.jsonl --prefix ep- --tok data/ep_tok.jsonl --out submission_p2.csv
+```
+
+| Étape | Réponses dépensées / endpoint | Requêtes | Durée (à 10 réponses/min, mesuré le 21/11 au soir ; 7 à 12 observés) | Reste |
+|---|---|---|---|---|
+| Passe 0, tous les endpoints | 2 | 66 comptées + refus gratuits | environ 20-30 min (non mesuré sur 33 endpoints ; 18 sondes ref ont pris 24 min avec un départ trop haut) | 98 partout |
+| Passe 1, tous les endpoints | 50 | 1 650 | 2 h 45 (2 h 20 à 3 h 55) | 48 partout |
+| Soumission 1 | 0 | — | — | — |
+| Passe 2, endpoints « base » et « changed » des familles ambiguës | +48 pour eux, 0 pour les autres | ≤ 1 584 ; 60 % des endpoints au simulateur, soit ~950 | ~1 h 35 | 0 pour eux, 48 pour les endpoints déjà tranchés (system prompt, persona, greedy/beam) |
+| Soumission 2 | 0 | — | — | — |
+
+- Passe 0 : si un endpoint accepte dès la première longueur (`>= start`), sa frontière n'est pas connue ; relancer avec `--start` plus grand coûte 1 réponse de plus pour lui.
+- La passe 2 doit inclure les endpoints « base » de la famille, pas seulement les ambigus : le test est apparié, il ne compare que des prompts posés aux deux endpoints.
+- Score attendu si les ep ressemblent aux ref ou au simulateur : passe 1 ≈ 0,36-0,48 (écart-type 0,10-0,15) ; après passe 2 ≈ 0,47-0,76. Ce sont des mesures sur d'autres modèles, pas une prévision.
+- Arrêt propre de la collecte : `touch data/STOP` (les requêtes en cours finissent et sont sauvées, aucune nouvelle ne part). Supprimer le fichier avant de relancer.
+
+### 0.6 Collecteur : vérifications faites (`test_collect_mock.py`, serveur factice local)
+
+- Coupe exactement à `--max-per-endpoint` en comptant le cache ; la passe 1 contient bien les 2 répétitions des n/2 premiers prompts.
+- Reprise après `kill -9` : aucun doublon, aucun prompt déjà sauvé redemandé. Les requêtes en vol au moment du kill sont perdues (2 dans le test, 4 au plus).
+- Chaque réponse est écrite et synchronisée sur disque (`fsync`) dès sa réception.
+- 429 + `Retry-After` et 503 : réessai sans double décompte. 429 sans `Retry-After` : endpoint marqué épuisé, on arrête de le solliciter.
+- Délai de lecture porté à 15 min : une réponse déjà décomptée par le serveur n'est pas abandonnée par un client impatient. Une réponse 200 illisible est sauvée telle quelle et n'est pas redemandée.
+- Risque restant : une coupure réseau pendant une requête. Le serveur peut l'avoir décomptée ; elle sera redemandée (1 réponse perdue par incident).
+- La latence de chaque requête est enregistrée (champ `latency`).
+
+### 0.7 Risques
+
+1. fp8 et LoRA faible restent invisibles : plafond réaliste vers 0,5-0,75 selon la composition des ep.
+2. Familles : rattachement non validé sur de vrais endpoints. Contrôle manuel prévu (0.4).
+3. Réglages faits sur 27 endpoints sans jeu de validation.
+4. Un LoRA fort peut faire perdre son nom au modèle et passer pour un system prompt (vu au simulateur à 50 réponses) : faux « même modèle ».
+5. Le watermark des ref a un taux de répétitions identiques de 0,23 (0,03-0,09 pour les autres) ; celui du simulateur non. Ce signal n'est pas utilisé.
+
 ## 1. Protocole API (lu dans le kit)
 
 - Base : `http://34.147.229.55/33-model-equality/v1`, en-tête `X-API-Key: <clé équipe>`.
@@ -100,6 +234,8 @@ Reproduire : `$PY analyze.py data/sim_all_answers.jsonl --truth data/sim_all_tru
 
 ## 4. Commandes exactes (quand la clé arrive)
 
+> **Obsolète (pipeline v1).** Ne pas lancer ces commandes sur les `ep` : le plan à suivre est en 0.5.
+
 Tout se lance depuis `tasks/model_equality/solution/`, avec `PY=../../../repos/model-equality-testing/.venv/bin/python` (ou n'importe quel Python avec `requests numpy scipy`). La clé est lue dans `MET_API_KEY` et n'est jamais écrite sur disque.
 
 ```bash
@@ -167,6 +303,8 @@ $PY submit.py submission.csv
 8. Le score public ne porte que sur une partie des paires. Il ne faut pas sur-ajuster le seuil sur le leaderboard ; garder la valeur du plateau ref/simulateur.
 
 ## 6. Fichiers (`tasks/model_equality/solution/`)
+- **v2** : `build_prompts_v2.py` / `prompts_v2.jsonl` (prompts libres), `fingerprint.py` (familles, modèles, courbe `--curve`), `tokprobe.py` (empreinte du tokenizer), `test_collect_mock.py` (test hors ligne du collecteur), `side_probe.py` (limite d'entrée et latence, ref seulement), `textsim.py`, `explore_*.py` (explorations).
+- v1 (quiz, abandonné) :
 - `build_prompts.py` : banque d'items et `prompts.jsonl` / `prompts_items.json` (50 questionnaires × 2) ; `prompts_ref.jsonl` (× 6 pour les ref).
 - `collect.py` : collecteur (cache/reprise, ≤ 4 requêtes parallèles, budget, dry-run, garde-fou ep, `probe`).
 - `met_common.py` : parsing et canonicalisation, score officiel (familles + modèles).
