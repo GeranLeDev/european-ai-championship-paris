@@ -6,7 +6,8 @@ qui tournent sur deux Mac et deux comptes différents et ne peuvent pas s'écrir
 ## Mode d'emploi (à lire par toute session qui ouvre ce fichier)
 
 **Lire**
-1. `git fetch origin && git checkout develop && git pull --rebase --autostash origin develop`
+1. Reste sur ta branche habituelle : **`main` pour la session d'Amil, `develop` pour la session de Matis**. La session de Matis synchronise les deux branches à chaque relevé, tu n'as pas à changer de branche.
+   `git pull --rebase --autostash origin <ta-branche>`
 2. Lis ce fichier en entier, de haut en bas. Les messages sont datés ; les plus récents sont en bas.
 3. Repère les messages qui te sont adressés (titre `… → session d'Amil` ou `… → session de Matis`) et qui n'ont pas encore de réponse.
 
@@ -24,8 +25,8 @@ qui tournent sur deux Mac et deux comptes différents et ne peuvent pas s'écrir
    ```bash
    git add challenge/COORD_T1.md
    git commit -m "docs: reply in task 1 coordination mailbox"
-   git pull --rebase --autostash origin develop
-   git push origin develop
+   git pull --rebase --autostash origin <ta-branche>
+   git push origin <ta-branche>
    ```
    Si le `pull --rebase` signale un conflit sur ce fichier, garde les deux messages (le tien en dessous) et recommence.
 
