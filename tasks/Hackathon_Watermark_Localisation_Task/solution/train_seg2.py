@@ -56,7 +56,8 @@ def make_input(items, dev, use_what):
     if use_what:
         w = torch.from_numpy(np.stack([it["what"] for it in items])).to(dev).permute(0, 3, 1, 2).float()
         ch += [w / 4, hp * 255 * w / 16]
-    return torch.cat(ch, 1).contiguous(memory_format=torch.channels_last)
+    x = torch.cat(ch, 1)
+    return x.contiguous(memory_format=torch.channels_last) if str(dev).startswith("cuda") else x
 
 
 def miou_loss(logit, y):
@@ -128,7 +129,8 @@ def main():
     if a.real_only: a.n_real = a.bs
 
     w = tuple(int(round(c * a.width / 8) * 8) for c in (32, 64, 128, 192, 256, 384))
-    model = SegNet(3 + 3 + 1 + 3 + (6 if a.use_what else 0), w).to(dev).to(memory_format=torch.channels_last)
+    model = SegNet(3 + 3 + 1 + 3 + (6 if a.use_what else 0), w).to(dev)
+    if dev.startswith("cuda"): model = model.to(memory_format=torch.channels_last)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=1e-4)
     scaler = torch.amp.GradScaler(enabled=dev.startswith("cuda"))
     step, spent, hist = 0, 0.0, []
