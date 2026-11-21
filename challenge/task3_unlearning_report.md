@@ -257,6 +257,19 @@ Score public de `sub_r2_g2` (mixcls) : **0,2616**. Vérité terrain disponible :
 - Puis `r7`, `r5`, `r3` (strong, priorité basse).
 - Pour classer : `rsync` de `output/logits/` vers `solution/cache/logits/`, puis `python fit_public.py`. Ajouter chaque nouveau score public dans `PUBLIC` (en tête de `fit_public.py`) : chaque point supplémentaire réduit la famille d'hypothèses.
 
+**Sweep `rx` (cible xstrong), terminé à 19:54** (mesuré, proxy) :
+
+| run | w-stat | α | lr / pas | strong | cls | mixcls | clsstrong | xstrong | retain KL / accord |
+|---|---|---|---|---|---|---|---|---|---|
+| rx_g0 | 0,1 | 10 | 5e-5 / 1500 | 0,167 | 0,093 | 0,181 | 0,334 | 0,506 | 0,081 / 0,838 |
+| rx_g1 | 0,3 | 10 | 5e-5 / 1500 | 0,107 | 0,035 | 0,110 | 0,325 | 0,510 | 0,090 / 0,831 |
+| rx_g2 | 0,1 | 20 | 5e-5 / 1500 | 0,182 | 0,109 | 0,197 | 0,324 | 0,483 | 0,059 / 0,860 |
+| rx_g3 | 0,1 | 10 | 1e-4 / 1000 | 0,159 | 0,089 | 0,173 | 0,326 | 0,494 | 0,090 / 0,813 |
+
+- L'oubli xstrong seul (sans suppression de classes) score bas sous strong, cls et mixcls, et dégrade le retain proxy : pas un candidat. Logits non encore dumpés, donc pas de prédiction `fit_public.py`.
+
+**État de la file à 19:59** : les workers `ipwork1` et `ipwork2` ont été annulés à 19:54:51 (pas par l'agent Task 3) ; `x1` a été interrompu au démarrage et remis en attente. Il reste un worker (`ipwork3`), occupé par `01_t1_rect_train`. File restante : `02_t1_rect_test`, `11c_t3_x3`, `11d_t3_x4`, `11g_t3_x1`, `12a_t3_dump2`, `30_t1_rect_fine_train`. `x2`, `r7`, `r5`, `r3` sont rangés dans `queue/parked_t3/`.
+
 **Candidats rapatriés et validés en local** (chargement strict, float32, valeurs finies, 328 Mo ; NON soumis), dans `tasks/unlearning/candidates/` :
 1. `sub_m1_g2.pt` : mixcls, α=5. Le plus haut sous toutes les hypothèses ajustées. Risque : retain proxy plus bas (KL 0,055, accord 0,858) que `r2_g2` (0,039 / 0,892).
 2. `sub_m1_g0.pt` : mixcls, w-stat 0,05. Prédit 0,254–0,274, donc équivalent à `r2_g2` ; retain proxy meilleur (KL 0,033, accord 0,905).
