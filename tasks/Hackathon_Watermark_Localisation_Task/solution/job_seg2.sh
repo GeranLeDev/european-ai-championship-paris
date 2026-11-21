@@ -13,6 +13,6 @@ rm -f $O/failed.txt
 run 0 trustmark  trustmark  --use-what 0 &
 run 1 pixelseal  pixelseal  --use-what 0 &
 run 2 stegastamp stegastamp --use-what 0 &
-run 3 trustmark_what trustmark --use-what 1 --seed 1 &
+run 3 all_realonly all --real-only 1 --eval-every 250 &
 wait
 [ ! -f $O/failed.txt ]

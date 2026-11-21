@@ -12,6 +12,7 @@ from pathlib import Path
 import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
 ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "solution"))
 from wmgen import Generator, Prefetch, real_items, TYPES
+from common import METHODS
 from wmloc.utils import miou_image
 
 
@@ -49,7 +50,9 @@ def make_input(items, dev, use_what):
     x = torch.from_numpy(np.stack([it["img"] for it in items])).to(dev).permute(0, 3, 1, 2).float() / 255
     hp = x - F.avg_pool2d(F.pad(x, (2, 2, 2, 2), mode="reflect"), 5, 1)
     ag = torch.tensor([it["agree"] for it in items], device=dev, dtype=torch.float32)[:, None, None, None].expand(-1, 1, 512, 512)
-    ch = [x - 0.5, hp * 20, ag]
+    oh = torch.zeros(len(items), 3, 512, 512, device=dev)
+    for i, it in enumerate(items): oh[i, METHODS.index(it["method"])] = 1
+    ch = [x - 0.5, hp * 20, ag, oh]
     if use_what:
         w = torch.from_numpy(np.stack([it["what"] for it in items])).to(dev).permute(0, 3, 1, 2).float()
         ch += [w / 4, hp * 255 * w / 16]
@@ -105,22 +108,26 @@ def main():
     ap.add_argument("--bs", type=int, default=16); ap.add_argument("--n-real", type=int, default=4, help="real train-fold images per batch")
     ap.add_argument("--lr", type=float, default=1e-3); ap.add_argument("--use-what", type=int, default=0); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=4); ap.add_argument("--eval-every", type=int, default=500); ap.add_argument("--n-synval", type=int, default=20)
+    ap.add_argument("--real-only", type=int, default=0, help="1 = no synthetic data (does the real train fold alone carry a learnable cue?)")
     ap.add_argument("--width", type=float, default=1.0); ap.add_argument("--p-real-cover", type=float, default=0.2); ap.add_argument("--no-test", action="store_true")
     a = ap.parse_args()
     torch.manual_seed(a.seed); rng = np.random.default_rng(a.seed)
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     dev = a.device; t_start = time.time()
     kw = dict(coco=ROOT / "extra" / "val2017", gen_dirs=[ROOT / "extra" / "diffusiondb"])
-    g0 = Generator(a.method, a.data, dev, seed=10_000 + a.seed, p_real=0.0, **kw)
-    print(f"{a.method}: covers coco {len(g0.coco)} generated {len(g0.gen)} coco images with object masks {len(g0.inst)}", flush=True)
-    real = real_items(g0, a.data)
+    methods = list(METHODS) if a.method == "all" else [a.method]       # "all" = one shared model for the 3 methods
+    gs = [Generator(m, a.data, dev, seed=10_000 + a.seed, p_real=0.0, **kw) for m in methods]
+    print(f"{methods}: covers coco {len(gs[0].coco)} generated {len(gs[0].gen)} coco images with object masks {len(gs[0].inst)}", flush=True)
+    real = [r for g in gs for r in real_items(g, a.data)]
     tr = [r for r in real if not r["val"]]; va = [r for r in real if r["val"]]
-    synval = [g0.sample(k) for k in TYPES for _ in range(a.n_synval)]
+    synval = [] if a.real_only else [g.sample(k) for g in gs for k in TYPES for _ in range(a.n_synval)]
     print(f"real train fold {len(tr)}, held-out {len(va)}, synthetic val {len(synval)}, setup {time.time() - t_start:.0f}s", flush=True)
-    pre = Prefetch(lambda i: Generator(a.method, a.data, dev, seed=a.seed * 100 + i, p_real=a.p_real_cover, **kw), n_threads=a.threads)
+    pre = None if a.real_only else Prefetch(lambda i: Generator(methods[i % len(methods)], a.data, dev, seed=a.seed * 100 + i, p_real=a.p_real_cover, **kw),
+                                            n_threads=max(a.threads, len(methods)))
+    if a.real_only: a.n_real = a.bs
 
     w = tuple(int(round(c * a.width / 8) * 8) for c in (32, 64, 128, 192, 256, 384))
-    model = SegNet(3 + 3 + 1 + (6 if a.use_what else 0), w).to(dev).to(memory_format=torch.channels_last)
+    model = SegNet(3 + 3 + 1 + 3 + (6 if a.use_what else 0), w).to(dev).to(memory_format=torch.channels_last)
     opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=1e-4)
     scaler = torch.amp.GradScaler(enabled=dev.startswith("cuda"))
     step, spent, hist = 0, 0.0, []
@@ -134,7 +141,7 @@ def main():
     def evaluate():
         r = dict(step=step, minutes=(spent + time.time() - t0) / 60)
         r["val"] = report("real held-out", va, predict(model, va, dev, a.use_what))
-        r["synval"] = report("synthetic val", synval, predict(model, synval, dev, a.use_what))
+        if synval: r["synval"] = report("synthetic val", synval, predict(model, synval, dev, a.use_what))
         r["train"] = report("real train fold", tr[::3], predict(model, tr[::3], dev, a.use_what))
         hist.append(r)
         atomic_save(dict(model=model.state_dict(), opt=opt.state_dict(), step=step, spent=spent + time.time() - t0, hist=hist, args=vars(a)), last)
@@ -145,7 +152,7 @@ def main():
         if el >= budget or step >= a.max_steps: break
         lr = a.lr * min(1.0, (step + 1) / warm) * (0.02 + 0.98 * 0.5 * (1 + np.cos(np.pi * min(1.0, el / budget))))
         for gparam in opt.param_groups: gparam["lr"] = lr
-        items = pre.get(a.bs - a.n_real) + [flip_item(tr[j], int(rng.integers(4))) for j in rng.integers(0, len(tr), a.n_real)]
+        items = (pre.get(a.bs - a.n_real) if pre else []) + [flip_item(tr[j], int(rng.integers(4))) for j in rng.integers(0, len(tr), a.n_real)]
         model.train()
         y = torch.from_numpy(np.stack([it["mask"] for it in items])).to(dev).float()
         with torch.autocast("cuda", dtype=torch.float16, enabled=dev.startswith("cuda")):
@@ -155,16 +162,16 @@ def main():
         nn.utils.clip_grad_norm_(model.parameters(), 5.0); scaler.step(opt); scaler.update()
         step += 1; tl += loss.item(); nl += 1
         if step % 50 == 0:
-            print(f"step {step} loss {tl / nl:.4f} lr {lr:.2e} {el / 60:.1f} min  queue {pre.q.qsize()} {('gen err ' + pre.err) if pre.err else ''}", flush=True); tl = 0.0; nl = 0
+            print(f"step {step} loss {tl / nl:.4f} lr {lr:.2e} {el / 60:.1f} min  queue {pre.q.qsize() if pre else 0} {('gen err ' + pre.err) if pre and pre.err else ''}", flush=True); tl = 0.0; nl = 0
         if step % a.eval_every == 0: evaluate()
     evaluate()
-    pre.stop = True
+    if pre: pre.stop = True
     res = dict(names=np.array([r["name"] for r in real]), probs=predict(model, real, dev, a.use_what).astype(np.float16),
-               val=np.array([r["val"] for r in real]), kind=np.array([r["kind"] for r in real]))
+               val=np.array([r["val"] for r in real]), kind=np.array([r["kind"] for r in real]), method=np.array([r["method"] for r in real]))
     if not a.no_test:
-        te = real_items(g0, a.data, "test")
+        te = [r for g in gs for r in real_items(g, a.data, "test")]
         res.update(test_names=np.array([r["name"] for r in te]), test_probs=predict(model, te, dev, a.use_what).astype(np.float16),
-                   test_agree=np.array([r["agree"] for r in te], np.float32))
+                   test_agree=np.array([r["agree"] for r in te], np.float32), test_method=np.array([r["method"] for r in te]))
     atomic_save(res, out / "pred.npz", kind="npz")
     print("wrote", out / "pred.npz", "total", f"{(time.time() - t_start) / 60:.1f} min", flush=True)
 

@@ -175,7 +175,7 @@ class Generator:
 
     def finish(self, y, bits, m512, kind):
         what, agree = self.side(y, bits)
-        return dict(img=np.ascontiguousarray(y), what=what, agree=agree, mask=downsample_mask(m512), kind=kind)
+        return dict(img=np.ascontiguousarray(y), what=what, agree=agree, mask=downsample_mask(m512), kind=kind, method=self.method)
 
 
 def real_items(gen, data, split="train"):
@@ -184,13 +184,13 @@ def real_items(gen, data, split="train"):
     if split == "train":
         for r in load_real(data, gen.method):
             what, agree = gen.side(r["img"], r["bits"])
-            out.append(dict(name=r["name"], img=r["img"], what=what, agree=agree, mask=r["mask128"], kind=r["kind"], val=r["val"]))
+            out.append(dict(name=r["name"], img=r["img"], what=what, agree=agree, mask=r["mask128"], kind=r["kind"], val=r["val"], method=gen.method))
     else:
         for e in json.loads((data / split / "metadata.json").read_text()):
             if e["method"] != gen.method: continue
             img = np.asarray(Image.open(data / split / "images" / f"{e['image_name']}.png").convert("RGB"))
             what, agree = gen.side(img, np.array([int(c) for c in e["message"]]))
-            out.append(dict(name=e["image_name"], img=img, what=what, agree=agree))
+            out.append(dict(name=e["image_name"], img=img, what=what, agree=agree, method=gen.method))
     return out
 
 
