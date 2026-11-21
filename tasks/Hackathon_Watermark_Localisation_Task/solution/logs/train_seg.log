@@ -1,0 +1,56 @@
+real train 360, val 150, synth 4500
+ep 0 step 0/742 loss 1.4373 5s
+ep 0 step 100/742 loss 1.0315 61s
+ep 0 step 200/742 loss 1.0041 109s
+ep 0 step 300/742 loss 0.9839 207s
+ep 0 step 400/742 loss 0.9684 292s
+ep 0 step 500/742 loss 0.9607 370s
+ep 0 step 600/742 loss 0.9531 469s
+ep 0 step 700/742 loss 0.9423 529s
+== ep 0 val {"pixelseal": 0.4565, "trustmark": 0.4461, "stegastamp": 0.4505, "all": 0.451} 565s
+ep 1 step 0/742 loss 1.0262 567s
+ep 1 step 100/742 loss 0.8784 648s
+ep 1 step 200/742 loss 0.8990 751s
+ep 1 step 300/742 loss 0.9004 818s
+ep 1 step 400/742 loss 0.8987 875s
+ep 1 step 500/742 loss 0.8941 925s
+ep 1 step 600/742 loss 0.8880 979s
+ep 1 step 700/742 loss 0.8864 1028s
+== ep 1 val {"pixelseal": 0.4519, "trustmark": 0.4521, "stegastamp": 0.46, "all": 0.4547} 1062s
+ep 2 step 0/742 loss 0.8940 1063s
+ep 2 step 100/742 loss 0.8839 1117s
+ep 2 step 200/742 loss 0.8990 1170s
+ep 2 step 300/742 loss 0.8840 1222s
+ep 2 step 400/742 loss 0.8781 1276s
+ep 2 step 500/742 loss 0.8743 1327s
+ep 2 step 600/742 loss 0.8762 1407s
+ep 2 step 700/742 loss 0.8734 1466s
+== ep 2 val {"pixelseal": 0.4519, "trustmark": 0.4544, "stegastamp": 0.4601, "all": 0.4555} 1498s
+ep 3 step 0/742 loss 0.7680 1499s
+ep 3 step 100/742 loss 0.8587 1559s
+ep 3 step 200/742 loss 0.8575 1613s
+ep 3 step 300/742 loss 0.8555 1675s
+ep 3 step 400/742 loss 0.8557 1734s
+ep 3 step 500/742 loss 0.8643 1795s
+ep 3 step 600/742 loss 0.8639 1855s
+ep 3 step 700/742 loss 0.8643 1915s
+== ep 3 val {"pixelseal": 0.4519, "trustmark": 0.4495, "stegastamp": 0.4508, "all": 0.4507} 1942s
+ep 4 step 0/742 loss 0.9243 1942s
+ep 4 step 100/742 loss 0.8648 2000s
+ep 4 step 200/742 loss 0.8692 2051s
+ep 4 step 300/742 loss 0.8635 2104s
+ep 4 step 400/742 loss 0.8619 2158s
+ep 4 step 500/742 loss 0.8624 2218s
+ep 4 step 600/742 loss 0.8620 2274s
+ep 4 step 700/742 loss 0.8616 2328s
+== ep 4 val {"pixelseal": 0.4536, "trustmark": 0.45, "stegastamp": 0.4464, "all": 0.45} 2356s
+ep 5 step 0/742 loss 0.9557 2357s
+ep 5 step 100/742 loss 0.8552 2415s
+ep 5 step 200/742 loss 0.8463 2470s
+ep 5 step 300/742 loss 0.8475 2529s
+ep 5 step 400/742 loss 0.8479 2588s
+ep 5 step 500/742 loss 0.8571 2647s
+ep 5 step 600/742 loss 0.8563 2709s
+ep 5 step 700/742 loss 0.8559 2763s
+== ep 5 val {"pixelseal": 0.454, "trustmark": 0.4495, "stegastamp": 0.4462, "all": 0.4499} 2789s
+best val 0.45547284194299703

@@ -1,0 +1,4381 @@
+{
+ "q00": [
+  {
+   "q": "In which year was the Euro introduced as cash?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "Translate the word 'milk' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 89 * 85?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "7565"
+  },
+  {
+   "q": "What is the chemical symbol of Gold?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'dream' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 587 - 79?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "508"
+  },
+  {
+   "q": "How many letters are in the word 'garden'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the atomic number of Lithium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of India?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "New Delhi"
+  },
+  {
+   "q": "Give one word that rhymes with 'milk'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is 52 * 90?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4680"
+  },
+  {
+   "q": "What is the atomic number of Phosphorus?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is 12 * 90?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1080"
+  },
+  {
+   "q": "What is the chemical symbol of Silver?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the atomic number of Nickel?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "How many players are on a rugby union team on the field?",
+   "type": "n",
+   "cat": "trivia"
+  }
+ ],
+ "q01": [
+  {
+   "q": "What is 461 - 238?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "223"
+  },
+  {
+   "q": "What is the capital of Morocco?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Rabat"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'garden'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Give one word that rhymes with 'summer'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "How many letters are in the word 'summer'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the letter that comes 2 places after 'm' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "Translate the word 'peace' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Ghana?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Accra"
+  },
+  {
+   "q": "What is the capital of Madagascar?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Antananarivo"
+  },
+  {
+   "q": "What is 81 * 69?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "5589"
+  },
+  {
+   "q": "What is 339 - 263?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "76"
+  },
+  {
+   "q": "What is the chemical symbol of Yttrium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'tree' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is 778 - 35?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "743"
+  },
+  {
+   "q": "What is the atomic number of Tin?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of Moldova?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Chisinau"
+  }
+ ],
+ "q02": [
+  {
+   "q": "Translate the word 'storm' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the opposite of 'forget'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is 874 - 10?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "864"
+  },
+  {
+   "q": "How many letters are in the word 'dog'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the currency of Hungary?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "How many letters are in the word 'music'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the atomic number of Cobalt?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'moon'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'road'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the capital of Honduras?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tegucigalpa"
+  },
+  {
+   "q": "What is the opposite of 'rich'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is 52 * 77?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4004"
+  },
+  {
+   "q": "How many letters are in the word 'bridge'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Give one word that rhymes with 'peace'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the atomic number of Scandium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of Portugal?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Lisbon"
+  }
+ ],
+ "q03": [
+  {
+   "q": "What is the first word that comes to mind for 'bread'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the atomic number of Neon?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Give one word that rhymes with 'dog'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Pick a random fruit.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Who formulated the laws of planetary motion? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is 953 + 218?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1171"
+  },
+  {
+   "q": "Give one word that rhymes with 'clock'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Translate the word 'doctor' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the chemical symbol of Molybdenum?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Pick a random number between 0 and 9.",
+   "type": "n",
+   "cat": "random"
+  },
+  {
+   "q": "What is the chemical symbol of Helium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'window'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the letter that comes 4 places after 'f' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is 433 - 17?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "416"
+  },
+  {
+   "q": "Who discovered penicillin? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is 467 + 849?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1316"
+  }
+ ],
+ "q04": [
+  {
+   "q": "What is 814 + 788?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1602"
+  },
+  {
+   "q": "What is 23 * 63?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1449"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'book'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'light'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is 77 * 74?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "5698"
+  },
+  {
+   "q": "What is 332 - 215?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "117"
+  },
+  {
+   "q": "Give one word that rhymes with 'mountain'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the capital of Cambodia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Phnom Penh"
+  },
+  {
+   "q": "What is the atomic number of Fluorine?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the atomic number of Chlorine?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the letter that comes 6 places after 'j' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is 21 * 99?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "2079"
+  },
+  {
+   "q": "What is 926 - 60?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "866"
+  },
+  {
+   "q": "What is the capital of Australia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Canberra"
+  },
+  {
+   "q": "How many cards are in a standard deck without jokers?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the smallest prime number?",
+   "type": "n",
+   "cat": "trivia"
+  }
+ ],
+ "q05": [
+  {
+   "q": "In which year was the United Nations founded?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'fire'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Translate the word 'friend' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the atomic number of Krypton?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is 346 - 288?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "58"
+  },
+  {
+   "q": "What is the capital of Laos?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Vientiane"
+  },
+  {
+   "q": "What is 173 + 762?",
+   "type": "n",
+   "cat": "add",
+   "ref": "935"
+  },
+  {
+   "q": "Translate the word 'dog' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the letter that comes 4 places after 'y' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is 96 * 94?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "9024"
+  },
+  {
+   "q": "What is the chemical symbol of Selenium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the capital of Lebanon?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Beirut"
+  },
+  {
+   "q": "Translate the word 'salt' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the chemical symbol of Magnesium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the opposite of 'accept'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "How many letters are in the word 'forest'?",
+   "type": "n",
+   "cat": "letters"
+  }
+ ],
+ "q06": [
+  {
+   "q": "Translate the word 'clock' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'river'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Pick a random profession.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Translate the word 'night' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 545 - 124?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "421"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'rain'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is 773 + 356?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1129"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'salt'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the chemical symbol of Tungsten?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "How many letters are in the word 'war'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the chemical symbol of Rubidium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'cat' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Zimbabwe?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Harare"
+  },
+  {
+   "q": "What is the capital of Malawi?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Lilongwe"
+  },
+  {
+   "q": "How many letters are in the word 'coffee'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Translate the word 'summer' into French.",
+   "type": "w",
+   "cat": "fr"
+  }
+ ],
+ "q07": [
+  {
+   "q": "Translate the word 'light' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 578 + 140?",
+   "type": "n",
+   "cat": "add",
+   "ref": "718"
+  },
+  {
+   "q": "What is the chemical symbol of Germanium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 486 - 61?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "425"
+  },
+  {
+   "q": "What is the capital of Uruguay?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Montevideo"
+  },
+  {
+   "q": "What is the letter that comes 6 places after 'u' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the capital of Argentina?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Buenos Aires"
+  },
+  {
+   "q": "Translate the word 'music' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is 93 * 38?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3534"
+  },
+  {
+   "q": "What is the atomic number of Mercury?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of Egypt?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Cairo"
+  },
+  {
+   "q": "How many letters are in the word 'tree'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 17 * 45?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "765"
+  },
+  {
+   "q": "What is 23 * 22?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "506"
+  },
+  {
+   "q": "Translate the word 'window' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 642 - 91?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "551"
+  }
+ ],
+ "q08": [
+  {
+   "q": "What is 840 - 259?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "581"
+  },
+  {
+   "q": "Translate the word 'mirror' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Pick a random number between 1 and 50.",
+   "type": "n",
+   "cat": "random"
+  },
+  {
+   "q": "What is the atomic number of Molybdenum?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Translate the word 'coffee' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the capital of France?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Paris"
+  },
+  {
+   "q": "Give one word that rhymes with 'salt'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "How many letters are in the word 'storm'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Pick a random planet.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Give one word that rhymes with 'silence'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Pick a random flower.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is the chemical symbol of Scandium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'school'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is 315 + 844?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1159"
+  },
+  {
+   "q": "What is the capital of Latvia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Riga"
+  },
+  {
+   "q": "What is the capital of Montenegro?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Podgorica"
+  }
+ ],
+ "q09": [
+  {
+   "q": "What is the currency of Switzerland?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the atomic number of Iron?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Translate the word 'dream' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'mountain'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Pick a random sport.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is the letter that comes 6 places after 'x' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the capital of Netherlands?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Amsterdam"
+  },
+  {
+   "q": "Who developed the theory of general relativity? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Who wrote 'Faust'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the chemical symbol of Radon?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'forest' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Malaysia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Kuala Lumpur"
+  },
+  {
+   "q": "What is the letter that comes 2 places after 'c' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the capital of Jamaica?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Kingston"
+  },
+  {
+   "q": "Translate the word 'time' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'door'?",
+   "type": "w",
+   "cat": "assoc"
+  }
+ ],
+ "q10": [
+  {
+   "q": "What is 725 - 106?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "619"
+  },
+  {
+   "q": "Translate the word 'stone' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the opposite of 'young'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "Translate the word 'river' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Pick a random vegetable.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is the capital of Mali?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Bamako"
+  },
+  {
+   "q": "What is the capital of Saudi Arabia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Riyadh"
+  },
+  {
+   "q": "How many letters are in the word 'rain'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 797 + 519?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1316"
+  },
+  {
+   "q": "What is the letter that comes 4 places after 'k' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "How many letters are in the word 'window'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 919 + 162?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1081"
+  },
+  {
+   "q": "What is 710 + 203?",
+   "type": "n",
+   "cat": "add",
+   "ref": "913"
+  },
+  {
+   "q": "Who wrote 'Les Miserables'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the capital of Afghanistan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Kabul"
+  },
+  {
+   "q": "Translate the word 'city' into German.",
+   "type": "w",
+   "cat": "de"
+  }
+ ],
+ "q11": [
+  {
+   "q": "What is the tallest mountain in Africa?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the boiling point of water in Fahrenheit?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is 617 - 208?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "409"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'war'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "How many letters are in the word 'ocean'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the chemical symbol of Carbon?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 98 * 28?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "2744"
+  },
+  {
+   "q": "What is 68 * 23?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1564"
+  },
+  {
+   "q": "Translate the word 'moon' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "How many letters are in the word 'river'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 57 * 67?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3819"
+  },
+  {
+   "q": "What is 44 * 80?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3520"
+  },
+  {
+   "q": "What is the opposite of 'victory'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the chemical symbol of Vanadium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the chemical symbol of Krypton?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 49 * 27?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1323"
+  }
+ ],
+ "q12": [
+  {
+   "q": "What is the opposite of 'light'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "How many letters are in the word 'gold'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'milk'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the letter that comes 5 places after 'l' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "Who wrote 'The Prince'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'love'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'winter'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Translate the word 'window' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the letter that comes 2 places after 'g' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the capital of Ethiopia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Addis Ababa"
+  },
+  {
+   "q": "Give one word that rhymes with 'shadow'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is 365 - 142?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "223"
+  },
+  {
+   "q": "What is 24 * 30?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "720"
+  },
+  {
+   "q": "What is 764 + 465?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1229"
+  },
+  {
+   "q": "What is the capital of Angola?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Luanda"
+  },
+  {
+   "q": "What is the capital of Sri Lanka?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Colombo"
+  }
+ ],
+ "q13": [
+  {
+   "q": "What is the capital of Ecuador?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Quito"
+  },
+  {
+   "q": "Give one word that rhymes with 'cat'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the chemical symbol of Nickel?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 952 - 239?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "713"
+  },
+  {
+   "q": "What is the atomic number of Titanium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "How many letters are in the word 'king'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "How many bones are in the adult human body?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is 711 + 552?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1263"
+  },
+  {
+   "q": "How many letters are in the word 'school'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Translate the word 'summer' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the capital of Israel?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Jerusalem"
+  },
+  {
+   "q": "What is the capital of Iceland?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Reykjavik"
+  },
+  {
+   "q": "How many letters are in the word 'light'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Syria?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Damascus"
+  },
+  {
+   "q": "What is the atomic number of Niobium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'heart'?",
+   "type": "w",
+   "cat": "assoc"
+  }
+ ],
+ "q14": [
+  {
+   "q": "What is the atomic number of Boron?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Give one word that rhymes with 'love'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the opposite of 'early'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the chemical symbol of Oxygen?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the capital of Tajikistan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Dushanbe"
+  },
+  {
+   "q": "What is the atomic number of Iodine?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Translate the word 'forest' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 226 + 590?",
+   "type": "n",
+   "cat": "add",
+   "ref": "816"
+  },
+  {
+   "q": "What is the capital of Burundi?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Gitega"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'coffee'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Translate the word 'war' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the capital of Senegal?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Dakar"
+  },
+  {
+   "q": "In which year did the American Civil War end?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "Translate the word 'clock' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'gold' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the opposite of 'rough'?",
+   "type": "w",
+   "cat": "opp"
+  }
+ ],
+ "q15": [
+  {
+   "q": "What is the first word that comes to mind for 'stone'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is 87 * 48?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4176"
+  },
+  {
+   "q": "What is the chemical symbol of Sodium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'mountain' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "How many letters are in the word 'heart'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Nicaragua?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Managua"
+  },
+  {
+   "q": "What is 581 + 958?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1539"
+  },
+  {
+   "q": "How many letters are in the word 'money'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Translate the word 'silence' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 82 * 73?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "5986"
+  },
+  {
+   "q": "What is the atomic number of Sodium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the chemical symbol of Beryllium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'mirror'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is 955 + 366?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1321"
+  },
+  {
+   "q": "Give one word that rhymes with 'king'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the capital of Iran?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tehran"
+  }
+ ],
+ "q16": [
+  {
+   "q": "What is the capital of Turkmenistan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Ashgabat"
+  },
+  {
+   "q": "What is 40 * 17?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "680"
+  },
+  {
+   "q": "What is the capital of Eritrea?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Asmara"
+  },
+  {
+   "q": "What is 301 - 108?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "193"
+  },
+  {
+   "q": "Translate the word 'door' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the atomic number of Silicon?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the chemical symbol of Argon?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the letter that comes 4 places after 'z' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'summer'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'gold'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the atomic number of Germanium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Who wrote 'Pride and Prejudice'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'peace'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'clock'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "How many letters are in the word 'love'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the atomic number of Oxygen?",
+   "type": "n",
+   "cat": "atomic"
+  }
+ ],
+ "q17": [
+  {
+   "q": "What is 73 * 57?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4161"
+  },
+  {
+   "q": "What is 50 * 82?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4100"
+  },
+  {
+   "q": "Translate the word 'king' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'river' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "Give one word that rhymes with 'forest'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Translate the word 'heart' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'sugar'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the capital of Bolivia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Sucre"
+  },
+  {
+   "q": "How many letters are in the word 'time'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Pick a random tree species.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Translate the word 'school' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'night' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Tanzania?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Dodoma"
+  },
+  {
+   "q": "What is the capital of Spain?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Madrid"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'time'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the capital of Paraguay?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Asuncion"
+  }
+ ],
+ "q18": [
+  {
+   "q": "Pick a random programming language.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is the opposite of 'guilty'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "Translate the word 'love' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the opposite of 'tall'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the chemical symbol of Zirconium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 795 + 123?",
+   "type": "n",
+   "cat": "add",
+   "ref": "918"
+  },
+  {
+   "q": "Translate the word 'bridge' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 89 * 30?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "2670"
+  },
+  {
+   "q": "Translate the word 'bread' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the capital of Yemen?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Sanaa"
+  },
+  {
+   "q": "What is 31 * 16?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "496"
+  },
+  {
+   "q": "What is 42 * 30?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1260"
+  },
+  {
+   "q": "What is 122 + 299?",
+   "type": "n",
+   "cat": "add",
+   "ref": "421"
+  },
+  {
+   "q": "What is 495 - 70?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "425"
+  },
+  {
+   "q": "Who wrote 'One Hundred Years of Solitude'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the chemical symbol of Antimony?",
+   "type": "w",
+   "cat": "symbol"
+  }
+ ],
+ "q19": [
+  {
+   "q": "What is 15 * 27?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "405"
+  },
+  {
+   "q": "What is 450 + 642?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1092"
+  },
+  {
+   "q": "Translate the word 'rain' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Uganda?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Kampala"
+  },
+  {
+   "q": "Who invented the telephone? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the atomic number of Yttrium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Give one word that rhymes with 'war'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is 93 * 36?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3348"
+  },
+  {
+   "q": "How many letters are in the word 'clock'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 469 - 238?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "231"
+  },
+  {
+   "q": "What is 53 * 90?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4770"
+  },
+  {
+   "q": "Translate the word 'road' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "Pick a random month.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is the atomic number of Tungsten?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Pick a random number between 1 and 10.",
+   "type": "n",
+   "cat": "random"
+  },
+  {
+   "q": "Translate the word 'horse' into French.",
+   "type": "w",
+   "cat": "fr"
+  }
+ ],
+ "q20": [
+  {
+   "q": "Translate the word 'tree' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 20 * 36?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "720"
+  },
+  {
+   "q": "Pick a random adjective.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is the capital of Niger?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Niamey"
+  },
+  {
+   "q": "What is 81 * 38?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3078"
+  },
+  {
+   "q": "What is 518 - 17?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "501"
+  },
+  {
+   "q": "What is the chemical symbol of Phosphorus?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'money' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "In which year did the Berlin Wall fall?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "Give one word that rhymes with 'music'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Pick a random emotion.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Give one word that rhymes with 'bird'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the capital of Ukraine?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Kyiv"
+  },
+  {
+   "q": "What is 82 * 54?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4428"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'apple'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the capital of Mexico?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Mexico City"
+  }
+ ],
+ "q21": [
+  {
+   "q": "What is the opposite of 'ancient'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the opposite of 'question'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "Give one word that rhymes with 'bridge'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Give one word that rhymes with 'winter'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the capital of Indonesia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Jakarta"
+  },
+  {
+   "q": "What is the atomic number of Sulfur?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the longest river in Africa?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Which planet is closest to the Sun?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the capital of Algeria?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Algiers"
+  },
+  {
+   "q": "What is the capital of Zambia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Lusaka"
+  },
+  {
+   "q": "What is 816 + 500?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1316"
+  },
+  {
+   "q": "Who wrote '1984'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Translate the word 'winter' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the opposite of 'loud'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is 304 + 366?",
+   "type": "n",
+   "cat": "add",
+   "ref": "670"
+  },
+  {
+   "q": "Translate the word 'fire' into German.",
+   "type": "w",
+   "cat": "de"
+  }
+ ],
+ "q22": [
+  {
+   "q": "What is 69 * 75?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "5175"
+  },
+  {
+   "q": "What is the main gas in Earth's atmosphere?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Give one word that rhymes with 'rain'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'forest'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the chemical symbol of Zinc?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the atomic number of Magnesium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Pick a random bird.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is the letter that comes 2 places after 'i' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the capital of Croatia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Zagreb"
+  },
+  {
+   "q": "What is 20 * 23?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "460"
+  },
+  {
+   "q": "What is 781 + 279?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1060"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'music'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the letter that comes 2 places after 'c' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the capital of Armenia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Yerevan"
+  },
+  {
+   "q": "In which year did the French Revolution begin?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the capital of Papua New Guinea?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Port Moresby"
+  }
+ ],
+ "q23": [
+  {
+   "q": "What is the capital of Slovenia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Ljubljana"
+  },
+  {
+   "q": "What is 54 * 72?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3888"
+  },
+  {
+   "q": "Give one word that rhymes with 'book'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the capital of South Korea?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Seoul"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'dog'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Translate the word 'gold' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the letter that comes 3 places after 'n' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "Give one word that rhymes with 'city'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'bird'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is 24 * 91?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "2184"
+  },
+  {
+   "q": "What is the chemical symbol of Hydrogen?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the chemical symbol of Sulfur?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 881 - 224?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "657"
+  },
+  {
+   "q": "How many letters are in the word 'road'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Botswana?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Gaborone"
+  },
+  {
+   "q": "What is 408 + 458?",
+   "type": "n",
+   "cat": "add",
+   "ref": "866"
+  }
+ ],
+ "q24": [
+  {
+   "q": "Pick a random day of the week.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is 965 + 265?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1230"
+  },
+  {
+   "q": "What is the chemical symbol of Strontium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "How many US states are there?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is 159 + 907?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1066"
+  },
+  {
+   "q": "What is 61 * 65?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3965"
+  },
+  {
+   "q": "How many letters are in the word 'silence'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Translate the word 'bird' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is 43 * 14?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "602"
+  },
+  {
+   "q": "What is the chemical symbol of Bismuth?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'doctor' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of China?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Beijing"
+  },
+  {
+   "q": "What is the chemical symbol of Neon?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 87 * 92?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "8004"
+  },
+  {
+   "q": "What is the atomic number of Zinc?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the atomic number of Hydrogen?",
+   "type": "n",
+   "cat": "atomic"
+  }
+ ],
+ "q25": [
+  {
+   "q": "What is 84 * 40?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3360"
+  },
+  {
+   "q": "What is the chemical symbol of Chlorine?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the currency of South Africa?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Translate the word 'snow' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is 75 * 54?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4050"
+  },
+  {
+   "q": "What is 86 * 47?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4042"
+  },
+  {
+   "q": "What is the atomic number of Copper?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Give one word that rhymes with 'bread'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is 312 - 244?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "68"
+  },
+  {
+   "q": "Who wrote 'The Trial'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Translate the word 'stone' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "Give one word that rhymes with 'moon'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Translate the word 'shadow' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'star' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 546 + 284?",
+   "type": "n",
+   "cat": "add",
+   "ref": "830"
+  },
+  {
+   "q": "What is the currency of Poland?",
+   "type": "w",
+   "cat": "trivia"
+  }
+ ],
+ "q26": [
+  {
+   "q": "What is 99 * 62?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "6138"
+  },
+  {
+   "q": "What is the chemical symbol of Uranium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'bridge'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "How many letters are in the word 'cat'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Translate the word 'horse' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the capital of Albania?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tirana"
+  },
+  {
+   "q": "What is 45 * 72?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3240"
+  },
+  {
+   "q": "In which year did Columbus first reach the Americas?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the atomic number of Strontium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the opposite of 'happy'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is 48 * 29?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1392"
+  },
+  {
+   "q": "What is the largest ocean on Earth?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Translate the word 'time' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'heart' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "Pick a random number between 1 and 100.",
+   "type": "n",
+   "cat": "random"
+  },
+  {
+   "q": "What is 57 * 22?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1254"
+  }
+ ],
+ "q27": [
+  {
+   "q": "What is the capital of Bulgaria?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Sofia"
+  },
+  {
+   "q": "How many letters are in the word 'sugar'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the hardest natural mineral?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is 80 * 89?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "7120"
+  },
+  {
+   "q": "In which year did the Chernobyl disaster happen?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the capital of Thailand?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Bangkok"
+  },
+  {
+   "q": "What is the chemical symbol of Potassium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "How many letters are in the word 'mountain'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "How many letters are in the word 'peace'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the chemical symbol of Lithium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the opposite of 'strong'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the atomic number of Aluminium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Give one word that rhymes with 'road'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'city'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'snow'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the opposite of 'hard'?",
+   "type": "w",
+   "cat": "opp"
+  }
+ ],
+ "q28": [
+  {
+   "q": "How many minutes are in a day?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the capital of Myanmar?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Naypyidaw"
+  },
+  {
+   "q": "What is 380 - 181?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "199"
+  },
+  {
+   "q": "Translate the word 'school' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Chad?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "N'Djamena"
+  },
+  {
+   "q": "What is 989 - 193?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "796"
+  },
+  {
+   "q": "Pick a random musical instrument.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is 724 - 51?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "673"
+  },
+  {
+   "q": "What is 289 + 835?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1124"
+  },
+  {
+   "q": "What is the capital of Nepal?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Kathmandu"
+  },
+  {
+   "q": "What is the capital of Sudan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Khartoum"
+  },
+  {
+   "q": "What is the chemical symbol of Iodine?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 735 + 203?",
+   "type": "n",
+   "cat": "add",
+   "ref": "938"
+  },
+  {
+   "q": "Give one word that rhymes with 'heart'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the capital of New Zealand?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Wellington"
+  },
+  {
+   "q": "What is the letter that comes 5 places after 'd' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  }
+ ],
+ "q29": [
+  {
+   "q": "What is the capital of Estonia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tallinn"
+  },
+  {
+   "q": "What is 40 * 59?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "2360"
+  },
+  {
+   "q": "Give one word that rhymes with 'gold'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'horse'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the letter that comes 3 places after 'u' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the chemical symbol of Tin?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the capital of Japan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tokyo"
+  },
+  {
+   "q": "What is the capital of Hungary?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Budapest"
+  },
+  {
+   "q": "Give one word that rhymes with 'coffee'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the opposite of 'thick'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the capital of Austria?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Vienna"
+  },
+  {
+   "q": "What is 356 + 220?",
+   "type": "n",
+   "cat": "add",
+   "ref": "576"
+  },
+  {
+   "q": "What is 35 * 16?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "560"
+  },
+  {
+   "q": "What is the capital of Norway?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Oslo"
+  },
+  {
+   "q": "What is 171 + 326?",
+   "type": "n",
+   "cat": "add",
+   "ref": "497"
+  },
+  {
+   "q": "What is the capital of Philippines?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Manila"
+  }
+ ],
+ "q30": [
+  {
+   "q": "What is the chemical symbol of Fluorine?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "How many letters are in the word 'salt'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the letter that comes 2 places after 'b' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the opposite of 'sharp'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "Give one word that rhymes with 'apple'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Give one word that rhymes with 'night'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "In which year did the Titanic sink?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the chemical symbol of Silicon?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 620 + 418?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1038"
+  },
+  {
+   "q": "What is the atomic number of Gallium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Who wrote 'War and Peace'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the opposite of 'fast'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "Who wrote 'The Divine Comedy'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "How many letters are in the word 'dream'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Peru?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Lima"
+  },
+  {
+   "q": "Translate the word 'music' into German.",
+   "type": "w",
+   "cat": "de"
+  }
+ ],
+ "q31": [
+  {
+   "q": "What is the first word that comes to mind for 'silence'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the capital of Kazakhstan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Astana"
+  },
+  {
+   "q": "What is the chemical symbol of Bromine?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "How many letters are in the word 'apple'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Translate the word 'star' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "Translate the word 'garden' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "How many letters are in the word 'mirror'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Bangladesh?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Dhaka"
+  },
+  {
+   "q": "What is 23 * 59?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1357"
+  },
+  {
+   "q": "What is the letter that comes 3 places after 'n' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is 52 * 85?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "4420"
+  },
+  {
+   "q": "What is the capital of Tunisia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tunis"
+  },
+  {
+   "q": "What is 137 + 720?",
+   "type": "n",
+   "cat": "add",
+   "ref": "857"
+  },
+  {
+   "q": "What is 633 - 169?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "464"
+  },
+  {
+   "q": "What is 711 - 223?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "488"
+  },
+  {
+   "q": "How many letters are in the word 'doctor'?",
+   "type": "n",
+   "cat": "letters"
+  }
+ ],
+ "q32": [
+  {
+   "q": "What is the capital of Libya?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tripoli"
+  },
+  {
+   "q": "Translate the word 'road' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the capital of Uzbekistan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tashkent"
+  },
+  {
+   "q": "Which organ produces insulin?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "In which year was the Magna Carta signed?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "In which year did World War I begin?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the opposite of 'clean'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the largest mammal?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Give one word that rhymes with 'storm'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Pick a random verb.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Give one word that rhymes with 'money'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Translate the word 'money' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'book' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 76 * 29?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "2204"
+  },
+  {
+   "q": "Pick a random letter of the alphabet.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is 660 - 157?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "503"
+  }
+ ],
+ "q33": [
+  {
+   "q": "How many letters are in the word 'night'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Who sculpted 'The Thinker'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the atomic number of Vanadium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the chemical symbol of Manganese?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the atomic number of Carbon?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of Kenya?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Nairobi"
+  },
+  {
+   "q": "What is the capital of Kyrgyzstan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Bishkek"
+  },
+  {
+   "q": "What is the capital of Jordan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Amman"
+  },
+  {
+   "q": "Translate the word 'mountain' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is 35 * 36?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1260"
+  },
+  {
+   "q": "What is 51 * 24?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1224"
+  },
+  {
+   "q": "What is the letter that comes 5 places after 'd' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the capital of Nigeria?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Abuja"
+  },
+  {
+   "q": "What is the letter that comes 4 places after 'l' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the atomic number of Xenon?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "How many letters are in the word 'bird'?",
+   "type": "n",
+   "cat": "letters"
+  }
+ ],
+ "q34": [
+  {
+   "q": "What is the first word that comes to mind for 'money'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the atomic number of Nitrogen?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Translate the word 'bread' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "How many hearts does an octopus have?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the atomic number of Argon?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Pick a random country.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Give one word that rhymes with 'dream'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Translate the word 'snow' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Give one word that rhymes with 'window'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is 68 * 78?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "5304"
+  },
+  {
+   "q": "What is 545 - 256?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "289"
+  },
+  {
+   "q": "What is 90 * 96?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "8640"
+  },
+  {
+   "q": "What is 904 - 77?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "827"
+  },
+  {
+   "q": "What is the letter that comes 2 places after 'p' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the capital of Cuba?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Havana"
+  },
+  {
+   "q": "What is the opposite of 'brave'?",
+   "type": "w",
+   "cat": "opp"
+  }
+ ],
+ "q35": [
+  {
+   "q": "What is the atomic number of Rubidium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the letter that comes 4 places after 'm' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is 78 * 42?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3276"
+  },
+  {
+   "q": "What is the capital of Cameroon?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Yaounde"
+  },
+  {
+   "q": "Translate the word 'war' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the chemical symbol of Niobium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'doctor'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "How many sides does a dodecagon have?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the opposite of 'natural'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the chemical symbol of Iron?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'apple' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the atomic number of Platinum?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of Azerbaijan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Baku"
+  },
+  {
+   "q": "What is the capital of Czech Republic?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Prague"
+  },
+  {
+   "q": "What is the chemical symbol of Boron?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Give one word that rhymes with 'fire'.",
+   "type": "w",
+   "cat": "rhyme"
+  }
+ ],
+ "q36": [
+  {
+   "q": "What is 687 - 222?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "465"
+  },
+  {
+   "q": "What is the atomic number of Potassium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the currency of India?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'shadow'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the capital of Mauritania?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Nouakchott"
+  },
+  {
+   "q": "What is 82 * 13?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1066"
+  },
+  {
+   "q": "Give one word that rhymes with 'mirror'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the capital of Vietnam?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Hanoi"
+  },
+  {
+   "q": "What is the chemical symbol of Xenon?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the atomic number of Helium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Translate the word 'bridge' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Bhutan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Thimphu"
+  },
+  {
+   "q": "Pick a random number between 1 and 1000.",
+   "type": "n",
+   "cat": "random"
+  },
+  {
+   "q": "Give one word that rhymes with 'door'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the currency of Turkey?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "How many letters are in the word 'star'?",
+   "type": "n",
+   "cat": "letters"
+  }
+ ],
+ "q37": [
+  {
+   "q": "What is 942 - 51?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "891"
+  },
+  {
+   "q": "Who composed the 'Moonlight Sonata'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the atomic number of Lead?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Translate the word 'sugar' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Who composed 'The Magic Flute'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the chemical symbol of Mercury?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "In which year did Constantinople fall to the Ottomans?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is 79 * 47?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3713"
+  },
+  {
+   "q": "What is the opposite of 'expand'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the letter that comes 6 places after 'u' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the atomic number of Calcium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of Georgia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Tbilisi"
+  },
+  {
+   "q": "What is the chemical symbol of Aluminium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Translate the word 'rain' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the capital of Lithuania?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Vilnius"
+  },
+  {
+   "q": "What is the atomic number of Bismuth?",
+   "type": "n",
+   "cat": "atomic"
+  }
+ ],
+ "q38": [
+  {
+   "q": "What is the capital of Finland?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Helsinki"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'tree'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the letter that comes 4 places after 'z' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is the opposite of 'visible'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "How many letters are in the word 'fire'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Colombia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Bogota"
+  },
+  {
+   "q": "How many letters are in the word 'winter'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the atomic number of Selenium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "Translate the word 'cat' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'friend' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'moon' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "How many letters are in the word 'shadow'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Denmark?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Copenhagen"
+  },
+  {
+   "q": "What is the capital of Chile?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Santiago"
+  },
+  {
+   "q": "What is the opposite of 'hot'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the opposite of 'fragile'?",
+   "type": "w",
+   "cat": "opp"
+  }
+ ],
+ "q39": [
+  {
+   "q": "How many letters are in the word 'door'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Translate the word 'milk' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "Translate the word 'garden' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "How many letters are in the word 'city'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 302 - 280?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "22"
+  },
+  {
+   "q": "What is 861 - 52?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "809"
+  },
+  {
+   "q": "What is 97 * 92?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "8924"
+  },
+  {
+   "q": "What is the chemical symbol of Calcium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the chemical symbol of Chromium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the capital of Oman?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Muscat"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'storm'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is 33 * 54?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1782"
+  },
+  {
+   "q": "What is the chemical symbol of Arsenic?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the capital of Venezuela?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Caracas"
+  },
+  {
+   "q": "What is 54 * 36?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1944"
+  },
+  {
+   "q": "Translate the word 'fire' into French.",
+   "type": "w",
+   "cat": "fr"
+  }
+ ],
+ "q40": [
+  {
+   "q": "What is the first word that comes to mind for 'dream'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the capital of Romania?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Bucharest"
+  },
+  {
+   "q": "Give one word that rhymes with 'sugar'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the capital of Belarus?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Minsk"
+  },
+  {
+   "q": "What is the capital of Somalia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Mogadishu"
+  },
+  {
+   "q": "What is the capital of Qatar?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Doha"
+  },
+  {
+   "q": "What is the capital of North Macedonia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Skopje"
+  },
+  {
+   "q": "What is the letter that comes 6 places after 'j' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "How many moons does Mars have?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the capital of Mozambique?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Maputo"
+  },
+  {
+   "q": "What is the chemical symbol of Gallium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Pick a random number between 10 and 20.",
+   "type": "n",
+   "cat": "random"
+  },
+  {
+   "q": "How many symphonies did Beethoven write?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the chemical symbol of Copper?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 43 * 53?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "2279"
+  },
+  {
+   "q": "Translate the word 'ocean' into French.",
+   "type": "w",
+   "cat": "fr"
+  }
+ ],
+ "q41": [
+  {
+   "q": "What is the capital of Belgium?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Brussels"
+  },
+  {
+   "q": "Pick a random metal.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "How many letters are in the word 'milk'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "How many letters are in the word 'bread'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 63 * 50?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3150"
+  },
+  {
+   "q": "What is 83 * 24?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1992"
+  },
+  {
+   "q": "In which year did the Soviet Union dissolve?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "In which year was the printing press of Gutenberg invented (approximately)?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the capital of Germany?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Berlin"
+  },
+  {
+   "q": "How many letters are in the word 'friend'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 792 + 262?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1054"
+  },
+  {
+   "q": "Translate the word 'love' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the opposite of 'wet'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "Give one word that rhymes with 'horse'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the opposite of 'borrow'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is 99 * 21?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "2079"
+  }
+ ],
+ "q42": [
+  {
+   "q": "How many strings does a standard violin have?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the currency of Japan?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Give one word that rhymes with 'time'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the opposite of 'open'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the capital of Pakistan?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Islamabad"
+  },
+  {
+   "q": "Translate the word 'bird' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the atomic number of Silver?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the largest planet in the Solar System?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Who wrote 'Don Quixote'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the atomic number of Beryllium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the opposite of 'public'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'king'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the capital of Poland?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Warsaw"
+  },
+  {
+   "q": "Pick a random car brand.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is 85 * 93?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "7905"
+  },
+  {
+   "q": "What is 22 * 81?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1782"
+  }
+ ],
+ "q43": [
+  {
+   "q": "Translate the word 'city' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is 978 - 33?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "945"
+  },
+  {
+   "q": "Translate the word 'peace' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the largest desert in the world?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'friend'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Who painted the Mona Lisa? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "How many letters are in the word 'snow'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'ocean'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is 683 + 273?",
+   "type": "n",
+   "cat": "add",
+   "ref": "956"
+  },
+  {
+   "q": "In which year did Napoleon lose at Waterloo?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the atomic number of Zirconium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of Serbia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Belgrade"
+  },
+  {
+   "q": "What is the atomic number of Radon?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the opposite of 'increase'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the atomic number of Chromium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the atomic number of Manganese?",
+   "type": "n",
+   "cat": "atomic"
+  }
+ ],
+ "q44": [
+  {
+   "q": "What is 89 * 82?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "7298"
+  },
+  {
+   "q": "Give one word that rhymes with 'star'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Which animal is the fastest on land?",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "Pick a random city.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is 86 * 39?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3354"
+  },
+  {
+   "q": "Translate the word 'shadow' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Mongolia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Ulaanbaatar"
+  },
+  {
+   "q": "Translate the word 'light' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Switzerland?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Bern"
+  },
+  {
+   "q": "What is the opposite of 'deep'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "How many letters are in the word 'book'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is 113 + 582?",
+   "type": "n",
+   "cat": "add",
+   "ref": "695"
+  },
+  {
+   "q": "Who painted 'The Starry Night'? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the chemical symbol of Titanium?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is the capital of Panama?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Panama City"
+  },
+  {
+   "q": "What is the opposite of 'maximum'?",
+   "type": "w",
+   "cat": "opp"
+  }
+ ],
+ "q45": [
+  {
+   "q": "What is 39 * 98?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "3822"
+  },
+  {
+   "q": "How many letters are in the word 'stone'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Rwanda?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Kigali"
+  },
+  {
+   "q": "Give one word that rhymes with 'school'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is 46 * 26?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1196"
+  },
+  {
+   "q": "What is 162 + 615?",
+   "type": "n",
+   "cat": "add",
+   "ref": "777"
+  },
+  {
+   "q": "How many keys does a standard piano have?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "Translate the word 'book' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the chemical symbol of Cobalt?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 87 * 65?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "5655"
+  },
+  {
+   "q": "How many letters are in the word 'horse'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "Give one word that rhymes with 'snow'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Give one word that rhymes with 'river'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the opposite of 'heavy'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the capital of Turkey?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Ankara"
+  },
+  {
+   "q": "Pick a random animal.",
+   "type": "w",
+   "cat": "random"
+  }
+ ],
+ "q46": [
+  {
+   "q": "What is the first word that comes to mind for 'star'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the opposite of 'ascend'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is the opposite of 'arrival'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "Pick a random color.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Translate the word 'silence' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "Translate the word 'mirror' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the atomic number of Bromine?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is 26 * 74?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1924"
+  },
+  {
+   "q": "What is the opposite of 'include'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is 623 - 11?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "612"
+  },
+  {
+   "q": "What is the opposite of 'begin'?",
+   "type": "w",
+   "cat": "opp"
+  },
+  {
+   "q": "What is 308 + 885?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1193"
+  },
+  {
+   "q": "What is the letter that comes 3 places after 'v' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "Translate the word 'coffee' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Fiji?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Suva"
+  },
+  {
+   "q": "Give one word that rhymes with 'garden'.",
+   "type": "w",
+   "cat": "rhyme"
+  }
+ ],
+ "q47": [
+  {
+   "q": "What is 497 + 957?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1454"
+  },
+  {
+   "q": "What is 45 * 19?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "855"
+  },
+  {
+   "q": "What is the atomic number of Arsenic?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is the capital of Gabon?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Libreville"
+  },
+  {
+   "q": "What is 74 * 25?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1850"
+  },
+  {
+   "q": "How many teeth does an adult human have?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "Translate the word 'dog' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is the letter that comes 3 places after 'i' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "Translate the word 'storm' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Translate the word 'apple' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the atomic number of Gold?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is 66 * 19?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1254"
+  },
+  {
+   "q": "Translate the word 'ocean' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "Give one word that rhymes with 'friend'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "Give one word that rhymes with 'ocean'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "How many squares are on a chessboard?",
+   "type": "n",
+   "cat": "trivia"
+  }
+ ],
+ "q48": [
+  {
+   "q": "What is the letter that comes 3 places after 'b' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "Give one word that rhymes with 'stone'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "What is the chemical symbol of Lead?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "Who was the first person on the Moon? (surname)",
+   "type": "w",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is the letter that comes 3 places after 'b' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is 257 + 674?",
+   "type": "n",
+   "cat": "add",
+   "ref": "931"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'cat'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "What is the chemical symbol of Platinum?",
+   "type": "w",
+   "cat": "symbol"
+  },
+  {
+   "q": "What is 27 * 62?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "1674"
+  },
+  {
+   "q": "Translate the word 'king' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Slovakia?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Bratislava"
+  },
+  {
+   "q": "In which year was the first iPhone released?",
+   "type": "n",
+   "cat": "trivia"
+  },
+  {
+   "q": "What is 88 * 61?",
+   "type": "n",
+   "cat": "mul",
+   "ref": "5368"
+  },
+  {
+   "q": "What is the capital of Ireland?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Dublin"
+  },
+  {
+   "q": "What is the capital of Sweden?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Stockholm"
+  },
+  {
+   "q": "What is the capital of Greece?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Athens"
+  }
+ ],
+ "q49": [
+  {
+   "q": "Translate the word 'door' into French.",
+   "type": "w",
+   "cat": "fr"
+  },
+  {
+   "q": "What is the capital of Canada?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Ottawa"
+  },
+  {
+   "q": "Pick a random first name.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "What is the atomic number of Uranium?",
+   "type": "n",
+   "cat": "atomic"
+  },
+  {
+   "q": "What is 682 + 995?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1677"
+  },
+  {
+   "q": "What is the first word that comes to mind for 'night'?",
+   "type": "w",
+   "cat": "assoc"
+  },
+  {
+   "q": "Translate the word 'salt' into German.",
+   "type": "w",
+   "cat": "de"
+  },
+  {
+   "q": "What is 657 + 535?",
+   "type": "n",
+   "cat": "add",
+   "ref": "1192"
+  },
+  {
+   "q": "What is the capital of Italy?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Rome"
+  },
+  {
+   "q": "What is the letter that comes 2 places after 'i' in the alphabet?",
+   "type": "w",
+   "cat": "alpha"
+  },
+  {
+   "q": "What is 609 - 153?",
+   "type": "n",
+   "cat": "sub",
+   "ref": "456"
+  },
+  {
+   "q": "Pick a random noun.",
+   "type": "w",
+   "cat": "random"
+  },
+  {
+   "q": "Give one word that rhymes with 'tree'.",
+   "type": "w",
+   "cat": "rhyme"
+  },
+  {
+   "q": "How many letters are in the word 'moon'?",
+   "type": "n",
+   "cat": "letters"
+  },
+  {
+   "q": "What is the capital of Luxembourg?",
+   "type": "w",
+   "cat": "capital",
+   "ref": "Luxembourg"
+  },
+  {
+   "q": "What is the opposite of 'full'?",
+   "type": "w",
+   "cat": "opp"
+  }
+ ]
+}

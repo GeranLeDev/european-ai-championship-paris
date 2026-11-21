@@ -19,3 +19,27 @@ wandb/
 .env
 *.key
 id_ed25519*
+
+# Task datasets (HF SprintML/*), re-download with huggingface-cli
+tasks/*/data/
+tasks/*/*.zip
+tasks/*/*.npz
+tasks/*/*.pt
+
+# Agent artifacts (large; live on Mac + JURECA, not in git)
+tasks/*/solution/cache/
+tasks/*/solution/synth*/
+tasks/*/solution/ckpt/
+tasks/*/solution/runs/
+tasks/*/solution/data/
+tasks/*/candidates/
+tasks/*/solution/*.pt
+tasks/*/solution/*.npz
+tasks/*/solution/*.npy
+tasks/*/.cache/
+tasks/*/.venv/
+tasks/*/models/
+tasks/*/release/
+tasks/*/submission.pt
+tasks/*/extra/
+tasks/*/extra/

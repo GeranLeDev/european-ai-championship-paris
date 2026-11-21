@@ -1,0 +1,22 @@
+[WARN]: `ffmpeg-python` not available, `SimpleVideoDataset` class will not be usable. Install it by `pip install ffmpeg-python`.
+/Users/matisgeran/Pro/Hackathon/European_AI_Championship_Paris/tasks/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/timm/models/layers/__init__.py:49: FutureWarning: Importing from timm.models.layers is deprecated, please import via timm.layers
+  warnings.warn(f"Importing from {__name__} is deprecated, please import via timm.layers", FutureWarning)
+/Users/matisgeran/Pro/Hackathon/European_AI_Championship_Paris/tasks/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/torch/nn/functional.py:4565: UserWarning: The operator 'aten::_upsample_bilinear2d_aa.out' is not currently supported on the MPS backend and will fall back to run on the CPU. This may have performance implications. (Triggered internally at /Users/runner/work/pytorch/pytorch/pytorch/aten/src/ATen/mps/MPSFallback.mm:13.)
+  return torch._C._nn._upsample_bilinear2d_aa(
+Model loaded successfully from /Users/matisgeran/Pro/Hackathon/European_AI_Championship_Paris/tasks/Hackathon_Watermark_Localisation_Task/models/pixelseal/checkpoint.pth with message: <All keys matched successfully>
+pixelseal 0 28s
+pixelseal 100 95s
+pixelseal 200 137s
+pixelseal 300 207s
+pixelseal 400 284s
+pixelseal 500 369s
+pixelseal 600 468s
+pixelseal 700 603s
+pixelseal 800 732s
+pixelseal 900 812s
+pixelseal 1000 884s
+pixelseal 1100 928s
+pixelseal 1200 991s
+pixelseal 1300 1047s
+pixelseal 1400 1121s
+done pixelseal 1500 1189s

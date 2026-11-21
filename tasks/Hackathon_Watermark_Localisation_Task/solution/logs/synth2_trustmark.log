@@ -1,0 +1,18 @@
+/Users/matisgeran/Pro/Hackathon/European_AI_Championship_Paris/tasks/Hackathon_Watermark_Localisation_Task/.venv/lib/python3.11/site-packages/trustmark/trustmark.py:176: FutureWarning: You are using `torch.load` with `weights_only=False` (the current default value), which uses the default pickle module implicitly. It is possible to construct malicious pickle data which will execute arbitrary code during unpickling (See https://github.com/pytorch/pytorch/blob/main/SECURITY.md#untrusted-models for more details). In a future release, the default value for `weights_only` will be flipped to `True`. This limits the functions that could be executed during unpickling. Arbitrary objects will no longer be allowed to be loaded via this mode unless they are explicitly allowlisted by the user via `torch.serialization.add_safe_globals`. We recommend you start setting `weights_only=True` for any use case where you don't have full control of the loaded file. Please open an issue on GitHub for any issues related to this experimental feature.
+  state_dict = torch.load(weight_path, map_location=torch.device('cpu'))
+trustmark 0 1s
+trustmark 100 53s
+trustmark 200 115s
+trustmark 300 181s
+trustmark 400 227s
+trustmark 500 275s
+trustmark 600 328s
+trustmark 700 383s
+trustmark 800 434s
+trustmark 900 481s
+trustmark 1000 527s
+trustmark 1100 626s
+trustmark 1200 706s
+trustmark 1300 772s
+trustmark 1400 804s
+done trustmark 1500 838s
