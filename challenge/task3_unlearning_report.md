@@ -203,6 +203,50 @@ Lecture des 3 scores publics :
   1. `sub_m1_g2.pt` (α=5) ;
   2. `sub_m3_g2.pt` (cible cls) ;
   3. `sub_m3_g3.pt` (cls, retain prudent).
+### 6.4 Suite (soir du 21/11)
+
+**Scores publics.** Ils sont monotones en α (poids de préservation du retain) : plus α est bas, mieux c'est.
+
+| soumission | cible | α | pas | public |
+|---|---|---|---|---|
+| r2_g0 | medium | 10 | 1500 | 0,0798 |
+| m3_g2 | cls | 10 | 1500 | 0,2046 |
+| m3_g3 | cls | 20 | 1500 | 0,2080 |
+| r2_g1 | strong | 10 | 1500 | 0,2384 |
+| r2_g2 | mixcls | 10 | 1500 | 0,2616 |
+| m1_g2 | mixcls | 5 | 1500 | 0,2736 |
+| ma_g1 | mixcls | 3 | 1500 | 0,2806 |
+| **ma_g0** | mixcls | 2 | 1500 | **0,2893** (meilleur) |
+
+**fp16** (`fp16check.py`) : aucun impact.
+- Pas de NaN ni d'Inf.
+- Écart des logits avec l'autocast fp16 : max |Δlogit| ≤ 0,024. Aucune classe prédite ne change.
+- Scores proxy identiques.
+
+**Soupes** (`soup.py`) : pas de gain.
+- Soupe greedy sur 12 runs mixcls : 0,507, contre 0,506 pour le meilleur run seul.
+- Soupe uniforme : 0,473, un oubli plus doux.
+- Soupe de seeds à α=2 : 0,515, contre 0,537 pour un seul run à 2500 pas.
+
+**α bas (tâche 06)** :
+- α=1 : mixcls 0,491, KL 0,112, accord 0,803. Le retain se dégrade ; à éviter.
+- α entre 1,5 et 2 : environ 0,50–0,51.
+
+**Le levier principal est le nombre de pas** (tâche 08). Le retain s'améliore en même temps : KL en baisse, accord en hausse.
+
+| run | α | pas | mixcls | strong | cls | KL retain | accord |
+|---|---|---|---|---|---|---|---|
+| al2_g0 | 2 | 2500 | 0,537 | 0,458 | 0,486 | 0,069 | 0,830 |
+| st_g0 | 2 | 4000 | 0,574 | 0,479 | 0,524 | 0,063 | 0,840 |
+| st_g1 | 1,5 | 4000 | **0,577** | 0,480 | 0,526 | 0,072 | 0,840 |
+| **st_g3** | 3 | 4000 | 0,574 | 0,480 | 0,524 | **0,052** | **0,851** |
+
+- **Candidats recommandés** : `output/sub_st_g3.pt` (meilleur compromis), puis `sub_st_g1.pt`.
+- Tâche en file : `09_t3_long` (runs lg_g0..g3).
+  - g0 : α=3, 8000 pas ;
+  - g1 : α=2, 8000 pas ;
+  - g2 : α=3, lr 1e-4, 4000 pas ;
+  - g3 : α=3, 6000 pas, seed 1.
 - Pour récapituler et exporter :
   ```bash
   cd /p/scratch/training2666/geran1/IncomingPHd/unlearning && source .venv/bin/activate

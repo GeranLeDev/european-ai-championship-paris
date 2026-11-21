@@ -1,5 +1,13 @@
 # ÉTAT DE REPRISE (sam. 21/11 ~19:30) — à lire en premier
 **Lire aussi : challenge/PLAN_CORRECTIONS.md (corrections du plan partagé) et challenge/HANDOFF_COMPUTE.md (reprise sur Modal/autre machine).**
+
+## PRIORITÉS (sam. 22:45, leaderboard public)
+- Nous: T1 0.46 (leaders 0.75, ~10 équipes 0.69-0.75) | T2 0.00 (leaders 1.00, plusieurs 0.70-0.85) | T3 0.29 (leader 0.40). Overall estimé ~0.35-0.40, hors top 9.
+- 1) T2 = plus gros gain (0 -> ~0.7 ≈ +0.2 overall). Finir calibration ref et DÉPENSER le budget ep ce soir (avec OK user). Le 1.00 d'autres équipes prouve un signal net (logprobs ? prompt_tokens ? déterminisme ?).
+- 2) T1: 0.46 -> ~0.70 atteignable. 434 grilles vides dans notre soumission. Segmenteur entraîné sur données kit officiel (Modal) + chasse rectangles.
+- 3) T3: plus faible levier. Plus de pas = gain (st_* 4000 pas proxy 0.57 vs 0.50). En cours de soumission: sub_st_g3, sub_st_g1.
+- NŒUD JURECA: réservé à la Task 1 après 09_t3_long (plus aucune tâche t3 à mettre en file).
+
 ## Leaderboard (public)
 - Task1 watermark: 0.4584 public (submission_baseline.pt, soumis 19:20). Suite: recherche rectangles (queue t1) -> submission_rect.pt.
 - Task2 model equality: 0.0 (singletons). Pipeline: tasks/model_equality/solution (rapport challenge/task2_*). Étape suivante: calibration gratuite sur ref-01..09 (agent relancé, non confirmé), puis collecte ep (DÉPENSE TOUT LE BUDGET, irréversible) => demander OK user.

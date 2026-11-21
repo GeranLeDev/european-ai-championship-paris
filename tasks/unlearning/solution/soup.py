@@ -11,7 +11,7 @@ from common import *; import augs, scoring
 
 ap = argparse.ArgumentParser()
 ap.add_argument("--device"); ap.add_argument("--runs", nargs="+", required=True)
-ap.add_argument("--key", default="mixcls"); ap.add_argument("--n", type=int, default=3500); ap.add_argument("--out-dir", default="../output")
+ap.add_argument("--key", default="mixcls"); ap.add_argument("--n", type=int, default=3500); ap.add_argument("--out-dir", default="../output"); ap.add_argument("--tag", default="")
 a = ap.parse_args()
 dev = pick_device(a.device); set_device(dev)
 amp = dict(device_type="cuda", dtype=torch.float16, enabled=dev == "cuda")   # like the server
@@ -73,7 +73,7 @@ def average(ns):
 def export(tag, sd):
     m = tt.build_model(); m.load_state_dict(sd, strict=True)
     assert all(v.dtype == torch.float32 and torch.isfinite(v).all() for v in sd.values())
-    dst = f"{a.out_dir}/sub_soup_{tag}.pt"; torch.save({k: v.contiguous() for k, v in sd.items()}, dst)
+    dst = f"{a.out_dir}/sub_soup_{a.tag}{tag}.pt"; torch.save({k: v.contiguous() for k, v in sd.items()}, dst)
     print(f"exported {dst} ({os.path.getsize(dst)/2**20:.0f} MB, NOT uploaded)", flush=True)
 
 
@@ -90,4 +90,4 @@ for n in order[1:]:
     if keep: members, best = cand, r
 results["greedy"] = dict(members=members, **best); print(fmt(f"SOUP greedy[{len(members)}]", best), "members:", members, flush=True)
 if len(members) > 1: export("greedy", average(members))
-json.dump(results, open(f"{a.out_dir}/soup_results.json", "w"), indent=1)
+json.dump(results, open(f"{a.out_dir}/soup_results{a.tag}.json", "w"), indent=1)
