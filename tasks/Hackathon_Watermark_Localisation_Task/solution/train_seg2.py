@@ -1,0 +1,173 @@
+"""Full-resolution watermark segmenter, one model per watermark method.
+Input 512 x 512 (never downscaled before the network): image, high-pass residual, global decoder agreement with the
+known message, optionally the re-embedding residual (--use-what). Output: 128 x 128 logits (the official grid).
+Data: online synthetic samples (solution/wmgen.py, no disk) + real train-fold images in every batch (flips).
+Evaluation: official per-image mIoU on the real held-out fold (never trained on), by mask type, and on a fixed
+synthetic validation set (gap synthetic -> real = fidelity of the generator).
+Robust to interruptions: time budget, atomic checkpoints, automatic resume from <out>/last.pt.
+Usage: python solution/train_seg2.py --method trustmark --device cuda --data release --out output/seg2/trustmark --minutes 60
+At the end writes <out>/pred.npz (probabilities for train fold, held-out fold and test)."""
+import argparse, json, os, sys, time
+from pathlib import Path
+import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
+ROOT = Path(__file__).resolve().parents[1]; sys.path.insert(0, str(ROOT)); sys.path.insert(0, str(ROOT / "solution"))
+from wmgen import Generator, Prefetch, real_items, TYPES
+from wmloc.utils import miou_image
+
+
+class Block(nn.Module):
+    def __init__(self, i, o, stride=1):
+        super().__init__()
+        self.c1 = nn.Conv2d(i, o, 3, stride, 1, bias=False); self.b1 = nn.BatchNorm2d(o)
+        self.c2 = nn.Conv2d(o, o, 3, 1, 1, bias=False); self.b2 = nn.BatchNorm2d(o)
+        self.sk = None if (i == o and stride == 1) else nn.Sequential(nn.Conv2d(i, o, 1, stride, bias=False), nn.BatchNorm2d(o))
+
+    def forward(self, x):
+        h = F.relu(self.b1(self.c1(x)), inplace=True); h = self.b2(self.c2(h))
+        return F.relu(h + (x if self.sk is None else self.sk(x)), inplace=True)
+
+
+class SegNet(nn.Module):
+    """Residual U-Net; the first stage works at full resolution (no pooling before the first convolutions)."""
+    def __init__(self, cin, w=(32, 64, 128, 192, 256, 384)):
+        super().__init__()
+        self.stem = nn.Sequential(nn.Conv2d(cin, w[0], 3, 1, 1, bias=False), nn.BatchNorm2d(w[0]), nn.ReLU(inplace=True), Block(w[0], w[0]))
+        self.down = nn.ModuleList([nn.Sequential(Block(w[i], w[i + 1], 2), Block(w[i + 1], w[i + 1])) for i in range(5)])   # 256,128,64,32,16
+        self.up = nn.ModuleList([Block(w[i + 1] + w[i], w[i]) for i in (4, 3, 2)])                                           # 32,64,128
+        self.head = nn.Conv2d(w[2], 1, 1)
+
+    def forward(self, x):
+        h = self.stem(x); feats = []
+        for d in self.down:
+            h = d(h); feats.append(h)
+        for u, skip in zip(self.up, (feats[3], feats[2], feats[1])):
+            h = u(torch.cat([F.interpolate(h, size=skip.shape[2:], mode="bilinear", align_corners=False), skip], 1))
+        return self.head(h)[:, 0]
+
+
+def make_input(items, dev, use_what):
+    x = torch.from_numpy(np.stack([it["img"] for it in items])).to(dev).permute(0, 3, 1, 2).float() / 255
+    hp = x - F.avg_pool2d(F.pad(x, (2, 2, 2, 2), mode="reflect"), 5, 1)
+    ag = torch.tensor([it["agree"] for it in items], device=dev, dtype=torch.float32)[:, None, None, None].expand(-1, 1, 512, 512)
+    ch = [x - 0.5, hp * 20, ag]
+    if use_what:
+        w = torch.from_numpy(np.stack([it["what"] for it in items])).to(dev).permute(0, 3, 1, 2).float()
+        ch += [w / 4, hp * 255 * w / 16]
+    return torch.cat(ch, 1).contiguous(memory_format=torch.channels_last)
+
+
+def miou_loss(logit, y):
+    p = torch.sigmoid(logit.float()); l = 0
+    for pc, yc in ((p, y), (1 - p, 1 - y)):
+        inter = (pc * yc).sum((1, 2)); union = (pc + yc - pc * yc).sum((1, 2))
+        l = l + 1 - (inter + 1) / (union + 1)
+    return (l / 2).mean()
+
+
+def flip_item(it, k):
+    if not k: return it
+    img, wh, m = it["img"], it["what"], it["mask"]
+    if k & 1: img, wh, m = img[:, ::-1], wh[:, ::-1], m[:, ::-1]
+    if k & 2: img, wh, m = img[::-1], wh[::-1], m[::-1]
+    return dict(it, img=np.ascontiguousarray(img), what=np.ascontiguousarray(wh), mask=np.ascontiguousarray(m))
+
+
+@torch.no_grad()
+def predict(model, items, dev, use_what, bs=16):
+    model.eval(); out = []
+    for i in range(0, len(items), bs):
+        with torch.autocast("cuda", dtype=torch.float16, enabled=dev.startswith("cuda")):
+            out.append(torch.sigmoid(model(make_input(items[i:i + bs], dev, use_what)).float()).cpu().numpy())
+    return np.concatenate(out) if out else np.zeros((0, 128, 128), np.float32)
+
+
+def report(tag, items, probs):
+    io = np.array([miou_image(p > 0.5, it["mask"]) for p, it in zip(probs, items)])
+    r = {"all": float(io.mean())}
+    for k in TYPES:
+        sel = np.array([it["kind"] == k for it in items])
+        if sel.any(): r[k] = float(io[sel].mean())
+    print(f"   {tag}: " + " ".join(f"{k} {v:.4f}" for k, v in r.items()), flush=True)
+    return r
+
+
+def atomic_save(obj, path, kind="torch"):
+    tmp = f"{path}.tmp{os.getpid()}"
+    if kind == "torch": torch.save(obj, tmp)
+    else: np.savez_compressed(tmp, **obj); tmp = tmp + ".npz"
+    os.replace(tmp, path)
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--method", required=True); ap.add_argument("--device", default="cuda"); ap.add_argument("--data", default=str(ROOT / "data"))
+    ap.add_argument("--out", required=True); ap.add_argument("--minutes", type=float, default=60); ap.add_argument("--max-steps", type=int, default=10 ** 9)
+    ap.add_argument("--bs", type=int, default=16); ap.add_argument("--n-real", type=int, default=4, help="real train-fold images per batch")
+    ap.add_argument("--lr", type=float, default=1e-3); ap.add_argument("--use-what", type=int, default=0); ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--threads", type=int, default=4); ap.add_argument("--eval-every", type=int, default=500); ap.add_argument("--n-synval", type=int, default=20)
+    ap.add_argument("--width", type=float, default=1.0); ap.add_argument("--p-real-cover", type=float, default=0.2); ap.add_argument("--no-test", action="store_true")
+    a = ap.parse_args()
+    torch.manual_seed(a.seed); rng = np.random.default_rng(a.seed)
+    out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
+    dev = a.device; t_start = time.time()
+    kw = dict(coco=ROOT / "extra" / "val2017", gen_dirs=[ROOT / "extra" / "diffusiondb"])
+    g0 = Generator(a.method, a.data, dev, seed=10_000 + a.seed, p_real=0.0, **kw)
+    print(f"{a.method}: covers coco {len(g0.coco)} generated {len(g0.gen)} coco images with object masks {len(g0.inst)}", flush=True)
+    real = real_items(g0, a.data)
+    tr = [r for r in real if not r["val"]]; va = [r for r in real if r["val"]]
+    synval = [g0.sample(k) for k in TYPES for _ in range(a.n_synval)]
+    print(f"real train fold {len(tr)}, held-out {len(va)}, synthetic val {len(synval)}, setup {time.time() - t_start:.0f}s", flush=True)
+    pre = Prefetch(lambda i: Generator(a.method, a.data, dev, seed=a.seed * 100 + i, p_real=a.p_real_cover, **kw), n_threads=a.threads)
+
+    w = tuple(int(round(c * a.width / 8) * 8) for c in (32, 64, 128, 192, 256, 384))
+    model = SegNet(3 + 3 + 1 + (6 if a.use_what else 0), w).to(dev).to(memory_format=torch.channels_last)
+    opt = torch.optim.AdamW(model.parameters(), lr=a.lr, weight_decay=1e-4)
+    scaler = torch.amp.GradScaler(enabled=dev.startswith("cuda"))
+    step, spent, hist = 0, 0.0, []
+    last = out / "last.pt"
+    if last.exists():                                        # resume
+        ck = torch.load(last, map_location=dev)
+        model.load_state_dict(ck["model"]); opt.load_state_dict(ck["opt"]); step, spent, hist = ck["step"], ck["spent"], ck["hist"]
+        print(f"resumed from step {step}, {spent / 60:.1f} min already spent", flush=True)
+    budget = a.minutes * 60; warm = 300; t0 = time.time(); tl = 0.0; nl = 0
+
+    def evaluate():
+        r = dict(step=step, minutes=(spent + time.time() - t0) / 60)
+        r["val"] = report("real held-out", va, predict(model, va, dev, a.use_what))
+        r["synval"] = report("synthetic val", synval, predict(model, synval, dev, a.use_what))
+        r["train"] = report("real train fold", tr[::3], predict(model, tr[::3], dev, a.use_what))
+        hist.append(r)
+        atomic_save(dict(model=model.state_dict(), opt=opt.state_dict(), step=step, spent=spent + time.time() - t0, hist=hist, args=vars(a)), last)
+        (out / "hist.json.tmp").write_text(json.dumps(hist)); os.replace(out / "hist.json.tmp", out / "hist.json")
+
+    while True:
+        el = spent + time.time() - t0
+        if el >= budget or step >= a.max_steps: break
+        lr = a.lr * min(1.0, (step + 1) / warm) * (0.02 + 0.98 * 0.5 * (1 + np.cos(np.pi * min(1.0, el / budget))))
+        for gparam in opt.param_groups: gparam["lr"] = lr
+        items = pre.get(a.bs - a.n_real) + [flip_item(tr[j], int(rng.integers(4))) for j in rng.integers(0, len(tr), a.n_real)]
+        model.train()
+        y = torch.from_numpy(np.stack([it["mask"] for it in items])).to(dev).float()
+        with torch.autocast("cuda", dtype=torch.float16, enabled=dev.startswith("cuda")):
+            logit = model(make_input(items, dev, a.use_what))
+        loss = F.binary_cross_entropy_with_logits(logit.float(), y) + miou_loss(logit, y)
+        opt.zero_grad(set_to_none=True); scaler.scale(loss).backward(); scaler.unscale_(opt)
+        nn.utils.clip_grad_norm_(model.parameters(), 5.0); scaler.step(opt); scaler.update()
+        step += 1; tl += loss.item(); nl += 1
+        if step % 50 == 0:
+            print(f"step {step} loss {tl / nl:.4f} lr {lr:.2e} {el / 60:.1f} min  queue {pre.q.qsize()} {('gen err ' + pre.err) if pre.err else ''}", flush=True); tl = 0.0; nl = 0
+        if step % a.eval_every == 0: evaluate()
+    evaluate()
+    pre.stop = True
+    res = dict(names=np.array([r["name"] for r in real]), probs=predict(model, real, dev, a.use_what).astype(np.float16),
+               val=np.array([r["val"] for r in real]), kind=np.array([r["kind"] for r in real]))
+    if not a.no_test:
+        te = real_items(g0, a.data, "test")
+        res.update(test_names=np.array([r["name"] for r in te]), test_probs=predict(model, te, dev, a.use_what).astype(np.float16),
+                   test_agree=np.array([r["agree"] for r in te], np.float32))
+    atomic_save(res, out / "pred.npz", kind="npz")
+    print("wrote", out / "pred.npz", "total", f"{(time.time() - t_start) / 60:.1f} min", flush=True)
+
+
+if __name__ == "__main__":
+    main()
