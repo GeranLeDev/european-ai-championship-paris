@@ -60,3 +60,48 @@ Pour régénérer : `python solution/rect_eval.py --train-tags ",_r,_r2" --test-
 1. Soumettre `submission_rect.pt` si l'utilisateur donne son accord.
 2. Les 75 % restants plafonnent à ~0.46-0.50 : masques irréguliers (partiels) et mode « full » avec zone propre restaurée. C'est là qu'est la marge, pas dans une grille plus fine.
 3. PixelSeal, rectangles fins : chercher un autre signal (le watermark y a peut-être été posé autrement que par crop → embed → recollage).
+
+## Banc d'assemblage des deux pipelines (dim. 22 nov. ~01:30)
+
+Code : `tasks/Hackathon_Watermark_Localisation_Task/solution/ensemble.py`, test : `solution/test_ensemble.py` (4 tests, ~15 s, passent en local). Rien n'est soumis par ce script.
+
+### Format d'échange
+Un fichier par (pipeline, outil, split) dans un même dossier : `<pipeline>_<outil>_<split>.npz` avec `names`, `probs` float16 [N,128,128] et, pour `train`, `used_in_training` bool (absent = on suppose que les noms pairs ont servi). `train_seg2.py --probs-dir` écrit déjà ce format.
+
+### Commandes
+```bash
+cd tasks/Hackathon_Watermark_Localisation_Task
+.venv/bin/python solution/test_ensemble.py
+# Amil, depuis son dossier modal_t1 (numpy + scipy suffisent) :
+python <repo>/tasks/Hackathon_Watermark_Localisation_Task/solution/ensemble.py import-amil \
+  --run pixelseal=pixelseal_research/runs/hires_c+pixelseal_research/runs/frozen_a,trustmark=runs/trustmark_mix,stegastamp=runs/stegastamp_mix \
+  --out probs_export
+# assemblage + soumission (non envoyée) :
+.venv/bin/python solution/ensemble.py eval --probs <dossier> --pipelines amil,seg2 --pp thr,K \
+  --fallback solution/submission_rect.pt --report output/ensemble_report.json --test solution/submission_ens.pt
+```
+
+### Ce que fait `eval`
+- Validation propre par outil = images du train officiel présentes dans tous les pipelines, utilisées en entraînement par aucun, et impaires (`--val-rule odd`).
+- Familles comparées : chaque pipeline seul, moyenne pondérée des probabilités, moyenne en logit, un pipeline par régime (partiel / complet, `modal_t1/cache/global_*.json`, seuil 0,80), ou n'importe quel candidat par régime.
+- Post-traitement repris du pipeline Modal (égalité testée avec `tracks/postproc/pp.py`) : seuil par régime, K plus grandes composantes et remplissage en option (`--pp thr,K,fill`), rectangle de `solution/cache/search_*` si score ≥ t, jamais de grille vide ni pleine.
+- Tous les choix sont faits dans les plis d'entraînement d'une validation croisée répétée (10 × 5 plis) ; le tableau donne la moyenne, l'écart-type, un IC bootstrap à 95 % et le gain apparié sur le meilleur pipeline seul. Une famille d'assemblage n'est retenue que si son gain dépasse 0,005 avec une probabilité bootstrap ≥ 0,80 (`--min-gain`, `--min-p`).
+- La métrique est `wmloc.utils.miou_image` du kit ; le test vérifie qu'elle est identique à la copie du kit dans `modal_t1/kit` et à `tracks/postproc/common.py::miou`.
+
+### Mesuré avec les fichiers locaux (entrées de démonstration, pas un résultat d'assemblage)
+- `make-demo` fabrique deux pipelines factices à partir du baseline et du baseline + rectangles. Validation propre : 23 à 27 images par outil (moitié impaire ∩ pli held-out de 150). CV : PixelSeal 0,521, TrustMark 0,608, StegaStamp 0,469.
+- `submission_rect.pt` contient 222 grilles vides et 172 grilles pleines sur 1020 : ces images plafonnent à 0,5.
+
+### Diagnostic du pipeline Modal (`modal_t1/diag/errors/per_image.json`, 271 images impaires)
+Points perdus par outil (en points de mIoU de l'outil), par régime et forme :
+
+| Outil (mIoU) | complet, trous en forme d'objet | partiel, objet | partiel, rectangle | partiel, barre |
+|---|---|---|---|---|
+| PixelSeal (0,572) | 0,57 → 19,5 pts perdus (n=39) | 0,59 → 11,9 (n=25) | 0,62 → 4,9 (n=11) | 0,51 → 4,6 (n=8) |
+| TrustMark (0,707) | 0,61 → 15,9 (n=37) | 0,69 → 7,6 (n=22) | 0,88 → 3,5 (n=26) | aucune |
+| StegaStamp (0,853) | 0,87 → 5,9 (n=43) | 0,85 → 3,2 (n=20) | 0,82 → 2,8 (n=15) | 0,87 → 1,4 (n=10) |
+
+- Le régime est presque toujours bien décidé (3 erreurs sur 271) ; l'oracle de régime ne rapporte rien.
+- Le meilleur seuil par image ne rapporte que +2 pts (PixelSeal, StegaStamp) : la perte vient de la carte, pas du seuil.
+- Images complètes : plus le trou est petit, plus le score baisse (PixelSeal 0,65 pour 10-30 % de trou, 0,48 pour < 2 % ; TrustMark 0,66 → 0,51).
+- Rectangles : TrustMark en utilise 24 sur 26 (0,71 → 0,88) ; PixelSeal 5 seulement, et l'oracle « rectangle ou réseau » ne vaut que +0,4 pt.
