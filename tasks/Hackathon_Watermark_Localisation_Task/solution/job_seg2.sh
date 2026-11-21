@@ -11,8 +11,8 @@ run() { # gpu name method extra-args
 }
 rm -f $O/failed.txt
 run 0 trustmark  trustmark  --arch feat &
-run 1 pixelseal  pixelseal  --arch feat &
+run 1 pixelseal  pixelseal  --arch feat --amp 0 &
 run 2 stegastamp stegastamp --arch pix &
-run 3 pixelseal_b pixelseal --arch feat --seed 1 --bb-lr 0.03 &
+run 3 pixelseal_b pixelseal --arch feat --seed 1 --bb-lr 0.03 --amp 0 &
 wait
 [ ! -f $O/failed.txt ]

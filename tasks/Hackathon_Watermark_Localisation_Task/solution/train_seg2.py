@@ -16,6 +16,9 @@ from common import METHODS
 from wmloc.utils import miou_image
 
 
+AMP = True                                                   # --amp 0 for PixelSeal: its ConvNeXt-V2 extractor gives NaN in float16
+
+
 class Block(nn.Module):
     def __init__(self, i, o, stride=1):
         super().__init__()
@@ -48,14 +51,50 @@ class SegNet(nn.Module):
     def run(self, items, dev): return self(make_input(items, dev, self.use_what))
 
 
+def wm_device(wm):
+    d = getattr(wm, "device", "cpu")
+    return d if isinstance(d, str) and (d.startswith("cuda") or d == "cpu") else "cpu"
+
+
+class StegaTorch(nn.Module):
+    """The 7 convolutions of the StegaStamp decoder, rebuilt in PyTorch from the ONNX weights so that they can be
+    fine-tuned and give a feature pyramid (the spatial transformer and the dense head are dropped)."""
+    def __init__(self, onnx_path):
+        super().__init__()
+        import onnx
+        from onnx import numpy_helper
+        g = onnx.load(str(onnx_path)).graph
+        init = {i.name: numpy_helper.to_array(i) for i in g.initializer}
+        consts = {n.output[0]: numpy_helper.to_array(n.attribute[0].t) for n in g.node if n.op_type == "Constant"}
+        self.convs = nn.ModuleList(); self.pads = []
+        for n in g.node:
+            if n.op_type != "Conv" or "dec_conv" not in n.name: continue
+            at = {x.name: list(x.ints) for x in n.attribute if x.ints}
+            w = init.get(n.input[1], consts.get(n.input[1])); b = init.get(n.input[2], consts.get(n.input[2])) if len(n.input) > 2 else None
+            c = nn.Conv2d(w.shape[1], w.shape[0], w.shape[2:], stride=at.get("strides", [1, 1]), bias=b is not None)
+            c.weight.data = torch.from_numpy(w.copy()).float()
+            if b is not None: c.bias.data = torch.from_numpy(b.copy()).float()
+            pd = at.get("pads", [0, 0, 0, 0])                 # onnx: top, left, bottom, right
+            self.convs.append(c); self.pads.append((pd[1], pd[3], pd[0], pd[2]))
+        assert len(self.convs) == 7, len(self.convs)
+
+    def forward(self, x):                                    # x in [0, 1]
+        h = x - 0.5; out = []
+        for c, pd in zip(self.convs, self.pads):
+            h = F.relu(c(F.pad(h, pd))); out.append(h)
+        return [out[1], out[3], out[4], out[5], out[6]]     # strides 2, 4, 8, 16, 32
+
+
 class FeatSeg(nn.Module):
     """Official extractor of the method (TrustMark ResNet-50 / PixelSeal ConvNeXt), fine-tuned, run at several input
     scales; its feature pyramid and its per-position agreement with the known message feed a segmentation head.
     (A head on the frozen TrustMark features starts learning within 200 iterations where the raw-pixel U-Net does not.)"""
     def __init__(self, wm, method, scales=(256, 512), c=64):
         super().__init__()
+        if method == "stegastamp": scales = (400, 512)
         self.method, self.scales = method, scales
-        self.bb = copy.deepcopy(wm.net if method == "trustmark" else wm.det).float()
+        if method == "stegastamp": self.bb = StegaTorch(ROOT / "models" / "stegastamp" / "stega_stamp_dec.onnx").to(wm_device(wm))
+        else: self.bb = copy.deepcopy(wm.net if method == "trustmark" else wm.det).float()
         for p in self.bb.parameters(): p.requires_grad_(True)
         with torch.no_grad():
             chans = [f.shape[1] for f in self.pyramid(torch.zeros(1, 3, 64, 64, device=next(self.bb.parameters()).device))[0]]
@@ -69,6 +108,8 @@ class FeatSeg(nn.Module):
             for k in ("layer1", "layer2", "layer3", "layer4"):
                 h = getattr(n, k)(h); feats.append(h)
             pp = torch.einsum("bchw,oc->bohw", h, n.fc.weight) + n.fc.bias[None, :, None, None]
+        elif self.method == "stegastamp":
+            feats = self.bb(x); pp = torch.zeros(len(x), 100, 1, 1, device=x.device)
         else:
             d = self.bb; h = x * 2 - 1
             for i in range(4):
@@ -131,7 +172,7 @@ def flip_item(it, k):
 def predict(model, items, dev, use_what, bs=16):
     model.eval(); out = []
     for i in range(0, len(items), bs):
-        with torch.autocast("cuda", dtype=torch.float16, enabled=dev.startswith("cuda")):
+        with torch.autocast("cuda", dtype=torch.float16, enabled=AMP and dev.startswith("cuda")):
             out.append(torch.sigmoid(model.run(items[i:i + bs], dev).float()).cpu().numpy())
     return np.concatenate(out) if out else np.zeros((0, 128, 128), np.float32)
 
@@ -161,10 +202,12 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3); ap.add_argument("--use-what", type=int, default=0); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=4); ap.add_argument("--eval-every", type=int, default=500); ap.add_argument("--n-synval", type=int, default=20)
     ap.add_argument("--arch", default="pix", choices=("pix", "feat")); ap.add_argument("--bb-lr", type=float, default=0.1, help="lr multiplier of the extractor")
+    ap.add_argument("--amp", type=int, default=1)
     ap.add_argument("--gen-device", default="", help="device of the watermark models (default: --device)")
     ap.add_argument("--real-only", type=int, default=0, help="1 = no synthetic data (does the real train fold alone carry a learnable cue?)")
     ap.add_argument("--width", type=float, default=1.0); ap.add_argument("--p-real-cover", type=float, default=0.2); ap.add_argument("--no-test", action="store_true")
     a = ap.parse_args()
+    global AMP; AMP = bool(a.amp)
     torch.manual_seed(a.seed); rng = np.random.default_rng(a.seed)
     out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
     dev = a.device; gdev = a.gen_device or dev; t_start = time.time()
@@ -182,7 +225,7 @@ def main():
 
     w = tuple(int(round(c * a.width / 8) * 8) for c in (32, 64, 128, 192, 256, 384))
     if a.arch == "feat":
-        assert len(methods) == 1 and a.method in ("trustmark", "pixelseal"), "--arch feat needs one method with a torch extractor"
+        assert len(methods) == 1, "--arch feat needs one method"
         model = FeatSeg(gs[0].wm, a.method).to(dev)
         groups = [dict(params=[p for n, p in model.named_parameters() if n.startswith("bb.")], scale=a.bb_lr),
                   dict(params=[p for n, p in model.named_parameters() if not n.startswith("bb.")], scale=1.0)]
@@ -191,7 +234,7 @@ def main():
         if dev.startswith("cuda"): model = model.to(memory_format=torch.channels_last)
         groups = [dict(params=list(model.parameters()), scale=1.0)]
     opt = torch.optim.AdamW(groups, lr=a.lr, weight_decay=1e-4)
-    scaler = torch.amp.GradScaler(enabled=dev.startswith("cuda"))
+    scaler = torch.amp.GradScaler(enabled=AMP and dev.startswith("cuda"))
     step, spent, hist = 0, 0.0, []
     last = out / "last.pt"
     if last.exists():                                        # resume
@@ -217,12 +260,13 @@ def main():
         items = (pre.get(a.bs - a.n_real) if pre else []) + [flip_item(tr[j], int(rng.integers(4))) for j in rng.integers(0, len(tr), a.n_real)]
         model.train()
         y = torch.from_numpy(np.stack([it["mask"] for it in items])).to(dev).float()
-        with torch.autocast("cuda", dtype=torch.float16, enabled=dev.startswith("cuda")):
+        with torch.autocast("cuda", dtype=torch.float16, enabled=AMP and dev.startswith("cuda")):
             logit = model.run(items, dev)
         loss = F.binary_cross_entropy_with_logits(logit.float(), y) + miou_loss(logit, y)
         opt.zero_grad(set_to_none=True); scaler.scale(loss).backward(); scaler.unscale_(opt)
         nn.utils.clip_grad_norm_(model.parameters(), 5.0); scaler.step(opt); scaler.update()
         step += 1; tl += loss.item(); nl += 1
+        assert np.isfinite(tl), "loss is not finite"
         if step % 50 == 0:
             print(f"step {step} loss {tl / nl:.4f} lr {lr:.2e} {el / 60:.1f} min  queue {pre.q.qsize() if pre else 0} {('gen err ' + pre.err) if pre and pre.err else ''}", flush=True); tl = 0.0; nl = 0
         if step % a.eval_every == 0: evaluate()

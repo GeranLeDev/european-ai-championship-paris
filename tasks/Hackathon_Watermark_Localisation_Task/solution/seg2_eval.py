@@ -39,6 +39,15 @@ def load_search(split, m, tags):
     return out
 
 
+def binarize(p, thr):
+    """Threshold with the two rules that hold for every image of the dataset: never an empty grid, never a full grid
+    (train masks: area between 0.3 % and 99.7 %). An empty / full prediction caps the image at 0.5."""
+    m = p > thr
+    if not m.any(): m = p >= max(float(p.max()) * 0.5, np.partition(p.ravel(), -32)[-32])
+    if m.all(): m = p > min(1 - (1 - float(p.min())) * 0.5, np.partition(p.ravel(), 32)[32])
+    return m.astype(np.uint8)
+
+
 def variants(n, m, feats, f_idx, srch, seg):
     i = f_idx[n]; ag = feats["agree"][i]
     base = predict(ag, feats["ppl"][i].astype(np.float32), *params[m])
@@ -47,7 +56,7 @@ def variants(n, m, feats, f_idx, srch, seg):
         d = RECT[m][1]; box = box_to_mask128(srch[n][0] + np.array([-d, -d, d, d]))
     v = {"base": base, "rect": box if box is not None else base}
     if seg is not None:
-        s = (seg > a.thr).astype(np.uint8); v["seg"] = s; v["seg+rect"] = box if box is not None else s
+        s = binarize(seg, a.thr); v["seg_raw"] = (seg > a.thr).astype(np.uint8); v["seg"] = s; v["seg+rect"] = box if box is not None else s
     return v
 
 
@@ -74,7 +83,7 @@ for m in METHODS:
         print(f"   {k:9s} all {np.mean(list(d.values())):.4f} | " + " ".join(f"{t} {v:.4f}" for t, v in by.items()))
     choice[m] = want.get(m) or max(sc, key=lambda k: np.mean(list(sc[k].values())))
     tot[m] = {k: float(np.mean(list(d.values()))) for k, d in sc.items()}
-print("global held-out: " + " ".join(f"{k} {np.mean([tot[m][k] for m in METHODS if k in tot[m]]):.4f}" for k in ("base", "rect", "seg", "seg+rect") if all(k in tot[m] for m in METHODS)))
+print("global held-out: " + " ".join(f"{k} {np.mean([tot[m][k] for m in METHODS if k in tot[m]]):.4f}" for k in ("base", "rect", "seg_raw", "seg", "seg+rect") if all(k in tot[m] for m in METHODS)))
 print("chosen per method:", choice, "-> global held-out %.4f" % np.mean([tot[m][choice[m]] for m in METHODS]))
 
 if a.test:
