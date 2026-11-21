@@ -1,0 +1,4835 @@
+Published as a conference paper at ICLR 2025
+MODEL EQUALITY TESTING:
+WHICH MODEL IS THIS API SERVING?
+Irena Gao, Percy Liang, Carlos Guestrin
+irena@cs.stanford.edu, pliang@cs.stanford.edu, guestrin@stanford.edu
+Stanford University
+ABSTRACT
+Users often interact with large language models through black-box inference APIs, both
+for closed- and open-weight models (e.g., Llama models are popularly accessed via Ama-
+zon Bedrock and Azure AI Studios). In order to cut costs or add functionality, API
+providers may quantize, watermark, or finetune the underlying model, changing the output
+distribution — possibly without notifying users. We formalize detecting such distortions
+as Model Equality Testing, a two-sample testing problem, where the user collects sam-
+ples from the API and a reference distribution, and conducts a statistical test to see if the
+two distributions are the same. We find that tests based on the Maximum Mean Discrep-
+ancy between distributions are powerful for this task: a test built on a simple string kernel
+achieves a median of 77.4% power against a range of distortions, using an average of
+just 10 samples per prompt. We then apply this test to commercial inference APIs from
+Summer 2024 for four Llama models, finding that 11 out of 31 endpoints serve different
+distributions than reference weights released by Meta.
+1 INTRODUCTION
+Since running a large language model requires compute and technical expertise, many users rely on black-
+box APIs to handle inference. This applies to both closed-weight models, like GPT and Claude, and open-
+weight ones: e.g., Amazon Bedrock, Microsoft Azure, and the seven other companies in Figure 1 all compete
+to offer Llama models as a service. While users can sample from black-box APIs, they have little to no
+insight into the underlying implementation of the model, including into questions like:
+1. How has the API modified the language model’s distribution? To drive down costs, API
+providers may quantize or prune large model weights; they may also watermark outputs or in-
+correctly implement some decoding parameters. These changes distort the resulting distribution
+of completions. The problem is when such distortions are undisclosed: users assume that calling
+a third-party API is exactly equivalent to working with the original model. For example, bench-
+marks like HELM (Liang et al., 2022) evaluate models through third-party APIs, but quantized or
+watermarked models may be less capable than the intended model.
+2. Is the API changing over time? Language model inference endpoints may also drift over time
+without notifying users (Chen et al., 2023; Eyuboglu et al., 2024), e.g., due to finetuning or updates
+to the inference stack. Unstable APIs affect research reproducibility (Pozzobon et al., 2023) and
+can disrupt user productivity in human-AI teams (Bansal et al., 2019).
+Under the status quo, neither users nor regulators have a way to rigorously answer these questions for
+themselves.1 These concerns are important to address: tens of thousands of developers already rely on
+black-box inference APIs for applications (Amazon, 2024), and this dependence will increase as LLMs —
+1These problems are already experienced by users: e.g., see threads 1, 2 and 3.
+1
+arXiv:2410.20247v2  [cs.LG]  8 Apr 2025
+Published as a conference paper at ICLR 2025
+Reference model
+Black-box LLM API
+?
+How has the API 
+modified the LLM’s 
+sampling distribution?
+sample
+sample
+Black-box LLM API
+(old)
+Black-box LLM API
+(current)
+Is the API changing 
+over time?
+sample
+sample
+Reference model
+Black-box LLM API
+? sample
+sample
+Llama 3
+8B 70B
+Llama 3.1
+8B 70BAPI Provider
+Figure 1: (Left) We formalize auditing black-box language model inference APIs as Model Equality Testing.
+This enables us to assess an API’s faithfulness to a reference distribution and its stability over time. (Right)
+We evaluate candidate tests and apply the most powerful one to Llama model APIs from Summer 2024,
+finding that 11 of 31 endpoints deviate from reference weights released by Meta.
+and the corresponding infrastructure costs for hosting — grow larger. For example, most users must rely on
+third-party APIs to use Llama 3.1 405B because of its size.
+The current approach to this problem is for an outside auditor to monitor APIs’ accuracies on multiple-choice
+or short-answer benchmarks (ArtificialAnalysis, 2024); these studies typically decode from the language
+model greedily. Such audits can be a poor match for user needs. Greedy decoding only checks that the
+modes of the next-token distributions match, rather than the overall distribution over completions, which is
+problematic because users often sample from models. Short-answer benchmarks cover only a small slice of
+possible prefixes, which may significantly differ from a particular user’s task: e.g., common applications like
+code generation, dialogue, and summarization are longform tasks. Ideally, users could personally audit APIs
+on their custom tasks. Such a method should be sample-efficient, apply to tasks without automated verifiers,
+and assess with confidence whether the overall distribution of completions has shifted in a statistically
+significant way.
+We provide such a method. Suppose a user wishes to audit a an API on their task of interest. The user
+collects two samples: one from a reference distribution P and one from the test API’s distribution Q. For
+example, to answer if an API has modified the distribution of an open-weight model, P might be from
+reference model weights released on Hugging Face. To answer if the API is changing over time, P might be
+from the API at an earlier point in time (Figure 1 left). The user then conducts a two-sample test for whether
+P = Q to examine if the API’s distribution is statistically indistinguishable from the reference.
+Our setting is challenging because the distributions being compared are high-dimensional: they are defined
+over multi-token completions from large vocabularies. Two-sample kernel tests based on estimating the
+Maximum Mean Discrepancy (MMD) between P and Q (Gretton et al., 2012) are flexible tools for this
+setting, as they allow us to specify a featurization to reduce dimensionality. We find that a simple string
+kernel based on the Hamming distance between completions is particularly sample-efficient. In simulations
+(§4), this test achieves a median of 77.4% power against a wide range of distortions — e.g., quantization,
+watermarking, and finetuning — using an average of just 10 samples per prompt for distributions over 20–25
+prompts. We then apply this test to nine commercial inference API providers across four Llama models (§5,
+Figure 1 right). Our test flags 11 out of these 31 endpoints, with each audit costing less than $1.
+2
+Published as a conference paper at ICLR 2025
+Because our test statistic is an estimate of a distance, we also explore how this machinery can quantify
+statistical distances between black-box endpoints. In §4.3, we estimate pairwise distances between the
+output distributions of 13 language models — without requiring log probability access — and find that
+models within the same family (e.g., the Llama family or GPT-3.5 family) output more similar distributions
+than models within the same size range (e.g., 7B or 70B models). In §5, we estimate the effect size of
+deviations between API endpoints and reference weights, finding that some implementations are further
+from the reference weights than if the provider had substituted in an entirely different language model.
+Summary of contributions. We unify several API auditing tasks under the formalization of Model Equal-
+ity Testing, a two-sample distribution testing problem, and empirically validate kernel-based tests for this
+problem. We then apply this test to audit popular commercial inference APIs. To enable users to audit APIs
+for custom applications, we open-source a Python package. We also encourage future research in Model
+Equality Testing by releasing a dataset of 1 million LLM completions from five models.2
+2 THE MODEL EQUALITY TESTING PROBLEM
+Suppose an auditor is interested in a task parameterized by a distribution π over m prompts and a maximum
+completion length of L tokens. The auditor has sample access to a reference distribution P and API distribu-
+tion Q, both operating on the same vocabulary V with the same decoding parameters. The auditor samples
+N prompt-completion pairs3 z := (x, y) from each distribution:
+DP := {z(i) : x(i) ∼ π, y(i) ∼ P (· | x(i))}N i=1,
+DQ := {z(i) : x(i) ∼ π, y(i) ∼ Q(· | x(i))}N i=1. (1)
+We wish to use these samples to test if P = Q, i.e., distinguish between the hypotheses
+H0 : π(x)P (y | x) = π(x)Q(y | x),
+H1 : π(x)P (y | x) ̸= π(x)Q(y | x). (2)
+We require that the Type-1 error rate is controlled at α. A good test will maximize power against unknown
+Q and generalize across several language models and prompt distributions π. We are particularly interested
+in sample-efficient tests that are cheap to run: such tests are powerful when N is small compared to the size
+of the vocabulary |V| and the maximum completion length L.4 The latter parameters modulate the size of
+the space that the joint distributions are defined over: the set of all prompt-completion pairs has size m|V|L,
+where m is the number of prompts captured in π. Effective tests must navigate this high-dimensional space
+well. Fortunately, we expect the distributions in practice to be lower-dimensional, as language typically only
+places significant mass on a small number of tokens at each position.
+Throughout the paper, we will use ns{S} to denote the count of object s in string or sample S, πP to denote
+the joint distribution of prompts and completions under P , and πQ to denote the joint distribution under Q.
+3 METHOD
+To tackle the problem, we employ a two-sample kernel test from Gretton et al. (2012). This test uses samples
+DP and DQ to estimate the Maximum Mean Discrepancy (MMD) between P and Q, which is a measure
+of the distance between the two distributions. Intuitively, if the estimated MMD is large, we reject the null
+hypothesis that P = Q.
+2Package, experiment code, and dataset: https://github.com/i-gao/model-equality-testing.
+3In Appendix C.6, we discuss how to extend this setup to unequal sample sizes.
+4As a concrete example, Llama-3 uses a vocabulary size of |V| = 128 256, and users often sample L = 250 tokens
+for longform generation tasks.
+3
+Published as a conference paper at ICLR 2025
+The MMD is defined with respect to a unit-norm kernel function k and its associated feature map ϕ. For
+our two joint distributions πP and πQ, the MMD is defined as the squared distance between the expected
+features from each distribution:
+MMDk (πP, πQ) = ∥Ez∼πP [ϕ(z)] − Ez∼πQ [ϕ(z)]∥2 ,
+= Ez,z′∼πP [k(z, z′)] + Ez,z′∼πQ [k(z, z′)] − 2Ez∼πP,z′ ∼πQ [k(z, z′)] . (3)
+For simplicity, we select kernels of the form k(z, z′) = 1{x = x′}˜k(y, y′), where ˜k is a prompt-agnostic
+kernel over completions. Then MMDk(πP, πQ) = Ex∼π
+
+MMD˜k (P (y | x), Q(y | x))
+
+.
+To conduct a two-sample test with samples DQ and DP , the test statistic is the empirical estimator of (3):
+\MMD(DP , DQ) = 1 N (N − 1)
+
+ X
+z,z′∈DP
+k(z, z′) + X
+z,z′ ∈DQ
+k(z, z′)
+
+ − 2 N 2 X z∈DP X z′ ∈DQ k(z, z′). (4)
+We can compute p-values by simulating the test statistic’s distribution under the null, i.e., by repeatedly
+sampling both DQ and DP from P and computing (4). Alternatively, to avoid drawing extra samples from
+P , we can use the permutation procedure (Lehmann et al., 1986), at a potential cost to power. This procedure
+repeatedly shuffles samples between DQ and DP to recompute the test statistic (Appendix A.2).
+Kernel choice. The choice of kernel (k, ϕ) determines the test’s semantics and power. For example, setting
+ϕ(z) to be an indicator of whether y passes an automated verifier for x, when one is available, leads to
+rejecting the null when P, Q result in different task accuracies. However, because ϕ is relatively coarse, the
+MMD may be zero even when P ̸= Q, limiting the test’s power. At the other extreme are universal kernels,
+which guarantee that the MMD is zero if and only if P = Q (Gretton et al., 2012). One such universal kernel
+for strings is the computationally expensive all-substrings kernel (Borgwardt et al., 2006):
+˜kall(y, y′) = X
+s∈V ≤L
+ns{y} · ns{y′}, (5)
+where ns{y} is the number of times s appears in y. Another universal kernel is the one-hot kernel:
+˜kone-hot(y, y′) = 1{y = y′}, (6)
+which results in a classical two-sample multinomial test between the joint distributions. While universal ker-
+nels can eventually detect differences between any P, Q with enough samples, they may have low power in
+the small-sample regime. For example, the one-hot MMD measures if there are more exact match collisions
+within DP or DQ than between them, but in small samples, we may see no duplicate completions at all.
+We posit that other string kernels, though not universal, provide more powerful features for testing with small
+samples. Specifically, we investigate a fast kernel related to the Hamming distance between completions:
+˜khamming(y, y′) =
+LX
+i=1
+1{yi = y′ i}, (7)
+where y shorter than L is right-padded with a special token. Intuitively, a test based on this kernel rejects if a
+significantly larger number of substitutions are needed to align completions between DP and DQ than within
+each sample. The associated Hamming MMD is a pseudo-metric, as it is zero when P = Q and obeys the
+triangle inequality, but may not separate all distributions (Appendix A.1). Despite this limitation, we find
+in the following sections that this kernel is empirically effective and well-suited to common distortions we
+encounter with language models: quantization, watermarking, finetuning, and related distortions tend to
+result in detectable inter-sample Hamming distances.
+4
+Published as a conference paper at ICLR 2025
+4 EVALUATING TESTS IN SIMULATIONS
+In this section, we evaluate our test’s power using different kernels at checking equivalence between known
+pairs of distributions. Specifically, we evaluate if tests can detect when a language model has been quantized
+or watermarked (§4.1), finetuned (§4.2), or swapped out for a different model altogether (§4.3).
+All experiments in this section are run on a longform language modeling task. The prompt distribution π is
+a uniform distribution over m = 25 random 100-character strings sampled from English, German, Spanish,
+French, and Russian Wikipedia (Box 1). The maximum completion length is L = 50, and we sample using
+temperature 1. Power is computed from 100 Monte Carlo simulations. We estimate p-values by simulating
+the empirical distribution of the test statistic under the null 1000 times; in Appendix C, we validate that the
+permutation procedure results in the same trends.
+Box 1: Sample prompt for the Wikipedia language modeling task
+Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the continuation
+immediately.
+“The British Arab Commercial Bank PLC (BACB) is an international wholesale bank incorporated in the U...”
+To evaluate tests’ generalization across prompts, we repeat power experiments over ten different prompt
+distributions, where we resample 25 Wikipedia strings for each π. All tests are conducted at a significance
+level of α = 0.05. Additional details can be found in Appendix B.
+4.1 DETECTING QUANTIZATION AND WATERMARKING
+In our first experiments, the reference distribution P represents full-precision weights published on Hugging
+Face. We evaluate if tests can distinguish P from alternative distributions Q:
+• Quantized models. These alternatives represent the model inferenced at lower precisions: nf4
+(Dettmers et al., 2024), int8 (Dettmers et al., 2022), and fp16. Some accounts suggest that quanti-
+zation particularly degrades Llama-3 models on longform tasks (Reddit, 2024; Panda, 2024).
+• Watermarked models. Some providers may watermark outputs so that they are later detectable as
+having been generated by the platform. We apply the watermarking algorithm from Kirchenbauer
+et al. (2023) with default bias of 2.5.
+We repeat evaluations for 5 instruction-tuned models: Mistral 7B Instruct (Jiang et al., 2023), Llama-3 8B
+and 70B Instruct, and Llama-3.1 8B and 70B Instruct (Meta, 2024). Additional models are in Appendix C.1.
+Tests. We compare three choices of kernels: the Hamming kernel (7), the all-substrings kernel (5), and
+the one-hot kernel (6). We also evaluate two tests from the multinomial testing literature (Balakrishnan &
+Wasserman, 2018; Bhattacharya & Valiant, 2015):
+L1(DP , DQ) =
+X
+z∈DP ∪DQ
+ nz {DP } − nz {DQ} N  (8)
+χ2(DP , DQ) = N 2 X
+z∈DP ∪DQ
+(nz {DP } − nz {DQ})2 − nz {DP } − nz {DQ}
+nz {DP } + nz {DQ} . (9)
+Results. Figure 2 (left) compares the empirical sample complexities of each test. To draw out a sample
+complexity curve, we vary the number of samples from N = 10m to N = 100m, where m = 25 is
+the number of prompts in the prompt distribution. We observe that the Hamming MMD test attains the
+highest power with the fewest samples: at an average of 10 samples per prompt, this test has a median power
+5
+Published as a conference paper at ICLR 2025
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Median power across alternatives
+Sample complexity @ L = 50
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Median power across alternatives
+Robustness to long completions @ N = 250
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+MMD (Hamming) power by alternative
+watermark
+nf4
+int8
+fp16MMD (Hamming) MMD (All Substrings) MMD (One-Hot) L1 Two-sample 2
+Figure 2: (Left) Sample complexity of tests. At an average of just 10 samples per prompt, the Hamming
+MMD test is able to detect quantization and watermarking with nontrivial power. Curves first median power
+across alternative distributions Q, averaged over language models and prompt distributions, with shaded
+standard errors. Results stratified by language model and alternative are in Appendix C.1. (Middle) While
+other tests rapidly degrade in power when the user is interested in longer completions, the Hamming MMD
+test maintains power best across completion lengths. (Right) Power of the Hamming MMD test, stratified
+by alternative distribution. The test is significantly less powerful against the fp16 alternative.
+of 77.4% across alternatives. In Figure 2 (right), we break down power by alternative distribution. The
+Hamming test is strong on all alternatives except fp16, where the initial power at N = 10m is much smaller.
+This suggests that fp16 and fp32 differ in ways that are not captured by the Hamming kernel.
+To accommodate user tasks which require very long completions, it is important that tests retain power as
+the completion length L increases, even though the size of the sample space grows exponentially with L. In
+Figure 2 (middle), we fix N = 250 (i.e., N = 10m) and vary the completion length L from 1 to 50 tokens.
+We observe that the Hamming MMD and all substring tests are more robust to increasing completion length
+than the other tests. This result is consistent with the intuition that a clever string kernel — as opposed to a
+one-hot kernel — can help MMD tests generalize to high-dimensional spaces.
+4.2 DETECTING FINETUNING
+Given their effectiveness in detecting quantized and watermarked models, we next ask if MMD-based tests
+can detect when a model has been finetuned. We finetune Llama-3 8B Instruct on two datasets: a disjoint,
+i.i.d. split of the testing Wikipedia task, and an out-of-distribution code dataset (Chaudhary, 2023). We use
+a small learning rate of 1 × 10−6 with AdamW (Loshchilov, 2017). We then use the Hamming MMD test
+to compare finetuned checkpoints Q to the original model as the reference distribution P .
+Figure 3 (upper left) plots power against the checkpoint number of the finetuned model. The Hamming
+MMD test is always able to detect finetuning with nontrivial (greater than 50%) power, even after a single
+epoch (42 optimization steps). One might expect that finetuning on the out-of-distribution code dataset
+would not affect the model’s distribution on the Wikipedia testing task, but we find this is not the case.
+Finetuning affects the model on other distributions enough to be detectable by statistical tests. These results
+suggest that it is challenging to isolate the effects of full finetuning to any single distribution, which may
+have implications for tasks such as unlearning or model editing (Hase et al., 2024).
+4.3 DISTINGUISHING IF SAMPLES COME FROM DIFFERENT LANGUAGE MODELS
+We next explore if the Hamming MMD test can distinguish whether two bodies of text are generated from
+the same language model. In this setting, P and Q are two different language models, drawn from a pool
+of 13 instruction-tuned models (Figure 3 right), including eight open-weight models (Abdin et al., 2024;
+Groeneveld et al., 2024; Team et al., 2024) and and five OpenAI closed-weight models. In order to compare
+6
+Published as a conference paper at ICLR 2025
+0 2 4 6 8
+Number of dataset epochs
+0.0
+0.5
+1.0Average power
+Detecting Llama-3 8B Instruct finetuning
+Finetuned on Wikipedia (in-distribution)
+Finetuned on CodeAlpaca (out-of-distribution)
+Power
+Alternative Q (P = Llama-3.1 8B)
+Llama-3 8B 0.76 (0.00)
+Llama-3 70B 1.00 (0.00)
+Llama-3.1 70B 0.75 (0.07)
+OLMo 7B 1.00 (0.00)
+gpt-4o-mini 1.00 (0.00)
+Llama-3.1 8B (watermark) 0.32 (0.04)
+Llama-3.1 8B (int8) 0.07 (0.01)
+Llama-3.1 8B (nf4) 1.00 (0.00)
+Llama-3 8BLlama-3.1 8BLlama-3 70BLlama-3.1 70BMistral 7BPhi-3 miniOLMo 7Bgpt-4o-minigpt-4ogpt-3.5-turbo-0125gpt-3.5-turbo-1106gpt-4-0125-previewGemma-2 9B
+Llama-3 8B
+Llama-3.1 8B
+Llama-3 70B
+Llama-3.1 70B
+Mistral 7B
+Phi-3 mini
+OLMo 7B
+gpt-4o-mini
+gpt-4o
+gpt-3.5-turbo-0125
+gpt-3.5-turbo-1106
+gpt-4-0125-preview
+Gemma-2 9B
+0.0000.08 0.05 0.06 0.05
+0.00
+0.01 0.00
+0.01 0.01 0.00
+0.01 0.01 0.01 0.00
+0.030.04 0.05 0.05 0.05 0.00
+0.110.07 0.05 0.08 0.05 0.10 0.000.11 0.11 0.11 0.05 0.04 0.07
+0.040.04 0.04 0.05 0.05 0.02 0.00
+0.060.04 0.05 0.05 0.05 0.04 0.07 0.00
+0.050.04 0.05 0.05 0.05 0.04 0.06 0.02 0.000
+0.020.03 0.03 0.03 0.03 0.03 0.02 0.07 0.06 0.000
+0.020.03 0.03 0.04 0.03 0.03 0.02 0.08 0.07 0.01 0.000
+0.040.05 0.04 0.05 0.04 0.04 0.03 0.07 0.07 0.03 0.04 0.000
+Estimated distance between models (MMD Hamming)
+0.00
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 3: (Upper left) The Hamming MMD test is able to detect when Llama-3 8B has been finetuned on
+datasets of 1000 samples, even after a single epoch. Power is higher, earlier, when the finetuning distribution
+is i.i.d. with the testing distribution. (Lower left) The Hamming MMD test can also detect when two models
+are different with near-perfect power. Standard errors are over prompt distributions. Full results are in
+Appendix C.2. (Right) The MMD framework allows us to estimate statistical distance between any models
+from which we can draw samples. The cells show average estimated MMDs over 10 bootstraps. Rows
+are sorted using spectral clustering with two components. Models within a family are typically clustered
+together, suggesting that factors like training data, rather than scale, determine model similarity.
+models with different tokenizers, samples must be compared in character space. We sample L = 50-token
+completions to the Wikipedia language modeling task as before, and then we decode these to characters,
+ignoring special tokens. The vocabulary of interest is now all Unicode characters (|V| = 155 063), the
+maximum completion length is L ≈ 1000 characters, and we test with N = 10m samples.
+Switching to character space makes the testing problem significantly more challenging, as the sample space
+is higher dimensional: Figure 3 (lower left) shows that power to detect quantization and watermarking is
+lower in this setting than in the token space setting (§4.1). However, even in this more challenging setting,
+we find that all model swaps are detectable with 100% power, except for pairs within the Llama family, e.g.,
+Llama-3.1 8B and Llama-3.1 70B (75% power) or Llama-3 8B and Llama-3.1 8B (76% power; Figure 3
+lower left). Model swaps are significantly more detectable than watermarking or quantization. Appendix
+D.2 shows qualitative examples of completions from different models.
+Estimating distances between models. A useful feature of the MMD tests is that the test statistic is
+an estimator of a distance. As a result, we can reuse the machinery to quantify the degree to which two
+models differ by estimating Ex∼π [MMD(P (· | x), Q(· | x))].5 Figure 3 (right) estimates the Hamming
+MMD between all pairs of models. To decrease estimator error, we increase the sample size to N = 100m
+samples from each model and report the average \MMD over 10 simulations, along with standard errors. We
+observe that models within a family are typically clustered together, suggesting that training data, rather than
+5Note that the Hamming MMD is a pseudometric: MMDHamming(P, Q) = 0 does not imply P = Q (Appendix A.1).
+7
+Published as a conference paper at ICLR 2025
+scale, determines model similarity. Surprisingly, while generations of Llama models (3 and 3.1) are close in
+distance, some generations of GPT models (e.g., 4-preview and 3.5-turbo) are not. This result suggests the
+use of different training data or procedures between these models.
+5 AUDITING INFERENCE API PROVIDERS
+As a case study, we now apply our test to 31 commercial inference endpoints for four of Meta’s Llama models
+(Figure 1). These endpoints are distributed across nine API providers from Summer 2024: Amazon Bedrock,
+Anyscale,6 Azure AI Studio, Deepinfra, Fireworks AI, Groq, Perplexity, Replicate, and Together.ai.7 We
+are interested in whether endpoints differ from weights published by Meta on Hugging Face inferenced at
+commonly accepted precisions. Specifically, we consider two possible null distributions: the full-precision
+weights (P1) and the fp16-precision weights (P2). The null and alternative hypotheses are
+H0 : π(x)P1(y | x) = π(x)Q(y | x) OR π(x)P2(y | x) = π(x)Q(y | x),
+H1 : π(x)P1(y | x) ̸= π(x)Q(y | x) AND π(x)P2(y | x) ̸= π(x)Q(y | x). (10)
+To test this composite hypothesis, we collect three samples: DP1 and DP2 from the two null distributions,
+and DQ from the API. We then conduct 2 two-sample tests, one for (DP1 , DQ) and another for (DP2 , DQ),
+and obtain p-values p1 and p2. We set the overall rejection rule to
+δ(DP1 , DP2 , DQ) = 1{p1 < α ∧ p2 < α}. (11)
+This rule continues to control the FPR at α under the composite null hypothesis: without loss of generality,
+suppose Q = P1. Since PQ=P1 (p1 < α) ≤ α, we have PQ=P1 (p1 < α ∧ p2 < α) = PQ=P1 (p1 <
+α)PQ=P1 (p2 < α | p1 < α) ≤ α. Note that this rule may be pessimistic, reducing power.
+Experiment details. We consider testing with three prompt distributions π. For all models, we test with
+one set of the Wikipedia completion task from §4, where π is uniform over m = 25 prompts, and L = 50
+tokens or around 1000 characters. For the smaller Llama-3 8B and Llama-3.1 8B models, we also test with
+the coding task HumanEval (Chen et al., 2021b) and instruction task UltraChat (Ding et al., 2023). Both π are
+uniform over m = 20 prompts, and L = 250 tokens or 3000 characters. Because APIs often return decoded
+completions, rather than individual tokens, we conduct all tests in character space, as in §4.3. We explicitly
+requested all samples at temperature 1. Tests are conducted at level α = 0.01 using N = 10m samples. To
+reduce variance, we repeat tests over ten samples and fail endpoints if the average rejection rate is ≥ 0.5. For
+the most expensive endpoint (Azure’s Llama-3 70B), a Wikipedia audit costs $0.14, HumanEval $0.83, and
+UltraChat $0.93. For the cheapest endpoint (Fireworks’ Llama-3 8B), all three audits cost less than $0.02.
+For additional details, including the dates we collect API samples, see Appendix B.
+Results. Despite power being generally reduced due to the composite decision rule, the test flags several
+endpoints (Table 1).8 Notably, Amazon Bedrock and Perplexity have the most endpoints flagged, with
+the latter failing all tests. In Box 2, we include an example comparing samples from the fp32 null and
+Perplexity; these samples suggest that Perplexity serves a lower entropy distribution than the full-precision
+model. Additional qualitative samples can be found in Appendix D.3. The HumanEval and UltraChat prompt
+distributions elicit more failures than the Wikipedia distribution; this may be because these knowledge-
+intensive distributions are more sensitive to changes such as quantization.
+To estimate the effect size of deviations, we estimate the MMD between providers and the nulls using
+ten bootstraps of N = 100m samples each. We find that some deviations are quite large: some APIs’
+6We collected samples from Anyscale’s serverless endpoints from before they were deprecated in August 2024.
+7At the time of writing, only two providers disclosed distribution-altering optimizations: Fireworks AI noted seman-
+tic caching, and Together.ai noted quantization.
+8In Figure 1, we combine the results of the tests on the prompt distributions via a Bonferroni correction, setting the
+level of each test to α = 0.01/3 and rejecting if the endpoint fails on any of the three prompt distributions.
+8
+Published as a conference paper at ICLR 2025
+Wikipedia HumanEval UltraChat
+3 8B 3.1 8B 3 70B 3.1 70B 3 8B 3.1 8B 3 8B 3.1 8B
+Amazon ✓ ✗ ✓ ✗ ✓ ✗ ✗ ✗
+Anyscale ✓ — — — — — — —
+Azure ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓
+Deepinfra ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓
+Fireworks ✓ ✓ ✓ ✓ ✓ ✗ ✓ ✗
+Groq ✓ ✓ ✓ ✗ ✓ ✗ ✓ ✓
+Perplexity ✗ ✗ ✗ ✗ ✗ ✗ ✗ ✗
+Replicate ✓ — ✗ — ✓ — ✓ —
+Together ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓
+Table 1: Audit results for 31 API endpoints across nine companies and four language models. ✗ denotes an
+endpoint failure, i.e., the average rejection rate over ten samples is ≥ 50%.
+amazon
+deepinfra
+amazon
+fireworks
+amazon
+together
+amazon
+deepinfra
+deepinfra
+fireworks
+deepinfra
+together
+0.00
+0.05
+0.10
+0.15MMD (Hamming)
+Average distances between providers for each model endpoint
+Llama-3 8B
+Llama-3.1 8B
+Llama-3 70B
+Llama-3.1 70B
+Llama-3.1 405B
+0.00 0.05 0.10 0.15 0.20 0.25 0.30
+MMD (Hamming)
+0.0
+0.2
+0.4
+0.6| Accuracy diff. |
+String-kernel based MMD vs. task accuracy on Humaneval
+1.824x + 0.060 (R2 = 0.394)
+Figure 4: (Left) Average MMD (Hamming) between providers for each model. Amazon Bedrock’s Llama-
+3 and -3.1 70B models are the most different from the other providers. (Right) Absolute difference in
+HumanEval average accuracy vs. the MMD (Hamming). There is a moderate positive correlation between
+MMD and task accuracy. Gray points indicate pairs where both distributions have accuracy < 10%. There
+are multiple ways to be wrong for a task, and the MMD captures these differences.
+implementations are further from the reference weights than if the provider had substituted in an entirely
+different language model. For example, the deviation between Perplexity’s Llama-3 8B and the fp32 null on
+the Wikipedia testing task is 0.03. This is comparable to the deviation between Llama-3 8B and GPT-3.5-
+Turbo (0.03; Figure 3 right), Phi-3 mini (0.04), or OLMo 7B (0.04).
+Correlating MMD with task accuracy. We now ask how well the Hamming MMD correlates with task
+accuracy when available. Automated verifiers exist for one of our prompt distributions, HumanEval. We
+find a moderate positive correlation between the absolute average accuracy difference and the Hamming
+MMD (Figure 4 right, R2 = 0.392). In several cases, the MMD is high but the accuracy difference is
+low. These are often when both task accuracies are low: the gray points in the figure highlight pairs where
+both distributions have accuracy < 10%. In these cases, the MMD captures that there are multiple ways to
+be wrong for a task. For example, the bottom-right-most point in the figure contrasts Llama-3.1 8B from
+Perplexity vs. the nf4 version; Perplexity answers with incorrect code snippets, while nf4 outputs nonsense
+completions (e.g., “simulation!!!!!!!!!![...]”). Samples from this comparison can be found in Appendix D.3.
+Which models do providers differ on most? Finally, we ask whether providers differ on some more
+models more than others. Figure 4 (left) estimates the MMD between providers for each model, and the
+large Llama-3.1 405B model. We find that deviations are larger on the earlier Llama models than the recent
+Llama-3.1 405B model.
+9
+Published as a conference paper at ICLR 2025
+Box 2: Samples from fp32 vs. Perplexity for Llama-3 8B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“Weaver, Tom. I Talked with a Zombie: Interviews with 23 Veterans of Horror and Sci-Fi Films and Tele...”
+fp32 Perplexity
+“...vision, Some of Whom Are Still Alive. New York: Pocket
+Books, 1981. According to Tom Weaver, Vincent Price was known
+for being a bit of a practical joker, and he would often play
+harmless pranks on the crew
+“...visions. New York: St. Martin’s Press, 1988. This collection of
+interviews with horror and science fiction professionals is a
+fascinating look at the creative process and the people behind some
+of the most iconic films and TV shows of the
+“...vision, voodoo, and the Apocalypse. New York: St. Martin’s
+Press, 1990. The book features interviews with notable horror and
+science fiction personalities, including Greg Cannom, makeup
+artist for The Lost Boys and RoboCop
+“...visions. New York: St. Martin’s Press, 1988. In this collection
+of interviews, Weaver delves into the experiences of some of the
+most iconic figures in the horror and science fiction genres,
+including George Romero, John Carpenter,
+“...vision. Written by Tom Weaver, a renowned authority on
+classical horror cinema, this book brings together intimate and
+revealing conversations with some of the most legendary figures in
+the genre, including Vincent Price, Boris Karloff, and Bela Lugosi.
+Interviews
+“...vision. New York: St. Martin’s Press, 1988. 224 pp. This
+collection of interviews with horror and science fiction
+professionals is a fascinating look at the people behind the genre’s
+most iconic films. Weaver’s conversational style
+6 RELATED WORK
+Auditing ML APIs. Prior work either only applies to the classifier setting (Chen et al., 2021a; 2022) or
+audit by monitoring performance on low-temperature multiple-choice or short-answer benchmarks (Artifi-
+cialAnalysis, 2024; Chen et al., 2023; Eyuboglu et al., 2024). Concurrent work studies a general language
+model setting, but does not provide guarantees of audit correctness (Sam et al., 2025). In contrast, we
+formalize auditing as a hypothesis testing problem, allowing us to provide FPR guarantees, and we study
+the general setting of sampling completions from language models, including for tasks without automated
+verifiers. In cryptography, a body of work has aimed to verify ML API predictions through proof protocols
+(Ghodsi et al., 2017; Feng et al., 2021; Liu et al., 2021; Kang et al., 2022; Weng et al., 2023; Lee et al., 2024).
+These methods require APIs to cooperate and opt-in to providing proofs of valid inference alongside each
+prediction; public verifiers then check these proofs for correctness with perfect accuracy. Unfortunately,
+these methods scale too poorly to apply to large language models: in Kang et al. (2022), generating a proof
+takes 41 minutes per prediction for a 68M parameter MobileNet (Sandler et al., 2018).
+Two-sample testing. Testing whether two samples come from the same distribution is an established prob-
+lem in statistics. A line of work focuses on testing multinomial distributions (Batu et al., 2013; Chan et al.,
+2014; Canonne, 2020), including when samples have unequal sizes (Bhattacharya & Valiant, 2015; Di-
+akonikolas & Kane, 2016; Balakrishnan & Wasserman, 2018). MMD-based tests are a general approach
+that do not assume a specific distributional form (Gretton et al., 2012). These tests can be applied to struc-
+tured data when paired with appropriate kernels (Lodhi et al., 2002; Borgwardt et al., 2006).
+7 CONCLUSION
+As the public grows more dependent on black-box APIs to interact with language models, tools for audit-
+ing these APIs are increasingly important. In this work, we unified several API auditing tasks under the
+formalization of Model Equality Testing, a two-sample distribution testing problem, and we extensively
+validated candidate tests for this problem. Future work could explore stronger tests than those we have
+presented, or explore how to adapt these tests to other modalities, such as image generation models. To
+help facilitate this research, we open-source the dataset of 1 million LLM completions used for this work
+at https://github.com/i-gao/model-equality-testing. This dataset contains completions from five
+models across quantized, watermarked, and API alternatives; also see Appendix B.1.
+10
+Published as a conference paper at ICLR 2025
+ACKNOWLEDGEMENTS
+The authors would like to thank Mert Yuksekgonul, Steven Cao, Chenchen Gu, Chenglei Si, Nicole Meister,
+Yifan Mai, Simon Guo, Teddi Worledge, Yuhui Zhang, and other members of the Guestrin and P-Lambda
+labs for feedback on this paper.
+CONFLICTS OF INTEREST
+PL is a co-founder of Together AI; this work was done in his Stanford capacity. The topic, research, and
+results of this work were not shared with Together, or any other API provider evaluated, until the public
+release of the paper.
+REFERENCES
+Marah Abdin, Sam Ade Jacobs, Ammar Ahmad Awan, Jyoti Aneja, Ahmed Awadallah, Hany Awadalla,
+Nguyen Bach, Amit Bahree, Arash Bakhtiari, Harkirat Behl, et al. Phi-3 technical report: A highly
+capable language model locally on your phone. arXiv preprint arXiv:2404.14219, 2024.
+Amazon. Amazon 2024 q1 earnings. https://s2.q4cdn.com/299287126/files/doc financials/
+2024/q1/AMZN-Q1-2024-Earnings-Release.pdf, 2024.
+ArtificialAnalysis. Artificial analysis, 2024. URL https://artificialanalysis.ai/.
+Sivaraman Balakrishnan and Larry Wasserman. Hypothesis testing for high-dimensional multinomials: A
+selective review. 2018.
+Gagan Bansal, Besmira Nushi, Ece Kamar, Daniel S Weld, Walter S Lasecki, and Eric Horvitz. Updates in
+human-ai teams: Understanding and addressing the performance/compatibility tradeoff. In Proceedings
+of the AAAI Conference on Artificial Intelligence, volume 33, pp. 2429–2437, 2019.
+Tu˘gkan Batu, Lance Fortnow, Ronitt Rubinfeld, Warren D Smith, and Patrick White. Testing closeness of
+discrete distributions. Journal of the ACM (JACM), 60(1):1–25, 2013.
+Bhaswar Bhattacharya and Gregory Valiant. Testing closeness with unequal sized samples. Advances in
+Neural Information Processing Systems, 28, 2015.
+Karsten M Borgwardt, Arthur Gretton, Malte J Rasch, Hans-Peter Kriegel, Bernhard Sch¨olkopf, and Alex J
+Smola. Integrating structured biological data by kernel maximum mean discrepancy. Bioinformatics, 22
+(14):e49–e57, 2006.
+Cl´ement L Canonne. A survey on distribution testing: Your data is big. but is it blue? Theory of Computing,
+pp. 1–100, 2020.
+Siu-On Chan, Ilias Diakonikolas, Paul Valiant, and Gregory Valiant. Optimal algorithms for testing closeness
+of discrete distributions. In Proceedings of the twenty-fifth annual ACM-SIAM symposium on Discrete
+algorithms, pp. 1193–1203. SIAM, 2014.
+Sahil Chaudhary. Code alpaca: An instruction-following llama model for code generation. https://
+github.com/sahil280114/codealpaca, 2023.
+Lingjiao Chen, Tracy Cai, Matei Zaharia, and James Zou. Did the model change? efficiently assessing
+machine learning api shifts. arXiv preprint arXiv:2107.14203, 2021a.
+Lingjiao Chen, Zhihua Jin, Evan Sabri Eyuboglu, Christopher R´e, Matei Zaharia, and James Y Zou. Hapi:
+A large-scale longitudinal dataset of commercial ml api predictions. Advances in Neural Information
+Processing Systems, 35:24571–24585, 2022.
+11
+Published as a conference paper at ICLR 2025
+Lingjiao Chen, Matei Zaharia, and James Zou. How is chatgpt’s behavior changing over time? arXiv
+preprint arXiv:2307.09009, 2023.
+Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan,
+Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger,
+Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ry-
+der, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe
+Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel
+Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin,
+Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh
+Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati,
+Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Woj-
+ciech Zaremba. Evaluating large language models trained on code, 2021b.
+Cohere. Multilingual wikipedia (11-2023), 2023. URL https://huggingface.co/datasets/Cohere/
+wikipedia-2023-11-embed-multilingual-v3. Huggingface dataset.
+Tim Dettmers, Mike Lewis, Younes Belkada, and Luke Zettlemoyer. Gpt3. int8 (): 8-bit matrix multipli-
+cation for transformers at scale. Advances in Neural Information Processing Systems, 35:30318–30332,
+2022.
+Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, and Luke Zettlemoyer. Qlora: Efficient finetuning of
+quantized llms. Advances in Neural Information Processing Systems, 36, 2024.
+Ilias Diakonikolas and Daniel M Kane. A new approach for testing properties of discrete distributions. In
+2016 IEEE 57th Annual Symposium on Foundations of Computer Science (FOCS), pp. 685–694. IEEE,
+2016.
+Ning Ding, Yulin Chen, Bokai Xu, Yujia Qin, Zhi Zheng, Shengding Hu, Zhiyuan Liu, Maosong Sun, and
+Bowen Zhou. Enhancing chat language models by scaling high-quality instructional conversations. arXiv
+preprint arXiv:2305.14233, 2023.
+Sabri Eyuboglu, Karan Goel, Arjun Desai, Lingjiao Chen, Mathew Monfort, Chris R´e, and James Zou.
+Model changelists: Characterizing updates to ml models. In The 2024 ACM Conference on Fairness,
+Accountability, and Transparency, pp. 2432–2453, 2024.
+Boyuan Feng, Lianke Qin, Zhenfei Zhang, Yufei Ding, and Shumo Chu. Zen: An optimizing compiler for
+verifiable, zero-knowledge neural network inferences. Cryptology ePrint Archive, 2021.
+Zahra Ghodsi, Tianyu Gu, and Siddharth Garg. Safetynets: Verifiable execution of deep neural networks on
+an untrusted cloud. Advances in Neural Information Processing Systems, 30, 2017.
+Arthur Gretton, Karsten M Borgwardt, Malte J Rasch, Bernhard Sch¨olkopf, and Alexander Smola. A kernel
+two-sample test. The Journal of Machine Learning Research, 13(1):723–773, 2012.
+Dirk Groeneveld, Iz Beltagy, Pete Walsh, Akshita Bhagia, Rodney Kinney, Oyvind Tafjord, Ananya Harsh
+Jha, Hamish Ivison, Ian Magnusson, Yizhong Wang, et al. Olmo: Accelerating the science of language
+models. arXiv preprint arXiv:2402.00838, 2024.
+Peter Hase, Thomas Hofweber, Xiang Zhou, Elias Stengel-Eskin, and Mohit Bansal. Fundamental problems
+with model editing: How should rational belief revision work in llms? arXiv preprint arXiv:2406.19354,
+2024.
+12
+Published as a conference paper at ICLR 2025
+Albert Q Jiang, Alexandre Sablayrolles, Arthur Mensch, Chris Bamford, Devendra Singh Chaplot, Diego
+de las Casas, Florian Bressand, Gianna Lengyel, Guillaume Lample, Lucile Saulnier, et al. Mistral 7b.
+arXiv preprint arXiv:2310.06825, 2023.
+Daniel Kang, Tatsunori Hashimoto, Ion Stoica, and Yi Sun. Scaling up trustless dnn inference with zero-
+knowledge proofs. arXiv preprint arXiv:2210.08674, 2022.
+John Kirchenbauer, Jonas Geiping, Yuxin Wen, Jonathan Katz, Ian Miers, and Tom Goldstein. A watermark
+for large language models. In International Conference on Machine Learning, pp. 17061–17084. PMLR,
+2023.
+Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph Gonza-
+lez, Hao Zhang, and Ion Stoica. Efficient memory management for large language model serving with
+pagedattention. In Proceedings of the 29th Symposium on Operating Systems Principles, pp. 611–626,
+2023.
+Seunghwa Lee, Hankyung Ko, Jihye Kim, and Hyunok Oh. vcnn: Verifiable convolutional neural network
+based on zk-snarks. IEEE Transactions on Dependable and Secure Computing, 2024.
+Erich Leo Lehmann, Joseph P Romano, and George Casella. Testing statistical hypotheses, volume 3.
+Springer, 1986.
+Percy Liang, Rishi Bommasani, Tony Lee, Dimitris Tsipras, Dilara Soylu, Michihiro Yasunaga, Yian Zhang,
+Deepak Narayanan, Yuhuai Wu, Ananya Kumar, et al. Holistic evaluation of language models. arXiv
+preprint arXiv:2211.09110, 2022.
+Tianyi Liu, Xiang Xie, and Yupeng Zhang. Zkcnn: Zero knowledge proofs for convolutional neural net-
+work predictions and accuracy. In Proceedings of the 2021 ACM SIGSAC Conference on Computer and
+Communications Security, pp. 2968–2985, 2021.
+Huma Lodhi, Craig Saunders, John Shawe-Taylor, Nello Cristianini, and Chris Watkins. Text classification
+using string kernels. Journal of machine learning research, 2(Feb):419–444, 2002.
+I Loshchilov. Decoupled weight decay regularization. arXiv preprint arXiv:1711.05101, 2017.
+AI Meta. Introducing meta llama 3: The most capable openly available llm to date. Meta AI, 2024.
+Ashwinee Panda. Post by @pandaashwinee. discussion of quantization for llama 3.1. https://x.com/
+pandaashwinee/status/1816966288905998829, 2024.
+Luiza Pozzobon, Beyza Ermis, Patrick Lewis, and Sara Hooker. On the challenges of using black-box apis
+for toxicity evaluation in research. arXiv preprint arXiv:2304.12397, 2023.
+Reddit. Post by user: mo4gv9eywmpmw3xr. result: Llama 3 exl2 quant quality compared to gguf
+and llama 2. https://www.reddit.com/r/LocalLLaMA/comments/1cfbadc/result llama 3 exl2
+quant quality compared to/, 2024.
+Dylan Sam, Marc Finzi, and J Zico Kolter. Predicting the performance of black-box llms through self-
+queries. arXiv preprint arXiv:2501.01558, 2025.
+Mark Sandler, Andrew Howard, Menglong Zhu, Andrey Zhmoginov, and Liang-Chieh Chen. Mobilenetv2:
+Inverted residuals and linear bottlenecks. In Proceedings of the IEEE conference on computer vision and
+pattern recognition, pp. 4510–4520, 2018.
+Ingo Steinwart. On the influence of the kernel on the consistency of support vector machines. Journal of
+machine learning research, 2(Nov):67–93, 2001.
+13
+Published as a conference paper at ICLR 2025
+Gemma Team, Thomas Mesnard, Cassidy Hardin, Robert Dadashi, Surya Bhupatiraju, Shreya Pathak, Lau-
+rent Sifre, Morgane Rivi`ere, Mihir Sanjay Kale, Juliette Love, et al. Gemma: Open models based on
+gemini research and technology. arXiv preprint arXiv:2403.08295, 2024.
+Jiasi Weng, Jian Weng, Gui Tang, Anjia Yang, Ming Li, and Jia-Nan Liu. pvcnn: Privacy-preserving and
+verifiable convolutional neural network testing. IEEE Transactions on Information Forensics and Security,
+18:2218–2233, 2023.
+Thomas Wolf, Lysandre Debut, Victor Sanh, Julien Chaumond, Clement Delangue, Anthony Moi, Pierric
+Cistac, Tim Rault, R´emi Louf, Morgan Funtowicz, et al. Transformers: State-of-the-art natural language
+processing. In Proceedings of the 2020 conference on empirical methods in natural language processing:
+system demonstrations, pp. 38–45, 2020.
+14
+Published as a conference paper at ICLR 2025
+A ADDITIONAL NOTES ON TESTS
+A.1 WHICH MMD KERNELS LEAD TO VALID METRICS?
+Recall that a metric on probability distributions satisfies (1) symmetry, (2) the triangle inequality, and (3)
+d(P, Q) = 0 if and only if P = Q. On the other hand, a pseudo-metric satisfies the first two properties and
+has d(P, P ) = 0. Regardless of the kernel, the MMD as defined in Equation 3 is clearly symmetric. It also
+satisfies triangle inequality, since MMD(P1, P3) = MMD(P1, P2) + MMD(P2, P3) for any P1, P2, P3. The
+question left is whether our kernels make the MMD injective as in Condition 3.
+• One-hot kernel. (Gretton et al., 2012) prove that universal kernels (Steinwart, 2001) result in
+an injective MMD. (Borgwardt et al., 2006) show that a kernel defined on a finite domain X is
+universal if k satisfies strict positive definiteness: i.e., k induces a nonsingular Gram matrix for any
+finite set of points X ⊆ X . This is true if ϕ(x(1)), · · · , ϕ(x(n)) are linearly independent for any set
+of distinct points x(1), · · · , x(n) ∈ X . For the one-hot kernel, the associated feature map ϕone-hot
+is of length |V |L, where the ith entry is an indicator for whether x is equal to the ith string. Since
+all ϕ(x) is one-hot and for distinct sets X, no two ϕ(x) are both 1 at the same index, the ϕ(x) are
+linearly independent. Therefore this kernel is universal, and MMDone-hot is a valid metric.
+• All-substrings kernel. Borgwardt et al. (2006) (Theorem 2.7) prove that this kernel is universal,
+and thus the MMD is a metric.
+• Hamming kernel. We will show that the MMD is not injective by showing that the mean em-
+bedding EP [ϕ(x)] is not injective, i.e., there exist P ̸= Q with EP [ϕ(x)] = EQ[ϕ(x)]. For the
+Hamming kernel, the associated feature map is of length |V| × L:
+ϕ(x) =
+
+
+1{x1 = v1}
+1{x1 = v2}
+· · ·
+1{x1 = v|V|}
+· · ·
+1{xL = v1}
+1{xL = v2}
+· · ·
+1{xL = v|V|}
+
+ =⇒ E[ϕ(x)] =
+
+
+P (x1 = v1)
+P (x1 = v2)
+· · ·
+P (x1 = v|V|)
+· · ·
+P (xL = v1)
+P (xL = v2)
+· · ·
+P (xL = v|V|)
+
+
+i.e., the mean embedding stacks all marginal distributions of P . But this shows the mean embedding
+is not injective: we know that multiple joint distributions P ̸= Q can map to the same marginal
+distributions. Thus the Hamming MMD is not injective, and it is only a pseudo-metric.
+A.2 SIMULATING P-VALUES
+P-values for MMD tests may be simulated in two ways:
+1. Simulating the test statistic under the null (Algorithm 1). This is done by repeatedly sampling
+DQ and DP from P and caching \MMD(DP , DQ). The p-value is then the proportion of times the
+test statistic is greater than or equal to the observed test statistic. We conduct tests using this method
+in the main text, reusing the same cached empirical distribution of the test statistic under the null
+for all alternatives at that sample size. Note that this method requires significant sampling access to
+P .
+2. Permutation procedure (Lehmann et al. (1986); Algorithm 2). Given samples DQ and DP , the
+permutation procedure randomly shuffles the labels of the samples and computes the test statistic
+on the permuted samples. This process is repeated many times to estimate the null distribution of
+the test statistic. The p-value is then the proportion of times the permuted test statistic is greater
+15
+Published as a conference paper at ICLR 2025
+than or equal to the observed test statistic. This method does not require additional sampling access
+to P but may have lower power. We conduct experiments using this method in Appendix C.7.
+Algorithm 1 Simulating the test statistic under the null
+1: Input: Number of simulations B, null distribution P , test samples DQ and DP
+2: Initialize a list T = [] to store simulated test statistics
+3: for i = 1, 2, . . . , B do
+4: Sample D(i) Q ∼ P and D(i) P ∼ P
+5: Compute \MMD(D(i) Q , D(i) P ) and append to T
+6: end for
+7: Compute p-value as the proportion of T greater than or equal to \MMD(DP , DQ)
+8: Return p-value
+Algorithm 2 Permutation testing
+1: Input: Number of permutations B, test samples DQ and DP
+2: Concatenate DQ and DP into a single dataset D = [DQ, DP ]
+3: Initialize a list T = [] to store permuted test statistics
+4: for i = 1, 2, . . . , B do
+5: Randomly shuffle D and split into two sets: D(i) Q and D(i) P
+6: Compute \MMD(D(i) Q , D(i) P ) and append to T
+7: end for
+8: Compute p-value as the proportion of T greater than or equal to \MMD(DP , DQ)
+9: Return p-value
+16
+Published as a conference paper at ICLR 2025
+B EXPERIMENT DETAILS
+B.1 SAMPLING AND DATASET DETAILS
+All experiments were conducted by sampling with replacement from a pre-collected dataset
+of language model completions, which we release alongside this paper at https://github.
+com/i-gao/model-equality-testing. The dataset consists of completions from five mod-
+els: mistralai/Mistral-7B-Instruct-v0.3, meta-llama/Meta-Llama-3-8B-Instruct,
+meta-llama/Meta-Llama-3.1-8B-Instruct, meta-llama/Meta-Llama-3-70B-Instruct, and
+meta-llama/Meta-Llama-3.1-70B-Instruct. We collected multiple completions per prompt for
+prompts from Wikipedia (Cohere, 2023), HumanEval (Chen et al., 2021b), and UltraChat (Ding et al.,
+2023). In total, our dataset contains 440 prompts: 80 from Wikipedia in each of English, Spanish, French,
+German, and Russian, as well as 20 from HumanEval and 20 from UltraChat. We repeated the collection
+process for each model at each precision (fp32, fp16, fp16, int8, and nf4) and when watermarked using the
+method in Kirchenbauer et al. (2023), as well as from each API audited in the paper. In total, this dataset
+size is 1.1M completions.
+Box 3: Sample prompt for HumanEval
+Complete the code. Do not output anything except the completion. Start the continuation immediately.
+from typing import List
+def has_close_elements(numbers: List[float], threshold: float) /> bool:
+""" Check if in given list of numbers, are any two numbers closer
+to each other than given threshold.
+>>> has_close_elements([1.0, 2.0, 3.0], 0.5)
+False
+>>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)
+True
+"""
+Box 4: Sample prompt for UltraChat
+Explain how the invention and widespread use of digital music formats such as MP3s and streaming services
+like Spotify have impacted the way music is distributed, consumed, and monetized in the music industry, and
+how this has affected the relationship between artists and their fans. Provide specific examples of how techno-
+logical advancements have changed the production and consumption of music, including changes to the format
+and length of songs, the role of record labels, and the use of social media to promote artists and their work. Ad-
+ditionally, discuss possible future developments in music technology and their potential impact on the industry
+and consumer habits.
+For the goodness-of-fit experiments in Appendix C.5, we collected completions for a disjoint set of 20
+additional prompts from each of language of Wikipedia for Mistral 7B and Llama-3 8B. This set also includes
+the log probabilities of each sample under the full precision model. All other experiments outside of this
+goodness-of-fit experiment were conducted on the previous, larger dataset.
+Details about local sampling (fp32, fp16, int8, nf4 4, and watermark). We collected 15 000 completions
+per prompt for the fp32 precision, and 5000 completions per prompt for the other precisions and watermarked
+alternatives. Local sampling was performed on a mix of RTX 6000, RTX 3090, Quadro RTX 8000, and A100
+GPUs using a mixture of the Transformers (Wolf et al., 2020) and VLLM (Kwon et al., 2023) libraries.
+The watermarking, nf4, and int8 implementations are from the Transformers library. We use the default
+watermarking parameters of 2.5 bias and context width 1. All samples were collected with vanilla decoding
+17
+Published as a conference paper at ICLR 2025
+parameters of temperature 1 without top-k or top-p sampling, and parameter max new tokens set to L = 50
+for Wikipedia and L = 250 for HumanEval and UltraChat.
+We used the default chat templates from the Transformers library for models. It was important for us to
+match the chat templates during local sampling to those we believe the APIs to use, as the chat templates
+can affect the completions generated. We confirmed that the number of tokens in our local rendering of the
+prompts matched the returned number of prompt tokens from API calls. The exception was for the Llama-3.1
+models, where the default Transformers chat template includes the current date. We found that this template
+did not match the number of prompt tokens returned by APIs; however, the Llama-3 chat template did.9 As
+a result, we used the Llama-3 chat template for Llama-3.1 models in our local sampling.
+Details about API sampling. API samples are collected by repeatedly querying endpoints for one com-
+pletion at a time. We aimed to collect 250 completions per prompt for each API within a 24 hour window,
+but due to rate limits and request failures, some prompts had samples collected over multiple days. The dates
+we query each endpoint are listed in Tables 2 – 5. We query serverless endpoints offered by providers and
+use the same decoding parameters as for local sampling. When available, we called the providers using their
+Python packages; otherwise, we made raw HTTP requests.
+Below are provider-specific details:
+• Anyscale. Because Anyscale deprecated its endpoints during our data collection in August 2024,
+we were only able to collect samples from their Llama-3 8B endpoint for Wikipedia.
+• Together. We collected Llama-3 8B and 70B samples from Together.ai before they introduced
+separate reference, turbo, and lite endpoints. We collected Llama-3.1 8B, 70B, and 405B from the
+turbo endpoints, which was the only option available at the time of collection.
+Model Dataset Provider Dates queried
+3 8B Wikipedia
+Anyscale 7/4
+Amazon 7/8, 8/1
+Azure 8/19-20, 8/24
+Deepinfra 7/4, 8/1
+Fireworks 7/4, 7/19
+Groq 7/4, 8/1-4, 8/8
+Perplexity 7/4
+Replicate 7/4, 7/19
+Together 7/4
+HumanEval
+Amazon 7/29
+Azure 8/24
+Deepinfra 8/1
+Fireworks 8/1, 8/12
+Groq 8/4, 8/24
+Perplexity 8/12
+Replicate 8/1
+Together 8/1, 8/12
+UltraChat
+Amazon 7/29
+Azure 8/24
+Deepinfra 8/1
+Fireworks 8/1, 8/12
+Groq 8/4, 8/24
+Perplexity 8/12
+Replicate 8/1-2
+Together 8/1, 8/12
+Table 2: Dates we queried Llama-3 8B inference endpoints.
+9In October 2024, this behavior has changed for Together AI, which now uses the Llama-3.1 chat template that
+includes the current date. At the time we collected samples with the Llama-3 template, this was not the case.
+18
+Published as a conference paper at ICLR 2025
+Model Dataset Provider Dates queried
+3.1 8B Wikipedia
+Amazon 8/1
+Azure 8/19-21, 8/23-24
+Deepinfra 8/1-2
+Fireworks 7/26-27, 8/6
+Groq 8/1-4, 8/8-11, 8/24-26
+Perplexity 8/1-2
+Together 7/26-27, 8/6-8
+HumanEval
+Amazon 8/1
+Azure 8/24
+Deepinfra 7/31
+Fireworks 7/30
+Groq 7/31, 8/24, 8/27
+Perplexity 7/30
+Together 7/30
+UltraChat
+Amazon 7/26-27, 8/1, 8/6
+Azure 8/24
+Deepinfra 7/31
+Fireworks 7/26, 7/30, 8/6
+Groq 7/31-8/1, 8/27
+Perplexity 7/30
+Together 7/26-27, 7/30, 8/6
+Table 3: Dates we queried Llama-3.1 8B inference endpoints.
+Model Dataset Provider Dates queried
+3 70B Wikipedia
+Amazon 7/8, 8/1
+Azure 8/19-21, 8/24
+Deepinfra 7/4, 8/5-6
+Fireworks 7/4, 7/31-8/1
+Groq 7/4, 7/31, 8/2-13
+Perplexity 7/4, 7/8, 8/5-6
+Replicate 7/4, 7/19, 7/31-8/1
+Together 7/4, 7/31-8/1
+HumanEval
+Amazon 7/29
+Azure 8/24
+Deepinfra 8/1
+Fireworks 8/6
+Groq 8/1
+Perplexity 8/6
+Replicate 8/6
+Together 8/6, 8/24
+UltraChat
+Amazon 8/24
+Azure 8/25-26
+Deepinfra 8/1-2
+Fireworks 8/6-7, 8/24
+Groq 8/1-2, 8/4, 8/24
+Perplexity 8/6, 8/24
+Replicate 8/6
+Together 8/6, 8/24
+Table 4: Dates we queried Llama-3 70B inference endpoints.
+B.2 MONTE CARLO SIMULATIONS
+To construct the ten Wikipedia prompt distributions in §4, we randomly sampled 25 prompts per distribu-
+tion from the Wikipedia prompts in our dataset. The HumanEval and UltraChat prompt distributions were
+constructed by using all available prompts from those sources.
+19
+Published as a conference paper at ICLR 2025
+Model Dataset Provider Dates queried
+3.1 70B Wikipedia
+Amazon 8/2
+Azure 8/24
+Deepinfra 8/2
+Fireworks 7/27-28, 8/2, 8/5-6
+Groq 8/2-5, 8/8-11, 8/21-24
+Perplexity 8/2, 8/6
+Together 7/27-28, 8/6
+HumanEval
+Amazon 8/24
+Azure 8/24, 8/26
+Deepinfra 7/31
+Fireworks 7/30
+Groq 7/31, 8/1-2, 8/24
+Perplexity 7/30-31
+Together 7/30, 8/6
+UltraChat
+Amazon 8/24-25
+Azure 8/25-26
+Deepinfra 7/31
+Fireworks 7/30
+Groq 7/31-8/1, 8/24
+Perplexity 7/30-31
+Together 7/30, 8/6
+Table 5: Dates we queried Llama-3.1 70B inference endpoints.
+Model Dataset Provider Dates queried
+3.1 405B Wikipedia
+Amazon 8/16-17, 8/23-24
+Deepinfra 8/16, 8/23-24
+Fireworks 8/16, 8/23-24
+Together 8/16, 8/20, 8/23-24
+HumanEval
+Amazon 8/24-25
+Deepinfra 8/24
+Fireworks 8/24
+Together 8/24
+UltraChat
+Amazon 8/24-25
+Deepinfra 8/24-25
+Fireworks 8/24
+Together 8/24
+Table 6: Dates we queried Llama-3.1 405B inference endpoints.
+In most experiments, we estimated power as the average rejection rate over 100 simulations, where we
+sample a fresh DP and DQ each time. We simulated p-values by sampling 1000 datasets DP and DQ from
+P and computing the test statistic on each pair, and then we reused this empirical distribution when testing
+against all alternatives for the same πP . The exception is for the MMD all-substrings test statistic: because
+this was exceptionally slow to compute, we simulated p-values using 100 samples instead of 1000, and we
+estimated power from 20 simulations instead of 100.
+20
+Published as a conference paper at ICLR 2025
+Model Dates queried
+gpt-4o-mini 8/21, 8/23-24
+gpt-4o 8/29
+gpt-3.5-turbo-0125 8/29
+gpt-3.5-turbo-1106 8/29
+gpt-4-0125-preview 8/29
+Table 7: Dates we queried OpenAI endpoints (Wikipedia task).
+21
+Published as a conference paper at ICLR 2025
+C ADDITIONAL RESULTS
+C.1 ADDITIONAL RESULTS FROM §4.1
+In §4.1, we evaluated two-sample tests on their ability to distinguish samples (in token space, L ≤ 50)
+from full-precision models from those of quantized models and watermarked models. Concretely, we eval-
+uated tests’ power on pairs of distributions (P, Q), where P represents samples from the fp32 model and Q
+represents samples from one of {fp16, int8, nf4, or watermarked} versions of the same model. To ensure
+generalizable results, we experimented with five language models (Mistral 7B Instruct, Llama-3 8B and 70B
+Instruct, and Llama-3.1 8B and 70B Instruct) and ten Wikipedia-based prompt distributions (Box 1).
+Figure 2 in the main text plotted sample complexity and length results, averaging across language mod-
+els and prompt distributions. In this appendix, we show plots for the same experiments, but stratified by
+language model and prompt distribution.
+• Figure 5 shows the sample complexities for different two-sample tests, stratified by the alternative
+distribution Q, but averaged over the five language models and ten prompt distributions.
+• Figure 6 shows the sample complexities for different two-sample tests, stratified by the alternative
+distribution Q and model, but averaged over ten prompt distributions.
+• Figure 7 shows the simulated powers for different completion lengths L, stratified by the alternative
+distribution Q.
+Additionally, Table 8 provides the power of the Hamming MMD test to distinguish (P, Q) for other language
+models in L = 50 token space. This table adds Phi-3 Mini (Instruct), OLMo 7B (Instruct), and Gemma-2
+9B (Instruct). Table 9 evaluates a Levenshtein MMD test, which uses the Levenshtein distance as the kernel
+function. The Levenshtein kernel is defined as k(x, y) = exp(−Levenshtein(x, y)). It is less powerful than
+the Hamming kernel, but still outperforms traditional two-sample tests.
+Discussion: the Hamming MMD is the most powerful test. Across Figure 2 (left), Figure 5, and Figure
+6, we observe that the Hamming MMD test is significantly more sample-efficient for all alternatives except
+fp16 quantization at completion length L = 50 tokens. We also observe that the Hamming MMD is more
+robust to changes in completion length than other tests (Figure 2 middle, Figure 7).
+Discussion: tests’ powers depend on the particular (P, Q) pair. In Figure 6 and Table 8, we observe that
+tests’ powers are heterogeneous across different (P, Q) pairs. The choice of model affects both the reference
+distribution P and the effect of interventions like quantization, i.e., the alternative Q. For example, 4-bit
+quantization of the Llama and OLMo models is consistently noticeable. On the other hand, 8-bit quantization
+and watermarking have more inconsistent effects. The impact of quantization is heterogeneous even within
+the same model family: for example, the Llama-3 8B model is more affected by int8 quantization than the
+Llama-3.1 8B model. On average however, as discussed above, our results above still support our claim that
+the Hamming MMD is more powerful than other kernel choices.
+C.2 ADDITIONAL RESULTS FROM §4.3
+In §4.3, we moved from evaluating tests in an easier token space to a higher-dimensional character space.
+Specifically, in §4.1 and §4.2, we evaluated tests in L = 50 token space, where |V| = 128 256. In §4.3
+and §5, we evaluated tests in L = 1000 or L = 5000 character space, where |V| = 155 063. In general,
+since the set of all prompt-completion pairs has size O(m|V|L), we expect testing to be harder in the latter,
+significantly higher-dimensional space. One can come to the same conclusion by extrapolating from Figure
+2 (middle) in the main text; this figure also shows that the Hamming MMD test is more robust to this increase
+in dimensionality than other tests.
+Discussion: power decreases in higher-dimensional space. Table 10 shows the power of the Hamming
+MMD test to distinguish between pairs of distributions (P, Q) in L = 1000 character space. As expected,
+22
+Published as a conference paper at ICLR 2025
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: fp16
+Sample complexities by alternative, averaged across models
+MMD (Hamming) MMD (All Substrings) MMD (One-Hot) L1 Two-sample 2
+Figure 5: Sample complexities for different two-sample tests. Each subplot represents power for an alterna-
+tive distribution Q averaged over five language models and ten prompt distributions π. Tests are conducted
+with sample sizes ranging from N = 10m to N = 100m, where m = 25 is the number of prompts in
+the prompt distribution. The completion length is fixed to L = 50 tokens. The Hamming MMD test is
+significantly more sample-efficient for all alternatives except fp16 quantization: for this alternative, while
+other two-sample tests can attain perfect power with enough samples, the kernel test increases power slowly.
+This suggests that fp16 and fp32 differ in ways that are difficult to capture with the Hamming kernel.
+moving to this higher-dimensional space decreases the power of the test; the powers in the last three rows
+are lower than those in Table 8 for the same models in L = 50 token space. These power losses can be
+compensated for by increasing the sample size: Table 11 repeats the experiments in Table 10 with N = 50m
+instead of N = 10m. If we were to use this sample size in §5, each audit would still cost < $5.
+Note that even in the reduced power setting, model swaps are easy to detect (Table 10, top rows).
+C.3 DETECTING INCORRECT DECODING PARAMETERS
+Our problem formulation in §2 compares two distributions in general: this includes cases where the API Q
+samples from the same model as the reference distribution P , but with different decoding parameters (e.g.,
+temperature τ ). Table 12 shows that detecting differences in the temperature parameter is quite easy; this
+parameter significantly affects the distribution of completions.
+23
+Published as a conference paper at ICLR 2025
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, fp16
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, fp16
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3.1 8B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3.1 8B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3.1 8B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3.1 8B, fp16
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 70B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 70B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 70B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 70B, fp16
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3.1 70B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3.1 70B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3.1 70B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3.1 70B, fp16
+Sample complexities by model P and alternative Q
+MMD (Hamming) MMD (All Substrings) MMD (One-Hot) L1 Two-sample 2
+Figure 6: Sample complexities for different two-sample tests. Each subplot represents power for a particular
+alternative distribution Q and model, but averaged over ten prompt distributions π. Tests are conducted with
+sample sizes ranging from N = 10m to N = 100m, where m = 25 is the number of prompts in the prompt
+distribution. The completion length is fixed to L = 50 tokens. Some model and alternative combinations
+are more difficult to detect than others.
+24
+Published as a conference paper at ICLR 2025
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: watermark
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: nf4
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: int8
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: fp16
+Robustness to long completions by alternative
+MMD (Hamming) MMD (All Substrings) MMD (One-Hot) L1 Two-sample 2
+Figure 7: Simulated powers for different completion lengths L ∈ {1, · · · , 50}, stratified by the alternative
+distribution Q. The sample size is fixed to N = 10m, where m = 25 is the number of prompts in the prompt
+distribution. Across all alternatives, kernel tests suffer less drop in power as the length of completions
+increases. Traditional two-sample tests observe a slight power increase from L = 1 tokens to L = 5, tokens,
+but power dramatically degrades afterwards.
+Model watermark nf4 int8 FPR (fp32)
+Llama-3 8B 1.00 (0.00) 0.93 (0.04) 0.79 (0.08) 0.05 (0.01)
+Llama-3.1 8B 0.62 (0.04) 1.00 (0.00) 0.08 (0.02) 0.05 (0.01)
+Llama-3 70B 0.97 (0.01) 1.00 (0.00) 1.00 (0.00) 0.07 (0.01)
+Llama-3.1 70B 0.54 (0.06) 1.00 (0.00) 1.00 (0.00) 0.06 (0.01)
+Mistral 7B 0.72 (0.06) 0.89 (0.04) 0.30 (0.06) 0.04 (0.01)
+OLMo 7B 0.47 (0.08) 0.99 (0.01) 0.36 (0.08) 0.06 (0.01)
+Gemma-2 9B 0.43 (0.02) 0.12 (0.01) 0.06 (0.01) 0.06 (0.01)
+Phi-3 Mini 0.75 (0.04) 0.63 (0.05) 0.24 (0.01) 0.06 (0.01)
+Table 8: Power of the Hamming MMD test to distinguish the fp32 model from alternatives in L = 50 token
+space at N = 10m samples, where m = 25 is the number of prompts in the prompt distribution. Aver-
+ages and standard errors are reported over ten prompt distributions. The column represents the alternative
+distribution Q. The FPR (fp32) column represents the false positive rate when comparing the full-precision
+model to itself.
+25
+Published as a conference paper at ICLR 2025
+Model watermark nf4 int8 FPR (fp32)
+Llama-3 8B 0.14 (0.01) 0.15 (0.01) 0.16 (0.01) 0.07 (0.01)
+Llama-3 70B 0.13 (0.02) 1.00 (0.00) 0.12 (0.01) 0.04 (0.01)
+Mistral 7B 0.11 (0.01) 0.19 (0.01) 0.12 (0.01) 0.05 (0.01)
+Table 9: Power of the Levenshtein MMD test to distinguish the fp32 model from alternatives in L = 50
+token space at N = 10m samples, where m = 25 is the number of prompts in the prompt distribution. Av-
+erages and standard errors are reported over ten prompt distributions. The column represents the alternative
+distribution Q. The FPR (fp32) column represents the false positive rate when comparing the full-precision
+model to itself.
+model Mistral 7B Llama-3 8B Llama-3.1 8B Llama-3 70B Llama-3.1 70B
+alternative
+Mistral 7B 0.06 (0.01) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+Llama-3 8B 1.00 (0.00) 0.05 (0.01) 0.76 (0.00) 0.98 (0.00) 0.95 (0.00)
+Llama-3.1 8B 1.00 (0.00) 0.83 (0.05) 0.07 (0.01) 1.00 (0.00) 0.53 (0.00)
+Llama-3 70B 1.00 (0.00) 0.99 (0.00) 1.00 (0.00) 0.07 (0.01) 0.89 (0.00)
+Llama-3.1 70B 1.00 (0.00) 0.98 (0.00) 0.75 (0.07) 0.99 (0.00) 0.06 (0.01)
+Phi-3 mini 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+Gemma-2 9B 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+OLMo 7B 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+gpt-4o-mini 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+gpt-4o 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+gpt-3.5-turbo-0125 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+gpt-3.5-turbo-1106 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+gpt-4-0125-preview 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+watermark 0.23 (0.02) 0.62 (0.05) 0.32 (0.04) 0.57 (0.06) 0.26 (0.03)
+int8 0.15 (0.02) 0.30 (0.06) 0.07 (0.01) 1.00 (0.00) 0.99 (0.01)
+nf4 0.44 (0.05) 0.38 (0.05) 1.00 (0.00) 1.00 (0.00) 1.00 (0.00)
+Table 10: Power of the Hamming MMD test to distinguish between pairs of models (and other alternatives)
+in L = 1000 character space at N = 10m, where m = 25 is the number of prompts covered by π. The
+column represents the null distribution P . Italicized entries are FPRs. Note that unlike §4.1, the test is now
+run in higher-dimensional character space, which generally reduces power.
+Sample size watermark nf4 int8 FPR (fp32)
+N = 10m 0.62 (0.05) 0.38 (0.05) 0.30 (0.06) 0.05 (0.01)
+N = 50m 1.00 (0.00) 1.00 (0.01) 0.96 (0.02) 0.07 (0.01)
+Table 11: Power of the Hamming MMD test to distinguish between the fp32 Llama-3 8B and quantized or
+watermarked alternatives in L = 1000 character space. We compare power at N = 10m and N = 50m,
+where m = 25 is the number of prompts covered by π. Increasing the sample size can compensate for losses
+of power.
+26
+Published as a conference paper at ICLR 2025
+Model τ = 0.5 τ = 1.5
+Llama-3 8B 1.00 (0.00) 1.00 (0.00)
+Llama-3.1 8B 1.00 (0.00) 1.00 (0.00)
+Mistral 8B 1.00 (0.00) 0.97 (0.02)
+Table 12: Power of the Hamming MMD test to distinguish between models sampled at temperature τ = 1
+(P ) vs. other temperatures (Q). This decoding parameter mismatch can be detected with near-perfect power.
+27
+Published as a conference paper at ICLR 2025
+C.4 EFFECT OF THE PROMPT DISTRIBUTION
+In §4, we evaluated tests on a prompt distribution π drawn from a Wikipedia language modeling task and
+supported on m = 25 prompts. In this appendix, we extend these evaluations to different prompt distribu-
+tions.
+Effect of the number of prompts m. In Figure 8, we continue to use the Wikipedia task, but vary the
+number of prompts m in the prompt distribution. Larger m values increase the power of the test, suggesting
+that users benefit from testing many prompts together, so long as the sample size is increased proportionally.
+0 20 40 60 80 100
+Number of prompts m
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Average power
+Dependence on number of prompts in 
+Figure 8: Power of the Hamming MMD test for different numbers of prompts m in the prompt distribution.
+Results are averaged over ten random samples of m prompts (for the Wikipedia task). The test is run with
+N = 10m and L = 50 tokens, with m varying from 1 to 100. Power increases with m, suggesting that users
+benefit from testing many prompts together.
+Effect of the task. We explored whether the “open-endedness” of the task affects power: intuitively, one
+might expect that more creative tasks lead to completion distributions that are higher entropy, which might
+make testing harder. To test this, we evaluated power across several prompt distributions: on the most
+constrained side of the spectrum, we experimented with HumanEval (code, Box 3); on the most creative
+side, UltraChat (chatbot dialogues, Box B.1), and in the middle, language modeling with Wikipedia (Box 1).
+We additionally experimented with tightly concentrated prompts (just Wikipedia in English, just Wikipedia
+in French, etc.) vs. diverse prompt distributions (Wikipedia mixed with HumanEval and UltraChat).
+Table 13 lists the Hamming MMD’s power against the local alternatives (nf4, int8, watermark) at N = 10m
+with tests conducted in token space (L = 50 token completions). We make several observations:
+• We do not observe that creative tasks are harder to test than constrained tasks: if this were the
+case, we would expect the power to be lowest for UltraChat and highest for HumanEval across all
+alternatives.
+• We also do not observe that diverse prompt distributions are harder to test than concentrated prompt
+distributions: if this were the case, we would expect the power to be higher for the single-language
+Wikipedia prompt distributions than the mixed-task prompt distributions.
+• The prompt distribution mainly affects the difficulty of detecting quantization, not watermarking.
+• For comparison, we also provide the results of the one-hot kernel in Table 14. The Hamming
+kernel consistently outperforms the one-hot baseline on all prompt distributions, matching our main
+conclusion of §4.1 about the relative strength of kernels.
+28
+Published as a conference paper at ICLR 2025
+m watermark nf4 int8 FPR (fp32)
+HumanEval (constrained) 20 0.99 (0.00) 1.00 (0.00) 0.32 (0.00) 0.06 (0.00)
+Wikipedia (language modeling)
+English only 25 0.98 (0.01) 0.49 (0.04) 0.11 (0.01) 0.06 (0.01)
+French only 25 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 0.06 (0.01)
+German only 25 0.98 (0.01) 0.71 (0.08) 0.27 (0.06) 0.05 (0.00)
+Spanish only 25 1.00 (0.00) 1.00 (0.00) 1.00 (0.00) 0.05 (0.01)
+Russian only 25 0.98 (0.01) 0.71 (0.05) 0.24 (0.04) 0.05 (0.01)
+All languages 25 1.00 (0.00) 0.93 (0.04) 0.79 (0.08) 0.05 (0.01)
+UltraChat (creative) 20 0.89 (0.00) 1.00 (0.00) 0.04 (0.00) 0.04 (0.00)
+Wikipedia + UltraChat 25 0.81 (0.05) 1.00 (0.00) 0.10 (0.02) 0.06 (0.01)
+Wikipedia + UltraChat + HumanEval 25 0.95 (0.01) 1.00 (0.00) 0.35 (0.05) 0.04 (0.01)
+Table 13: Hamming MMD’s power against the local alternatives (nf4, int8, watermark) at N = 10m with
+tests conducted in token space (L = 50 token completions).
+m watermark nf4 int8 FPR (fp32)
+HumanEval (constrained) 20 0.46 (0.00) 0.77 (0.00) 0.16 (0.00) 0.05 (0.00)
+Wikipedia (language modeling)
+English only 25 0.06 (0.01) 0.05 (0.01) 0.04 (0.01) 0.01 (0.00)
+French only 25 0.04 (0.01) 0.06 (0.01) 0.05 (0.00) 0.01 (0.00)
+German only 25 0.04 (0.01) 0.04 (0.01) 0.04 (0.01) 0.01 (0.00)
+Spanish only 25 0.04 (0.01) 0.06 (0.01) 0.04 (0.01) 0.02 (0.00)
+Russian only 25 0.04 (0.01) 0.05 (0.01) 0.03 (0.01) 0.01 (0.00)
+All languages 25 0.04 (0.00) 0.05 (0.01) 0.04 (0.01) 0.01 (0.00)
+UltraChat (creative) 20 0.07 (0.00) 0.48 (0.00) 0.04 (0.00) 0.01 (0.00)
+Wikipedia + UltraChat 25 0.09 (0.01) 0.05 (0.01) 0.07 (0.01) 0.04 (0.01)
+Wikipedia + UltraChat + HumanEval 25 0.22 (0.02) 0.32 (0.03) 0.05 (0.01) 0.05 (0.01)
+Table 14: One-hot MMD’s power against the local alternatives (nf4, int8, watermark) at N = 10m with
+tests conducted in token space (L = 50 token completions).
+C.5 COMPARING TWO-SAMPLE AND APPROXIMATE GOODNESS-OF-FIT TESTS
+In §2, we assumed only sample access to both the reference distribution P and API Q. An alternative
+problem setup might give the auditor privileged access to P to evaluate probabilities P (y | x) for arbitrary
+(prompt, completion) pairs. Here, we compare the performance of two-sample tests to goodness-of-fit tests
+that leverage this privileged setting.
+In an extreme case, evaluating probabilities is free – the auditor can fully describe P (y | x) for all comple-
+tions y ∈ V ≤L. Then goodness-of-fit tests, like the one-sample L1 statistic, can be used to compare observed
+counts in DQ to expected counts under P :
+L1gof(P, DQ) =
+X
+z∈X ×V ≤L
+|nz {DQ} − N · P (y|x)π(x)| . (12)
+However, in practice, evaluating P (y | x) for all y ∈ V ≤L and all x is intractable: as a concrete example, for
+our language modeling task on Llama-3, m · |V ≤L| = 25 · 128 00050 ≈ 5 × 10256. A more realistic scenario
+is that the auditor can only evaluate P (y | x) for the observed (x, y) in DQ. This leads to an approximation
+29
+Published as a conference paper at ICLR 2025
+of the goodness-of-fit test statistic:
+[L1gof(P, DQ) = X
+z∈DQ
+|nz {DQ} − N · P (y|x)π(x)| . (13)
+We take a similar strategy for the one-sample L2 test
+L2gof(P, DQ) =
+X
+z∈X ×V ≤L
+(nz {DQ} − N · P (y|x)π(x))2
+[L2gof(P, DQ) = X
+z∈DQ
+(nz {DQ} − N · P (y|x)π(x))2 , (14)
+the Pearson χ2 test
+χ2 pearson(P, DQ) = X
+z∈X ×V ≤L
+(nz {DQ} − N · P (y|x)π(x))2
+N · P (y|x)π(x)
+\χ2pearson(P, DQ) = X
+z∈DQ
+(nz {DQ} − N · P (y|x)π(x))2
+N · P (y|x)π(x) ,
+(15)
+and the truncated χ2 test (Balakrishnan & Wasserman, 2018)
+χ2 truncated(P, DQ) = X
+z∈X ×V ≤L
+(nz {DQ} − N · P (y|x)π(x))2 − nz {DQ}
+max
+
+P (y|x)π(x), 1 |V ≤L |
+
+\χ2 truncated(P, DQ) = X
+z∈DQ
+(nz {DQ} − N · P (y|x)π(x))2 − nz {DQ}
+max
+
+P (y|x)π(x), 1 |V ≤L |
+ .
+(16)
+The only goodness-of-fit test that we consider which is unaffected by the approximation is the likelihood
+ratio test:
+LRT(P, DQ) = −2
+X
+z∈DQ
+nz {DQ} log
+ nz {DQ}
+N · P (y|x)π(x)
+
+. (17)
+Figure 9 plots sample complexities of these (approximate) goodness-of-fit tests alongside the two-sample
+tests evaluated in the main text. The best goodness-of-fit tests outperform their two-sample counterparts
+in the extremely low-sample regime (N < 1000), but this trend reverses as N increases. This is surpris-
+ing — in theory, we would expect probability access to only increase power. These results suggest that
+the approximations compensating for limited evaluation budget can introduce bias, reducing the power of
+goodness-of-fit tests. We leave to future work ideas for the correction of this bias.
+30
+Published as a conference paper at ICLR 2025
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, fp16
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, fp16
+Goodness of fit vs. two-sample sample complexities by model P and alternative Q
+MMD (Hamming)
+MMD (One-Hot)
+L1
+Two-sample 2
+Likelihood Ratio Test
+Approx. one-sample L1
+Approx. one-sample L2
+Approx. Pearson 2
+Approx. truncated 2
+Figure 9: Power of two-sample MMD tests and goodness-of-fit tests. Each subplot represents a particular
+language model and alternative distribution Q. The goodness-of-fit tests are approximated by evaluating
+P (y | x) only for observed (x, y) in DQ. The truncated chi-squared and one-sample L2 tests perform best
+out of the goodness-of-fit tests, while the likelihood ratio test and one-sample L1 tests perform worst. Note
+that experiments were run on a different set of 10 prompt distributions than the main text; these prompts
+specifically had model probabilities saved (see Appendix B.1).
+C.6 ASYMMETRIC SAMPLING COSTS
+In some cases, it may be significantly less expensive to sample from one distribution than the other. For ex-
+ample, the auditor may have unlimited compute to sample from the null distribution P , but limited monetary
+budget to sample from the API Q. In these cases, we show that it is possible to achieve slight power gains by
+increasing the sample size of the cheaper distribution, even while keeping the sample size of the expensive
+distribution fixed. Figure 10 fixes |DQ| = 10m and varies |DP | between 10m and 400m. All test statistics
+see some increases in power, with the L1 test seeing surprisingly large gains.
+31
+Published as a conference paper at ICLR 2025
+0 2000 4000 6000 8000 10000
+Number of samples from P (250 samples from Q)
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: watermark
+0 2000 4000 6000 8000 10000
+Number of samples from P (250 samples from Q)
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: nf4
+0 2000 4000 6000 8000 10000
+Number of samples from P (250 samples from Q)
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: int8
+0 2000 4000 6000 8000 10000
+Number of samples from P (250 samples from Q)
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: fp16
+Effect of increasing samples from P; fixing samples from Q at 10
+MMD (Hamming) MMD (One-Hot) L1 Two-sample 2
+Figure 10: Power when the sample size from P increases, when the sample size from Q is fixed to 250.
+There are slight power gains for all test statistics, with the L1 test seeing the largest gains.
+C.7 PERMUTATION PROCEDURE
+Results in the main text simulate the test statistic’s empirical distribution under the null by sampling datasets
+DQ and DP both from P . Here we validate these trends by conducting the same tests using a permutation
+procedure to estimate p-values (see Appendix A.2). Figures 11, 12, and 13 repeat the sample complexity,
+length, and asymmetric sampling cost experiments, but use the permutation procedure to estimate p-values.
+Because of the computational complexity of this step, we use 100 permutations, estimate power using 20
+simulations, and only test Mistral 7B and Llama-3 8B. We observe that the permutation procedure maintains
+similar power levels to the bootstrap method, and trends from the previous figures are replicated.
+32
+Published as a conference paper at ICLR 2025
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Mistral 7B, fp16
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, watermark
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, nf4
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, int8
+500 1000 1500 2000 2500
+Number of samples N
+0.0
+0.5
+1.0Power
+Llama-3 8B, fp16
+Sample complexities by model P and alternative Q (permutation method)
+MMD (Hamming) MMD (One-Hot) L1 Two-sample 2
+Figure 11: Sample complexities for different two-sample tests, stratified by the alternative distribution Q,
+but averaged over five language models and ten prompt distributions π. This figure parallels Figure 5 but
+uses the permutation procedure, rather than repeated sampling from P , to estimate p-values.
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: watermark
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: nf4
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: int8
+0 10 20 30 40 50
+Length of completion L
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: fp16
+Robustness to long completions
+MMD (Hamming) MMD (One-Hot) L1 Two-sample 2
+Figure 12: Simulated powers for different completion lengths L, stratified by the alternative distribution Q.
+This figure parallels Figure 7 but uses the permutation procedure, rather than repeated sampling from P , to
+estimate p-values.
+33
+Published as a conference paper at ICLR 2025
+0 2000 4000 6000 8000 10000
+Number of samples from P (250 samples from Q)
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: watermark
+0 2000 4000 6000 8000 10000
+Number of samples from P (250 samples from Q)
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: nf4
+0 2000 4000 6000 8000 10000
+Number of samples from P (250 samples from Q)
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: int8
+0 2000 4000 6000 8000 10000
+Number of samples from P (250 samples from Q)
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0Power
+Alternative: fp16
+Effect of increasing samples from P; fixing samples from Q at 10
+MMD (Hamming) MMD (One-Hot) L1 Two-sample 2
+Figure 13: Simulated power when the sample size from P increases, when the sample size from Q is fixed
+to 250. This figure parallels Figure 10 but uses the permutation procedure, rather than repeated sampling
+from P , to estimate p-values.
+34
+Published as a conference paper at ICLR 2025
+C.8 ADDITIONAL RESULTS FROM §5
+Wikipedia HumanEval UltraChat
+3 8B 3.1 8B 3 70B 3.1 70B 3 8B 3.1 8B 3 8B 3.1 8B
+Amazon 0.07 1.00 0.32 1.00 0.48 1.00 1.00 1.00
+Anyscale 0.02 — — — — — — —
+Azure 0.01 0.00 0.01 0.01 0.01 0.29 0.00 0.13
+Deepinfra 0.04 0.00 0.04 0.00 0.08 0.19 0.04 0.09
+Fireworks 0.04 0.04 0.01 0.01 0.01 1.00 0.03 0.90
+Groq 0.03 0.07 0.02 0.59 0.01 0.98 0.05 0.35
+Perplexity 1.00 1.00 1.00 1.00 1.00 1.00 1.00 1.00
+Replicate 0.12 — 0.33 — 0.07 — 0.06 —
+Together 0.01 0.00 0.00 0.00 0.00 0.27 0.01 0.07
+watermark 0.30 0.00 0.07 0.03 0.40 0.85 0.06 0.38
+int8 0.07 0.00 1.00 0.96 0.01 0.45 0.01 0.03
+nf4 0.09 1.00 1.00 1.00 1.00 1.00 1.00 1.00
+fp16 0.02 0.01 0.00 0.01 0.00 0.02 0.00 0.04
+fp32 0.01 0.00 0.00 0.00 0.00 0.10 0.01 0.04
+Table 15: Power against alternatives for the full audit. Table 1 in the main text thresholds power at 0.5 for
+the APIs. The FPRs against the full- and half-precision nulls are italicized.
+3 8B 3.1 8B 3 70B 3.1 70B
+Amazon ✗ ✗ ✗ ✗
+Anyscale ✓ — — —
+Azure ✓ ✓ ✓ ✓
+Deepinfra ✓ ✓ ✓ ✓
+Fireworks ✓ ✗ ✓ ✓
+Groq ✓ ✗ ✓ ✗
+Perplexity ✗ ✗ ✗ ✗
+Replicate ✓ — ✓ —
+Together ✓ ✓ ✓ ✓
+Table 16: Overall audit results, as also copied in Figure 1. The 8B models are tested on three prompt
+distributions (Wikipedia, HumanEval, UltraChat), while the 70B models are tested on Wikipedia. Tests
+from different prompt distributions are combined using a Bonferroni correction.
+Table 15 shows the overall audit results. The 8B models are tested on three prompt distributions (Wikipedia,
+HumanEval, UltraChat), while the 70B models are tested on Wikipedia. Tests from different prompt distri-
+butions are combined using a Bonferroni correction in Table 17.
+Discussion: the composite null reduces power. In §5, we use a composite null hypothesis that combines
+the fp32 and fp16 distributions. Table 18 shows the power of the Hamming MMD test in this composite null
+setting, stratified by model and prompt distribution. In general, power is reduced using the composite null.
+Power is generally highest on HumanEval, which collects longer completions than Wikipedia (250 vs. 50
+tokens).
+Discussion: the Hamming MMD is correlated with absolute differences in HumanEval average ac-
+curacy. In Figure 4 in the main text, we show that the Hamming MMD is correlated with the absolute
+differences in HumanEval average accuracy. However, the direction of this difference is inconsistent across
+APIs: sometimes APIs with nonzero MMDs have higher HumanEval accuracy than the local model, and
+35
+Published as a conference paper at ICLR 2025
+3 8B 3.1 8B 3 70B 3.1 70B
+Amazon 1.00 1.00 0.58 1.00
+Anyscale 0.02 — — —
+Azure 0.02 0.10 0.01 0.01
+Deepinfra 0.01 0.04 0.04 0.01
+Fireworks 0.00 1.00 0.03 0.00
+Groq 0.01 0.75 0.00 0.59
+Perplexity 1.00 1.00 1.00 1.00
+Replicate 0.02 — 0.48 —
+Together 0.01 0.09 0.00 0.00
+nf4 1.00 1.00 1.00 1.00
+int8 0.00 0.12 1.00 0.92
+watermark 0.12 0.45 0.50 0.06
+fp16 0.00 0.00 0.00 0.00
+fp32 0.00 0.06 0.00 0.00
+Table 17: Power against alternatives for the full audit with the Bonferroni correction. The FPRs against the
+full- and half-precision nulls are italicized.
+Wikipedia HumanEval UltraChat
+3 8B 3.1 8B 3 70B 3.1 70B 3 8B 3.1 8B 3 8B 3.1 8B
+watermark 0.30 0.00 0.07 0.03 0.40 0.85 0.06 0.38
+int8 0.07 0.00 1.00 0.96 0.01 0.45 0.01 0.03
+nf4 0.09 1.00 1.00 1.00 1.00 1.00 1.00 1.00
+fp16 0.02 0.01 0.00 0.01 0.00 0.02 0.00 0.04
+fp32 0.01 0.00 0.00 0.00 0.00 0.10 0.01 0.04
+Table 18: Power against local alternatives for the composite null setting (§5) in character space (L = 1000),
+stratified by model and prompt distribution.
+sometimes they have lower accuracy (see Table 19). Our main argument in the main text is that regardless
+of direction, one can predict the magnitude of change using the MMD. This is important in its own right;
+for example, it suggests that when the effect size returned by our test is large, users should do a manual
+examination for quality. For tasks with an automated verifier, like HumanEval, this two-step procedure may
+seem roundabout; however, for tasks without an automated accuracy metric, the MMD effect size provides
+users signal on when to invest manual resources into reviewing if the API is affecting performance.
+36
+Published as a conference paper at ICLR 2025
+Version Llama-3 8B Instruct Llama-3.1 8B Instruct
+fp32 0.17 0.67
+fp16 0.17 0.39
+Amazon 0.19 0.52
+Azure 0.19 0.72
+Deepinfra 0.18 0.64
+Fireworks 0.19 0.68
+Groq 0.14 0.26
+int8 0.15 0.53
+nf4 0.00 0.00
+Perplexity 0.00 0.06
+Replicate 0.22 —
+Together 0.19 0.66
+watermark 0.08 0.55
+Table 19: Raw HumanEval average accuracy for the Llama-3 8B Instruct and Llama-3.1 8B Instruct models.
+C.9 COMPARING APIS TO EACH OTHER
+In Figures 14 – 25, we compute the pairwise MMDs between APIs and quantized model weights for all
+prompt distributions (Wikipedia, HumanEval, UltraChat) and available models (Llama-3 8B, Llama-3.1
+8B, Llama-3 70B, Llama-3.1 70B). We use spectral clustering with two components to discover groups of
+implementations. Providers that pass the audit in Table 1 are typically clustered with the null distributions
+f p16 and f p32, reflecting that they are distributionally close to these nulls.
+Additionally, Figure 26 shows the estimated MMDs between APIs for each of the three prompt distributions
+for the Llama-3.1 405B model. Due to their size, we could not sample from the released weights for this
+large model directly, but we can still estimate the distances between APIs for this model.
+37
+Published as a conference paper at ICLR 2025
+perplexitytogetherfireworksdeepinfraanyscalegroq fp32 fp16 int8 nf4 azurereplicateamazon
+perplexity
+together
+fireworks
+deepinfra
+anyscale
+groq
+fp32
+fp16
+int8
+nf4
+azure
+replicate
+amazon
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3 8B on wikipedia
+togetherfireworks
+replicate
+deepinfra
+amazon
+anyscalegroq
+perplexity
+azure
+fp32
+fp16int8
+nf4
+Cluster visualization
+1: perplexity
+2: together, fireworks, deepinfra, anyscale, groq, fp32
+3: fp16, int8, nf4
+4: azure
+5: replicate, amazon
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 14: (Left) Hamming MMDs between APIs for the Llama-3 8B model on the Wikipedia prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+togetherdeepinfraazure fp32 fp16 perplexitygroq amazonfireworks
+together
+deepinfra
+azure
+fp32
+fp16
+perplexity
+groq
+amazon
+fireworks
+0.000
+(0.000)
+0.004
+(0.000)
+0.000
+(0.000)
+0.003
+(0.000)
+0.018
+(0.000)
+0.004
+(0.000)
+0.033
+(0.000)
+0.003
+(0.000)
+0.002
+(0.000)
+0.002
+(0.000)
+0.002
+(0.000)
+0.000
+(0.000)
+0.016
+(0.000)
+0.016
+(0.000)
+0.000
+(0.000)
+0.016
+(0.000)
+0.034
+(0.000)
+0.016
+(0.000)
+0.016
+(0.000)
+0.016
+(0.000)
+0.003
+(0.000)
+0.003
+(0.000)
+0.000
+(0.000)
+0.026
+(0.000)
+0.003
+(0.000)
+0.002
+(0.000)
+0.002
+(0.000)
+0.030
+(0.000)
+0.031
+(0.000)
+0.000
+(0.000)
+0.031
+(0.000)
+0.030
+(0.000)
+0.030
+(0.000)
+0.002
+(0.000)
+0.001
+(0.000)
+0.000
+(0.000)
+0.001
+(0.000)
+0.001
+(0.000)
+0.001
+(0.000)
+0.000
+(0.000)
+0.001
+(0.000)
+0.001
+(0.000)
+0.001
+(0.000)
+0.000
+(0.000)
+0.000
+(0.000)
+MMD between APIs for endpoint Llama-3.1 8B on wikipedia
+together
+fireworks
+deepinfra
+amazon
+groq
+perplexity
+azure
+fp32fp16
+Cluster visualization
+1: together, deepinfra, azure, fp32, fp16
+2: perplexity
+3: groq
+4: amazon
+5: fireworks0.00
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 15: (Left) Hamming MMDs between APIs for the Llama-3.1 8B model on the Wikipedia prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+38
+Published as a conference paper at ICLR 2025
+togetherfireworksdeepinfragroq azurefp32 fp16 nf4 perplexityint8 replicateamazon
+together
+fireworks
+deepinfra
+groq
+azure
+fp32
+fp16
+nf4
+perplexity
+int8
+replicate
+amazon
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.16
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.04
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.17
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.04
+(0.00)
+0.03
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.22
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.06
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.00
+(0.00)
+0.15
+(0.00)
+0.18
+(0.00)
+0.17
+(0.00)
+0.18
+(0.00)
+0.18
+(0.00)
+0.18
+(0.00)
+0.18
+(0.00)
+0.18
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3 70B on wikipedia
+togetherfireworks
+replicate
+deepinfra
+amazon
+groq
+perplexity
+azure
+fp32fp16
+int8
+nf4
+Cluster visualization
+1: together, fireworks, deepinfra, groq, azure, fp32, fp16
+2: nf4
+3: perplexity
+4: int8
+5: replicate, amazon
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 16: (Left) Hamming MMDs between APIs for the Llama-3 70B model on the Wikipedia prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+togetherfireworksdeepinfraazure fp32 fp16 nf4 perplexityint8 amazongroq
+together
+fireworks
+deepinfra
+azure
+fp32
+fp16
+nf4
+perplexity
+int8
+amazon
+groq
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.02
+(0.00)
+0.03
+(0.00)
+0.16
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.02
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.02
+(0.00)
+0.16
+(0.00)
+0.03
+(0.00)
+0.04
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.19
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.06
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.12
+(0.00)
+0.15
+(0.00)
+0.14
+(0.00)
+0.15
+(0.00)
+0.15
+(0.00)
+0.15
+(0.00)
+0.15
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3.1 70B on wikipedia
+together
+fireworks
+deepinfra
+amazon
+groq
+perplexity
+azurefp32fp16
+int8
+nf4
+Cluster visualization
+1: together, fireworks, deepinfra, azure, fp32, fp16
+2: nf4
+3: perplexity
+4: int8
+5: amazon, groq
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 17: (Left) Hamming MMDs between APIs for the Llama-3.1 70B model on the Wikipedia prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+39
+Published as a conference paper at ICLR 2025
+togetherfireworksdeepinfragroq azurefp32 fp16 int8 nf4 perplexityamazonreplicate
+together
+fireworks
+deepinfra
+groq
+azure
+fp32
+fp16
+int8
+nf4
+perplexity
+amazon
+replicate
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.12
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.04
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.12
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.04
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.17
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.12
+(0.00)
+0.12
+(0.00)
+0.12
+(0.00)
+0.12
+(0.00)
+0.12
+(0.00)
+0.12
+(0.00)
+0.12
+(0.00)
+0.12
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3 8B on humaneval
+togetherfireworks
+replicate
+deepinfra
+amazon
+groq
+perplexity
+azure
+fp32fp16int8
+nf4
+Cluster visualization
+1: together, fireworks, deepinfra, groq, azure, fp32, fp16, int8
+2: nf4
+3: perplexity
+4: amazon
+5: replicate
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 18: (Left) Hamming MMDs between APIs for the Llama-3 8B model on the HumanEval prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+togetherdeepinfraamazonazure fp32 int8 nf4 groq fp16 perplexityfireworks
+together
+deepinfra
+amazon
+azure
+fp32
+int8
+nf4
+groq
+fp16
+perplexity
+fireworks
+0.00
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.06
+(0.00)
+0.10
+(0.00)
+0.16
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.09
+(0.00)
+0.05
+(0.00)
+0.17
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.02
+(0.00)
+0.00
+(0.00)
+0.06
+(0.00)
+0.05
+(0.00)
+0.06
+(0.00)
+0.00
+(0.00)
+0.05
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.24
+(0.00)
+0.12
+(0.00)
+0.12
+(0.00)
+0.11
+(0.00)
+0.07
+(0.00)
+0.00
+(0.00)
+0.12
+(0.00)
+0.03
+(0.00)
+0.10
+(0.00)
+0.11
+(0.00)
+0.30
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.02
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.02
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.03
+(0.00)
+0.04
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.25
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.03
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.20
+(0.00)
+0.20
+(0.00)
+0.23
+(0.00)
+0.20
+(0.00)
+0.20
+(0.00)
+0.20
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3.1 8B on humaneval
+together
+fireworks
+deepinfra
+amazon
+groq
+perplexity
+azure
+fp32
+fp16
+int8
+nf4
+Cluster visualization
+1: together, deepinfra, amazon, azure, fp32, int8
+2: nf4
+3: groq, fp16
+4: perplexity
+5: fireworks
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 19: (Left) Hamming MMDs between APIs for the Llama-3.1 8B model on the HumanEval prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+40
+Published as a conference paper at ICLR 2025
+togetherfireworksdeepinfragroq azure replicateperplexityamazon
+together
+fireworks
+deepinfra
+groq
+azure
+replicate
+perplexity
+amazon
+0.000
+(0.000)
+0.001
+(0.000)
+0.000
+(0.000)
+0.137
+(0.001)
+0.140
+(0.001)
+0.000
+(0.000)
+0.145
+(0.001)
+0.140
+(0.001)
+0.138
+(0.001)
+0.002
+(0.000)
+0.003
+(0.000)
+0.000
+(0.000)
+0.079
+(0.001)
+0.082
+(0.000)
+0.024
+(0.000)
+0.083
+(0.001)
+0.000
+(0.000)
+0.079
+(0.000)
+0.105
+(0.000)
+0.080
+(0.000)
+0.003
+(0.000)
+0.004
+(0.000)
+0.005
+(0.000)
+0.000
+(0.000)
+0.020
+(0.001)
+0.020
+(0.000)
+0.169
+(0.001)
+0.019
+(0.000)
+0.015
+(0.000)
+0.000
+(0.000)
+0.020
+(0.000)
+0.000
+(0.000)
+0.001
+(0.000)
+0.002
+(0.000)
+0.003
+(0.000)
+0.000
+(0.000)
+MMD between APIs for endpoint Llama-3 70B on humaneval
+together
+fireworks
+replicate
+deepinfra amazon
+groq
+perplexity
+azure
+Cluster visualization
+Cluster 1
+Cluster 2
+Cluster 3
+Cluster 4
+0.00
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 20: (Left) Hamming MMDs between APIs for the Llama-3 70B model on the HumanEval prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+perplexity together fireworks amazon groq deepinfra
+perplexity
+together
+fireworks
+amazon
+groq
+deepinfra
+0.00
+(0.00)
+0.11
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.14
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.10
+(0.00)
+0.04
+(0.00)
+0.09
+(0.00)
+0.09
+(0.00)
+0.15
+(0.00)
+0.00
+(0.00)
+0.19
+(0.00)
+0.05
+(0.00)
+0.07
+(0.00)
+0.17
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3.1 70B on humaneval
+together
+fireworks
+deepinfra
+amazon
+groq
+perplexity
+Cluster visualization
+1: perplexity
+2: together, fireworks
+3: amazon
+4: groq
+5: deepinfra0.00
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 21: (Left) Hamming MMDs between APIs for the Llama-3.1 70B model on the HumanEval prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+41
+Published as a conference paper at ICLR 2025
+togetherfireworksreplicatedeepinfragroq azurefp16 int8 nf4 perplexityamazonfp32
+together
+fireworks
+replicate
+deepinfra
+groq
+azure
+fp16
+int8
+nf4
+perplexity
+amazon
+fp32
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.07
+(0.00)
+0.07
+(0.00)
+0.07
+(0.00)
+0.07
+(0.00)
+0.00
+(0.00)
+0.07
+(0.00)
+0.10
+(0.00)
+0.07
+(0.00)
+0.07
+(0.00)
+0.07
+(0.00)
+0.17
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.04
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.03
+(0.00)
+0.41
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.38
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.37
+(0.00)
+0.38
+(0.00)
+0.38
+(0.00)
+0.38
+(0.00)
+0.37
+(0.00)
+0.38
+(0.00)
+0.37
+(0.00)
+0.38
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3 8B on ultrachat
+togetherfireworksreplicatedeepinfra
+amazon
+groq
+perplexity
+azure
+fp32
+fp16int8
+nf4
+Cluster visualization
+1: together, fireworks, replicate, deepinfra, groq, azure, fp16, int8
+2: nf4
+3: perplexity
+4: amazon
+5: fp32
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 22: (Left) Hamming MMDs between APIs for the Llama-3 8B model on the UltraChat prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+groq fp32 nf4 amazonperplexityfireworkstogetherdeepinfraazure fp16 int8
+groq
+fp32
+nf4
+amazon
+perplexity
+fireworks
+together
+deepinfra
+azure
+fp16
+int8
+0.00
+(0.00)
+0.02
+(0.00)
+0.05
+(0.00)
+0.01
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.38
+(0.00)
+0.00
+(0.00)
+0.06
+(0.00)
+0.02
+(0.00)
+0.05
+(0.00)
+0.00
+(0.00)
+0.35
+(0.00)
+0.00
+(0.00)
+0.02
+(0.00)
+0.00
+(0.00)
+0.05
+(0.00)
+0.01
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.38
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.02
+(0.00)
+0.42
+(0.00)
+0.00
+(0.00)
+0.06
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.42
+(0.00)
+0.00
+(0.00)
+0.02
+(0.00)
+0.00
+(0.00)
+0.05
+(0.00)
+0.01
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.38
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.02
+(0.00)
+0.01
+(0.00)
+0.05
+(0.00)
+0.01
+(0.00)
+0.04
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.37
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.00
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.38
+(0.00)
+0.38
+(0.00)
+0.38
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3.1 8B on ultrachat
+together
+fireworks
+deepinfra
+amazon
+groq
+perplexity
+azure
+fp32
+fp16
+int8
+nf4
+Cluster visualization
+1: groq, fp32
+2: nf4
+3: amazon, perplexity
+4: fireworks
+5: together, deepinfra, azure, fp16, int8
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 23: (Left) Hamming MMDs between APIs for the Llama-3.1 8B model on the UltraChat prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+42
+Published as a conference paper at ICLR 2025
+replicate together fireworks groq amazon perplexitydeepinfra
+replicate
+together
+fireworks
+groq
+amazon
+perplexity
+deepinfra
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.28
+(0.00)
+0.01
+(0.00)
+0.05
+(0.00)
+0.07
+(0.00)
+0.07
+(0.00)
+0.26
+(0.00)
+0.00
+(0.00)
+0.07
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.05
+(0.00)
+0.05
+(0.00)
+0.11
+(0.00)
+0.05
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3 70B on ultrachat
+togetherfireworks
+replicate
+deepinfra
+amazon
+groq
+perplexity
+Cluster visualization
+1: replicate
+2: together, fireworks, groq
+3: amazon
+4: perplexity
+5: deepinfra
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 24: (Left) Hamming MMDs between APIs for the Llama-3 70B model on the UltraChat prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+fireworks amazon perplexity together deepinfra groq
+fireworks
+amazon
+perplexity
+together
+deepinfra
+groq
+0.00
+(0.00)
+0.01
+(0.00)
+0.33
+(0.00)
+0.03
+(0.00)
+0.00
+(0.00)
+0.00
+(0.00)
+0.01
+(0.00)
+0.00
+(0.00)
+0.33
+(0.00)
+0.03
+(0.00)
+0.33
+(0.00)
+0.00
+(0.00)
+0.02
+(0.00)
+0.03
+(0.00)
+0.02
+(0.00)
+0.32
+(0.00)
+0.00
+(0.00)
+0.04
+(0.00)
+0.04
+(0.00)
+0.29
+(0.00)
+0.00
+(0.00)
+Est. MMDs on endpoint Llama-3.1 70B on ultrachat
+together
+fireworks
+deepinfra
+amazongroq
+perplexity
+Cluster visualization
+1: fireworks
+2: amazon
+3: perplexity
+4: together, deepinfra
+5: groq
+0.01
+0.02
+0.03
+0.04
+0.05
+0.06
+Figure 25: (Left) Hamming MMDs between APIs for the Llama-3.1 70B model on the UltraChat prompt
+distribution. (Right) Visualization of the 2D spectral clustering components. Clusters are colored together.
+43
+Published as a conference paper at ICLR 2025
+togetherfireworksamazondeepinfra
+together
+fireworks
+amazon
+deepinfra
+0.000
+(0.000)
+0.006
+(0.000)
+0.000
+(0.000)
+0.005
+(0.000)
+0.006
+(0.000)
+0.000
+(0.000)
+0.007
+(0.000)
+0.005
+(0.000)
+0.008
+(0.000)
+0.000
+(0.000)
+wikipedia
+deepinfraamazonfireworkstogether
+deepinfra
+amazon
+fireworks
+together 0.000 (0.000) 0.025 (0.001) 0.015 (0.001) 0.009 (0.000)
+0.000
+(0.000)
+0.021
+(0.000)
+0.019
+(0.000)
+0.000
+(0.000)
+0.018
+(0.000)
+0.000
+(0.000)
+humaneval
+deepinfraamazonfireworkstogether
+deepinfra
+amazon
+fireworks
+together 0.000 (0.000) 0.010 (0.000) 0.009 (0.000) 0.011 (0.000)
+0.000
+(0.000)
+0.012
+(0.000)
+0.015
+(0.000)
+0.000
+(0.000)
+0.015
+(0.000)
+0.000
+(0.000)
+ultrachat
+0.00
+0.01
+0.02
+0.00
+0.01
+0.02
+0.00
+0.01
+0.02
+Figure 26: Estimated MMDs between Llama-3.1 405B APIs on three prompt distributions. Deepinfra pub-
+lishes that they serve Llama-3.1 405B at fp8 precision. (Source: Deepinfra website)
+44
+Published as a conference paper at ICLR 2025
+D DATA SAMPLES
+In this appendix, we randomly sample completions from pairs of distributions to illustrate the differences
+between them. In general, we observe that it is challenging to visually distinguish between samples from
+different distributions, especially for longform tasks. This is because each distribution produces diverse
+outputs. Formal statistical tests that we describe in the main text are necessary to detect these differences.
+In a few cases, detected differences between distributions are also visually obvious. For example, we ob-
+serve that the Llama 70B-scale models quantize poorly, and their nf4 completions are degenerate. Different
+language models also often differ in how they begin completions. We also observe that some APIs (in partic-
+ular, Perplexity) seem to be producing lower-entropy completions than the reference distribution, suggesting
+some form of caching or incorrect implementation of the temperature parameter.
+D.1 COMPARING MODELS TO QUANTIZED OR WATERMARKED VERSIONS
+Box 5: Samples from fp32 vs. fp16 Llama-3 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start
+the continuation immediately. “Calectasia is a genus of about fifteen species of flowering plants in the family
+Dasypogonaceae and ...”
+fp32 fp16
+“...are native to eastern Australia and New Zealand,
+with one species, Calectasia articulata, also
+occurring in Lord Howe Island. The genus is
+thought to have evolved from a single ancestral
+species in the mid-Tertiary period. Calectasia
+“...is endemic to Australia, with a majority of the
+species found in the southern and western parts of
+the country. The plants in this genus are shrubs or
+small trees with simple or compound leaves, and
+they produce small yellow or white flowers in
+clusters
+“...is native to the Pacific region, with species found
+in Australia, New Zealand, and the Pacific Islands,
+including New Caledonia and the Solomon Islands.
+The genus is characterised by its unique
+inflorescences, which are racemes
+“...are native to Australia and New Caledonia,
+which are characterized by their club-shaped
+inflorescences and solitary, axillary flowers. The
+flowers are typically yellow or mauve in color and
+are often highly fragrant, attracting a range
+“...are native to the coastal regions of southeastern
+Australia, southern New South Wales, Victoria,
+Tasmania, and the coastal islands of Southern and
+Southwestern Australia, typically preferring
+well-drained sandy soils and full sun to partial
+shade.”
+“... is endemic to northern and eastern Australia,
+including Tasmania and southern New Guinea.
+They are spinifex grasses of shrub-like habit,
+typically ranging in size from 0.5 to 4 metres in
+height. The leaves are strap-shaped
+“...is endemic to Australia and New Guinea, with
+most species being restricted to the southwestern
+corner of Western Australia. The plants are
+typically small to medium in size, and have leaves
+that are often reduced in size or absent, producing
+stems and inflores
+“...is endemic to Australia, with species found in the
+coastal and mountainous regions of eastern New
+South Wales, the Australian Capital Territory, and
+southeastern Queensland. The plants are
+characterised by their simple, solitary, terminal
+flowers, which appear in late winter
+“...is found in Australia and New Zealand, where
+they grow in coastal areas with sandy soils. They
+are also known as calectases or lomandras in some
+regions, and are commonly encountered in dry,
+sandy areas and scrublands. The
+“... native to eastern Australia and New Caledonia.
+They are shrub to small tree species, often growing
+up to 2-6 metres in height, with simple serrated
+leaves that are usually 10-40 mm long and a thick
+cop
+45
+Published as a conference paper at ICLR 2025
+Box 6: Samples from fp32 vs. fp16 Llama-3 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“The agreement provides for training teams from the Libyan Stock Exchange in Tripoli and in London to...”
+fp32 fp16
+“...enhance their skills in various aspects of
+securities trading and exchange management,
+including market regulation, risk management, and
+investor protection. The training program is
+designed to equip the Libyan Stock Exchange with
+the necessary expertise to operate efficiently and
+effectively, promoting economic growth
+“...enable them to develop their technical skills and
+knowledge in areas such as market regulation,
+surveillance, and settlement systems. Additionally,
+the partnership will facilitate the exchange of best
+practices and expertise between the two exchanges,
+with the aim of enhancing the Libyan capital market
+“...enhance their skills in areas such as market
+regulation, trading systems, and investor relations,
+with the goal of increasing the efficiency and
+transparency of the Libyan capital market.
+Additionally, the London Stock Exchange will
+provide technical assistance to help the Libyan
+Stock Exchange
+“...gain expertise in modern trading practices, risk
+management, and regulatory compliance, with the
+aim of enhancing the Libyan capital market’s
+infrastructure and attracting foreign investment to
+support the country’s economic growth and
+development. The partnership is also expected to
+facilitate the listing of
+“...enhance their skills and knowledge in modern
+stock exchange operations, with a focus on trading,
+settlement, and market surveillance systems.
+Additionally, the London Stock Exchange will
+provide technical assistance to help the Libyan
+Stock Exchange develop its regulatory framework
+and operational infrastructure,
+“...to enhance their skills in trading, regulation, and
+market operations, with a focus on implementing
+international best practices and standards. The
+training programs will cover a range of topics,
+including trading rules, risk management, and
+corporate governance, and will be designed
+“exchange knowledge and best practices in areas
+such as market operations, listing requirements, and
+investor relations, with the goal of strengthening the
+Libyan Stock Exchange’s capacity to attract foreign
+investment and promote economic growth in Libya.”
+“...to enhance their skills and knowledge in areas
+such as market regulation, trading systems, and risk
+management. Additionally, the deal will facilitate
+the exchange of information and expertise between
+the two countries, with the LSE providing guidance
+on developing a more efficient and
+“...to enhance their skills in areas such as market
+regulation, securities trading, and risk management,
+with the ultimate goal of strengthening the Libyan
+capital market and promoting economic
+development in the region.”
+“...exchange information and best practices on
+securities regulation, market surveillance, and
+trading operations. The training will focus on
+enhancing the capacity of the Libyan Stock
+Exchange to effectively regulate and monitor the
+Libyan capital market, as well as to improve its
+operational efficiency and competitiveness
+46
+Published as a conference paper at ICLR 2025
+Box 7: Samples from fp32 vs. int8 Llama-3 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“Weaver, Tom. I Talked with a Zombie: Interviews with 23 Veterans of Horror and Sci-Fi Films and Tele...”
+fp32 int8
+“...vision, from the 1930s to the 1980s. Jefferson,
+NC: McFarland, 2009. Print. This book provides a
+unique perspective on the history of horror and
+science fiction, as it is told through
+“...including Max Brooks,ed Troma Nightmares and
+Brian De Palma’s Mission: Impossible III,ed Stan
+Winston,ed Edward Scissorhands,ed...”
+“...vision. McFarland, 2011. This book provides a
+unique perspective on the horror and science fiction
+genres by offering firsthand accounts from
+individuals who played a significant role in their
+development. The interviews, which span several
+decades, offer insight into
+“...including legendary actors like Bruce
+Campbell,...”
+“...vision About Their Most Memorable Roles.
+McFarland, 2011. Print. This book offers a unique
+perspective on the horror and sci-fi genre, as it is
+comprised of interviews with actors and actresses
+who have played iconic roles in various
+“...Famous Monsters,ed by Tom Weaver,ed features
+in-depth interviews with ed ed legends of horror and
+sci-fi,ed films and television,ed. Amonged the ed ed
+is Bruce Dern,ed,ed horror
+“...vision. McFarland, 2011. This collection of
+interviews with professionals from the horror and
+science fiction genres offers valuable insights into
+the production of classic films and television shows.
+The book includes discussions with actors, writers,
+directors, and special
+“...and TV,ed with the cast and crew of George
+Romero’s Diary of the Dead,ing to recall the good
+old days of horror movie making. We caught up
+with Tippi Hedren,...”
+“...vision, McFarland, 2008. This book provides a
+unique insight into the experiences of actors,
+directors, and special effects artists who worked on
+classic horror and science fiction films and
+television shows. The interviews offer a
+behind-the-scenes look
+“...Famous Monsters and Others.”
+47
+Published as a conference paper at ICLR 2025
+Box 8: Samples from fp32 vs. nf4 Mistral 7B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“The agreement provides for training teams from the Libyan Stock Exchange in Tripoli and in London to...”
+fp32 nf4
+“collaborate on developing market infrastructure,
+regulatory frameworks, and trading systems.
+Additionally, the partnership allows for knowledge
+exchange on best practices in financial services, risk
+management, and market surveillance. This
+cooperation aims to foster a stable, thriving,
+“ensure the seamless exchange of knowledge and
+best practices in trading, market surveillance, and
+regulatory compliance. This transatlantic
+collaboration aims to prepare the Libyan Stock
+Exchange for a more robust and resilient financial
+market, integrating international standards
+“work collaboratively on developing and
+strengthening the market infrastructure, adhering to
+international standards, and facilitating the growth
+of the Libyan capital market.”
+“ensure compliance with international best practices
+and regulations, as well as enhancing
+capacity-building in various areas such as trading
+systems, surveillance, and market data
+management.”
+facilitate the exchange and sharing of knowledge in
+financial markets and regulations, while also
+ensuring the proper implementation of international
+best practices and standards. This collaborative
+effort aims to strengthen the Libyan Stock
+Exchange, enhance its efficacy, and promote
+sustainable economic growth
+“ensure that they are equipped with the latest
+financial market trading techniques and best
+practices. This exchange of knowledge is aimed at
+modernizing the Libyan Stock Exchange and
+making it more competitive on an international
+level. The teams will undergo intensive training
+programs
+“facilitate the development of modern trading
+practices and administrative systems, ensuring a
+harmonious integration with global financial
+standards.”
+“to share best practices and enhance the technical
+competencies of the teams, ensuring the smooth
+operation and sustained growth of the exchange.”
+...further enhance their capabilities and gain
+in-depth knowledge of modern trading practices,
+regulatory frameworks, and technology
+implementations. This collaboration aims to
+strengthen the Libyan Stock Exchange’s position in
+the international financial market, contribute to
+economic stability,
+“share their expertise in various areas, including
+market analysis, trading practices, regulatory
+compliance, and technology infrastructure. This
+exchange of knowledge aims to equip the Libyan
+Stock Exchange with the necessary tools and skills
+to effectively manage their market, improve its
+transparency
+48
+Published as a conference paper at ICLR 2025
+Box 9: Samples from fp32 vs. nf4 Llama-3 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“The agreement provides for training teams from the Libyan Stock Exchange in Tripoli and in London to...”
+fp32 nf4
+“...enhance their skills in areas such as market
+regulation, surveillance, and settlement systems,
+with the aim of improving the overall efficiency and
+transparency of the Libyan capital market.
+Additionally, the agreement outlines plans for the
+development of a new trading platform, which
+Course!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+“familiarize themselves with the operational
+systems and regulatory frameworks of the London
+Stock Exchange, with the aim of enhancing the
+capacity and competitiveness of the Libyan capital
+market. Additionally, the partnership will facilitate
+the exchange of best practices and expertise in areas
+such as risk
+Earth!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+“...enhance their knowledge and skills in areas such
+as market regulation, trading operations, and risk
+management, thus enabling them to develop a more
+efficient and transparent capital market in Libya.
+The cooperation is expected to facilitate the
+integration of the Libyan Stock Exchange into
+certain!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+“...gain expertise in modern stock exchange
+operations, including trading, settlement, and
+regulatory practices. This training will be conducted
+by experienced staff from the London Stock
+Exchange and will take place over a period of six
+months. Additionally, the agreement includes the
+provision of
+healthy!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+“...design and implement a new trading system,
+which will enable the Libyan Stock Exchange to
+operate more efficiently and in line with
+international standards. The training will cover all
+aspects of the new system, including its technical
+capabilities, operational procedures, and risk
+management strategies
+Reverse!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+49
+Published as a conference paper at ICLR 2025
+Box 10: Samples from fp32 vs. watermarked Llama-3.1 8B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“The agreement provides for training teams from the Libyan Stock Exchange in Tripoli and in London to...”
+fp32 Watermark
+“...further develop and refine their skills in the areas
+of corporate governance, risk management, and
+financial markets operations, with the goal of
+strengthening the Libyan Stock Exchange’s capacity
+to effectively play a central role in the country’s
+economic development.”
+“...enable them to develop the needed expertise to
+list Libyan companies on both exchanges, with the
+ultimate goal of increasing access to international
+finance for these companies and promoting
+economic growth in Libya.”
+“...learn about international best practices, listing
+rules, and compliance regulations, as well as to
+discuss ways to enhance the Libyan Stock
+Exchange’s capacity and increase investor
+confidence.”
+“...enable the implementation of international best
+practices and improve market operations,
+assessment, and enforcement. The project also aims
+to develop the institutional capacity of the Libyan
+Stock Exchange to list and regulate
+Sharia-compliant securities, and to establish a
+robust framework for corporate governance
+“...enhance their capacity and knowledge in areas
+such as corporate governance, risk management,
+and trading system implementation, ultimately
+contributing to the development of a more robust
+and efficient Libyan capital market.”
+“learn best practices for listing and disclosure
+standards, as well as the use of the London Stock
+Exchange’s ELITE programme to support the
+growth of Libyan companies.”
+“...familiarize them with international best practices
+in exchange operations, market making, and listing
+requirements. The teams will also undergo
+negotiation and stakeholder management training to
+enhance their capability to engage effectively with
+investors and issuers. Additionally, the agreement
+includes a
+“...familiarise them with the best practices of
+international exchange organisations, and for
+regular monitoring of Libya’s progress towards
+regulatory compliance with international standards.”
+“...facilitate greater integration of Libyan listed
+companies into the international capital market and
+to enhance the exchange’s technical capabilities.
+The London Stock Exchange’s internationally
+recognized standards and rules will be shared with
+the Libyan Stock Exchange to improve the
+efficiency and transparency of trading
+“...optimize trading and listings systems, and also
+allocated a sum for implementing a state-of-the-art
+trading platform at the Libyan Stock Exchange in
+Tripoli.”
+50
+Published as a conference paper at ICLR 2025
+D.2 COMPARING MODELS TO OTHER MODELS
+Box 11: Samples from Llama-3 8B (Instruct) vs. Phi-3 Mini (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“Gung Ho! (full title: Gung Ho!: The Story of Carlson´s Makin Island Raiders) is a 1943 American war ...”
+Llama-3 8B Phi-3 Mini
+“...drama film directed by Ray Enright, starring
+Randolph Scott and James Cagney. The story is
+based on the true events of Carlson’s Makahiki
+Raiders, a group of U.S. Marine Raiders who, under
+the command of Lt
+war film directed by Robert Wise and produced by
+Pandro S. Berman for Samuel Goldwyn
+Productions. It is based on the true story of the
+Makin Island raid during World War II. The film
+tells the tale of U
+“...drama film directed by Robert Wise, produced by
+Samuel G. Engel, and starring Randolph Scott. The
+movie is based on the true story of Alamo Scout
+Company B, 2nd Battalion, 1st Marine Regiment,
+during the Pacific
+...comedy-drama film directed by Mel Ferrer. Set
+during the Second Battle of the Philippines, the
+story is based on the true events of World War II
+and follows the 21st Marine Raider Battalion, led
+by Captain Howard
+...“comedy-drama film directed by Sam Wood,
+starring Randolph Scott, James Gleason, and Robert
+Ryan. The film is based on the true story of the
+United States Marine Corps’ 2nd Marine Raider
+Battalion, who were tasked with the
+war biographical film directed by Robert Lewis and
+John Ford. Set during World War II, the film
+focuses on the exploits of Lieutenant Commander
+Evans Carlson and his specialized American task
+force in Japan, highlighting the innovative guerrilla
+...“film directed by Ray Enright and starring
+Randolph Scott, Alan Hale, Jr., and Noah Beery Jr.
+The film is based on a true story about a group of
+United States Marine Raiders who launched a
+successful raid on the Japanese occupied Makin
+war film directed by John Sturges, written by Ward
+Elliott, and adapted from the book “Gung Ho!” by
+E.R. Hewett. This film chronicles the daring and
+harrowing experiences of the Makin
+“...film directed by Ray Enright and starring
+Randolph Scott, Barbara Britton, and Frank
+Mitchell. The movie is based on the true story of the
+formation of the Makin Island Attack Unit, a group
+of United States Marine Raiders who were tasked
+with
+...decion film directed by Robert Hendrickson and
+produced by William Alland. The film stars Victor
+Mature, Betty Field, and Sabu in the lead roles. Set
+during World War II, it chronicles the story of a
+group of
+51
+Published as a conference paper at ICLR 2025
+Box 12: Samples from Llama-3.1 70B (Instruct) vs. Gemma-2 9B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“Gung Ho! (full title: Gung Ho!: The Story of Carlson´s Makin Island Raiders) is a 1943 American war ...”
+Llama-3.1 70B Gemma-2 9B
+“... film directed by Ray Enright and starring
+Randolph Scott. The movie is based on the views
+attributed to the commander of the 2nd Raider
+Battalion, Evans Carlson, and the Battle of Makin
+Island (also known as the Battle of Butar
+film directed by Ray Enright and written by .”””
+“... film directed by Ray Enright and starring
+Randolph Scott. The film is largely fictional, but is
+based on the true story of the Carlson’s Raiders, the
+2nd Marine Raider Battalion, which was activated
+on June 19, 1942
+film, directed by Ray Enright and starring Wallace
+Ford. The film is based on a 1942 book by T.R.
+Fehrenbach about the famous amphibious raid of
+Makin Island in 1942
+“... film directed by Ray Enright, starring Randolph
+Scott, and based on the true story of the Carlson’s
+Raiders, a special military unit set up by President
+Franklin D. Roosevelt as an American counterpart
+to the British Commandos, that took part in
+film about the real-life exploits of United States
+Marine Corps scout-snipers on Makin Island during
+World War II. The film was directed by Ray Enright
+and stars Jon Hall as Lt. Alexander Bonnyman, a
+stern Marine officer
+“... film directed by Ray Enright that follows the
+story of Lieutenant Colonel Evans Carlson’s 2nd
+Marine Raider Battalion and their 30-day
+occupation of Makin Island in the Gilbert Islands
+during August 1942. The film stars Randolph Scott,
+Robert
+film, directed by Henry H. Arbitell, narrated by
+Philip J. Freeman, with music by William O.
+Steward and appeared in the following excerpt from
+the Encarta Encyclopedia:“Gung Ho! (full title:
+Gung
+film directed by Ray Enright, starring Randolph
+Scott, and based on the true story of the Carlson’s
+Raiders and the Makin Island raid. The screenplay
+was written by W. S. Burnett and data collected
+from the USMC. The film was
+film based on the real-life United States Marine
+Corps raid on Makin Island during World War II.
+52
+Published as a conference paper at ICLR 2025
+Box 13: Samples from Llama-3 8B (Instruct) vs. Llama-3.1 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“Gung Ho! (full title: Gung Ho!: The Story of Carlson´s Makin Island Raiders) is a 1943 American war ...”
+Llama-3 8B Llama-3.1 70B
+...film directed by Robert Wise and starring
+Randolph Scott. The movie is based on the true
+story of the Carlson’s Patrol, also known as the
+Makin Island Raiders, a small group of U.S.
+Marines who conducted a daring raid on
+Japanese-held
+“... film directed by Ray Enright, starring Randolph
+Scott. The film’s plot is based on the real-life World
+War II Makin Island raid led by Lieutenant Colonel
+Evans Carlson’s 2nd Marine Raider Battalion. Scott
+plays a fictional commander of the
+“...drama film directed by Ray Enright, starring
+Alan Ladd as John W. “Moe” Smith, a Marine
+raider who takes part in a special operations mission
+on Wake Island during the early years of World War
+II. The film
+film directed by Ray Enright, starring Randolph
+Scott, and produced by Walter Wanger. The
+screenplay was written by W. S. [Walker] Crowther
+and Joseph Hoffman, corrected to Hoffman’s
+dictation, based on the book of the same
+“...drama film directed by Ray Enright and starring
+Randolph Scott, James Wong Howe, and Robert
+Ryan. The film is based on the true story of the U.S.
+Marine Raider Battalion, led by Major Evans
+Carlson, who captured the strategic Mak
+film directed by Ray Enright, starring Randolph
+Scott and Alan Curtis. The film is based on the
+story of the Carlson’s Raiders and their famous raid
+on Makin Island during World War II. It attempts to
+convey the message that battle is not just
+...film directed by Ray Enright and starring Alan
+Ladd, Robert Preston, and Veronica Lake. The
+movie is based on a true story about a group of U.S.
+Marines stationed on Makin Island, also known as
+Butaritari,
+film directed by Ray Enright and starring Randolph
+Scott. The film is based on the true story of the
+Carlson’s Patrol, a 30-day raid on Japanese-held
+Makin Island between August 17 and September
+25, 1942, by
+“...drama film directed by Ray Enright and starring
+Randolph Scott, Alan Curtis, and James Ellison.
+The movie is based on the true story of the
+Carlson’s Raiders, a group of United States Marine
+Raiders who seized the strategic Makin Island from
+film directed by Ray Enright and starring Randolph
+Scott, based on the true story of the 2nd Marine
+Raider Battalion’s World War II raid on Makin
+Island, which was led by Lieutenant Colonel Evans
+Carlson.
+53
+Published as a conference paper at ICLR 2025
+Box 14: Samples from Llama-3.1 8B (Instruct) vs. OLMo 7B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“Gung Ho! (full title: Gung Ho!: The Story of Carlson´s Makin Island Raiders) is a 1943 American war ...”
+Llama-3.1 8B OLMo 7B
+“... film directed by Ray Enright. The film is based
+on a true story about the 2nd Marine Raider
+Battalion, under the command of Lieutenant
+Colonel Evans F. Carlson, who occupied the Makin
+Island (now known as Butaritari
+films, follows the inspiring true story of Colonel
+Carl L. Smith’s 4,000-man Corps of famous
+Japanese-American Battle Ground Warriors, who
+triumphantly embarked on a 50-day, 90-mile
+Hawaiian desert race to build a trenches and
+...film directed by Ray Enright, starring Robert
+Hutton and Preston Foster. The movie is based on
+the book of the same name, If You Want to Look for
+Treasure by Maj. Carl G. Carlson, USMCR, which
+tells the
+drama film directed by Ray DeFinis and featuring
+an ensemble cast that includes William “Dub”
+Jones, Harold Gobber, Tom Tully, Alan Cotton, and
+Philip Merivale. Set during World War II, the film
+follows the
+... film directed by Ray Enright, starring Randolph
+Scott, Jameson Thomas and Carole Landis. The
+film is an adaptation of the 1943 non-fiction book of
+the same name by Robert P. Landry and Frank R.
+McCoy,
+mercenaries, mostly African-American, who are
+tasked with building and managing a new
+humangeous village for the local Malayan¿’s (the
+indigenous people) and teaching them modern
+agriculture and forensics. observe the orderly and
+disciplined
+...film directed by Ray Enright, starring Wallace
+Beery and Carl Esmond. The screenplay was
+written by Jo Swerling and Joseph Hoffman, based
+on the 1943 book “Gung Ho!” by Robert P.
+Henderson.
+film, directed by Henry H. Arbitell, narrated by
+Philip J. Freeman, with music by William O.
+Steward and appeared in the following excerpt from
+the Encarta Encyclopedia: “Gung Ho! (full title:
+Gung
+“...buddy film directed by Ray Enright, starring
+Robert Hutton as Major Jim Curry and Randolph
+Scott as Major Carl Entschede. The film is loosely
+based on a true story of Carlson’s Makin Island
+Raiders, a United States Marine Corps
+animation by Tatsuo Stella, with uneorologisticatley
+accurate meteorological animations by Chica Tokiji,
+the film celebrates the heroic deeds of a devoted
+team of outcasts led by frontiersman Sam Dwier
+Brown, whose words
+54
+Published as a conference paper at ICLR 2025
+D.3 COMPARING APIS
+Box 15: Samples from fp32 vs. Perplexity for Llama-3 8B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start
+the continuation immediately. “Calectasia is a genus of about fifteen species of flowering plants in the family
+Dasypogonaceae and ...”
+fp32 Perplexity
+“...are native to the southern and eastern regions of
+Australia, New Zealand, and surrounding islands.
+The genus is characterized by its unique flowers,
+which are often yellow or orange in color and have
+five or six petals. Calectasia plants are often small
+“...is native to Australia, where they are commonly
+found in dry, open forests and woodlands. The
+plants are shrubs or small trees, typically growing to
+a height of 1-5 meters, with a spreading habit and a
+rounded crown.
+“...is endemic to Australia, with most species found
+in the states of Western Australia and Northern
+Territory. The plants are generally woody shrubs or
+small trees that grow up to 10 meters tall, with
+leaves that are typically divided into three lobes
+“...are native to Australia, where they are commonly
+found in dry, open forests and woodlands. The
+plants are shrubs or small trees that typically grow
+to a height of 1-5 meters, with a spread of around
+1-3
+“...is primarily native to Australia, with some
+species also found in New Guinea and the Pacific
+Islands. The plants are generally shrubs or small
+trees, typically growing up to 2-5 meters tall, with
+simple or lobed leaves that are often
+“...is native to Australia, where they are found in a
+variety of habitats, including forests, woodlands,
+and grasslands. The plants are characterized by their
+distinctive, often brightly colored flowers, which are
+typically arranged in clusters or spikes. The leaves
+“...are native to the temperate and subtropical
+regions of Australia. They are small to
+medium-sized shrubs or trees, typically growing up
+to 5 meters tall, with a distinctive, layered or
+shrubby habit. The leaves are simple, alternate
+“...are native to Australia, where they are commonly
+found in dry, open forests and woodlands. The
+plants are shrubs or small trees, typically growing to
+a height of 1-5 meters, and have a distinctive,
+sprawling habit. The
+“...is native to Australia and New Guinea. The
+plants are shrubs or small trees that typically grow
+to a height of around 1-5 meters, with a spread of up
+to 2-3 meters. The leaves are simple, alternate,
+“...are native to Australia, where they are found in a
+variety of habitats, including forests, woodlands,
+and grasslands. The plants are characterized by their
+distinctive, often brightly colored flowers, which are
+typically arranged in clusters or spikes, and their
+55
+Published as a conference paper at ICLR 2025
+Box 16: Samples from fp32 vs. Amazon Bedrock for Llama-3 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately.
+“Weaver, Tom. I Talked with a Zombie: Interviews with 23 Veterans of Horror and Sci-Fi Films and Tele...”
+fp32 Amazon Bedrock
+“...visions. Jefferson, NC: McFarland, 2004.
+Weldon, Michael J. The Psychotronic Video Guide.
+New York: St. Martin’s Press, 1996. Weldon,
+Michael J. The Psychot
+“...vision. McFarland & Co, 2004. This unique
+collection brings together a group of people who
+have been behind the scenes of some the most
+beloved and enduring horror and science fiction
+films and TV series, providing insight into how their
+...vision. Jefferson, NC: McFarland & Company,
+Inc., 2004. ISBN 0-786-48181-0; Weaver, Tom.
+Interviews with B Science Fiction and Horror
+Movie Makers: Writers, Producers,
+“...vision. McFarland, 2004. ISBN 0-7864-1684-5.
+Weaver, Tom. They Fought in the Creature
+Features: A History of Makeup Special Effects
+Artists. McFarland, 2010
+“...vision. Jefferson, NC: McFarland, 2004. ISBN
+0-7864-1686-1. Willemen, Paul. “The Fantastic.” In
+Film Comment 14, no. 6 (1978):
+“...Films and Television Shows. McFarland &
+Company, 2009” The author delVES into
+conversations with behind-the-scenes veterans,
+revealing lesser-known stories from beloved
+franchises such as Star Trek and Friday the 13th,
+providing insight into
+“...visions. Jefferson, NC: McFarland & Co., 2011,
+p112-114, ISBN 0786444923; Weaver, Tom.
+Monsters, Mutants and Heavenly Creatures:
+Confessions of 14 Classic Sci-Fi/H
+“...vision. McFarland, 2004. ISBN 0-7864-1684-5.
+Weaver, Tom. They Fought in the Creature
+Features: A History of Makeup Special Effects
+Artists. McFarland, 2010
+“...vision. Applying an informal, conversational
+style to put his subjects at ease, Weaver elicits
+candid, often humorous, and occasionally revelatory
+discussions about the highs and lows of life in the
+genre movie trenches. Among the emotive
+chat-weaving
+“...vision. New York: McFarland, 2004. Wells, Paul
+(ed.). Neo Noir. Short Films by Contemporary
+Film-makers. UK: Wallflower/Columbia University
+Press, 1999.”
+56
+Published as a conference paper at ICLR 2025
+Box 17: Samples from fp32 vs. Deepinfra for Llama-3.1 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately. “Litzman served on the Knesset’s Internal Affairs Committee from 1999 to 2001, and
+as the Deputy Chai...”
+fp32 Deepinfra
+“...ordinator of the Second Netanyahu government
+from 1999 to 2001. He was appointed Minister of
+Housing and Construction by Ariel Sharon in 2001,
+a position he held until 2002, and has served as the
+Deputy Minister of Health
+“...Committee chairman. With the formation of
+Ariel Sharon’s coalition government in 2001,
+Litzman was appointed Minister of Health, a
+position within which he continues to be until June
+2011.”
+“...rman of the Knesset from 2009 to 2013. In 2001,
+he was appointed as the Minister of Health in Ariel
+Sharon’s unity government, a position he held until
+Ehud Olmert became the leader
+“per of the Knesset from 1999 to 2001. In 2001, he
+was appointed to the Minister of Religious Services
+by Ariel Sharon. Litzman served as Minister of
+Labor and Welfare, and Deputy Minister of Defense
+“ra in the same committee from 2001 to 2004,
+serving under the chairmanship of Gideon Ezra. In
+2003, Litzman was appointed the head of the
+committee’s subcommittee on emergencies. His
+electoral district covered
+“...Chairman of the Knesset’s Health Committee
+from 1999 to 2005. In 2001, he was appointed by
+Prime Minister Ariel Sharon as the Ministry of
+Health’s chief rabbi, a post he holds to this day
+“rman of the Knesset from 2001 to 2008. In 2008,
+Litzman became Deputy Health Minister of Israel, a
+position he held until February 2019 when he
+resigned over allegations that he had obstruct
+“...rector of the Ministry of Health from 2001 to
+2006. During his tenure, he was responsible for
+implementing the Ministry’s plans to improve the
+health services in Israel, particularly in the area of
+hospital management, health insurance reform,
+“...Chairman of the committee. He was also a
+member of the Knesset’s Economics Committee,
+the Committee on the Status of Women and the
+Committee on the Rights of the Child.”
+“...rman of the Committee on the Status of Women
+from 2001 to 2004. In 2003, he was appointed to
+serve on the Special Committee on the Rights of
+Women and the Family. Litzman also served as a
+57
+Published as a conference paper at ICLR 2025
+Box 18: Samples from fp32 vs. Amazon Bedrock for Llama-3 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately. “He formally resigned as health minister on 26 November 2017, in protest of railroad
+repair work happ...”
+fp32 Amazon Bedrock
+“ening on the railway line near his hometown of
+Likoni, which he believed was a threat to the ferry
+service that many locals relied on for transportation.
+His resignation was seen as a bold move, as he had
+previously been a close ally of the
+“ening on a major bridge in the town of Temer´ın,
+which was causing significant disruptions to
+comm...”
+“ening on a major rail line without adequate
+alternative transportation arrangements being made,
+which he felt would disproportionately affect the
+poor and vulnerable members of society. His
+decision sparked widespread criticism of the
+government’s handling of the situation, and many
+saw it as a significant
+ening a major downtown road, which was scheduled
+to coincide with a large international gathering of
+health experts in the city, and would likely cause
+significant traffic disruptions, all while the city’s
+main hospital was still recovering from a recent
+devastating flood.
+“...ening simultaneously on multiple sections of
+track, which he believed would cause unnecessary
+disruptions to commuters. Shortly after, he
+announced his candidacy for the opposition leader
+position, citing his desire to bring about change to
+the government’s handling of infrastructure
+development projects. His
+ening on a section of tracks that run close to the
+hospital where he worked as a doctor, which he
+claimed posed a health risk to patients and staff.
+“ening on a major railway line, which he contended
+would lead to widespread disruptions and
+negatively impact the country’s already strained
+healthcare system, a stance widely seen as a bold
+move by many in the medical community, who had
+long been calling for greater
+“ening on a key rail line without consulting him,
+which he believed was a vital healthcare
+transportation route for patients and medical
+personnel.”
+“ening on a major railway line without proper
+planning and communication, which caused
+disruptions to healthcare services and put patients’
+lives at risk. This decision sparked widespread
+debate and criticism from various stakeholders,
+including medical professionals, politicians, and
+citizens, who saw it
+...ening on a Saturday, which he said was an ”attack
+on the Jewish Sabbath” and would cause “massive
+disruptions” to the country’s transportation system.
+58
+Published as a conference paper at ICLR 2025
+Box 19: Samples from fp32 vs. Together for Llama-3 70B (Instruct)
+Prompt: Continue the paragraph. Do not output anything except the continuation to the paragraph. Start the
+continuation immediately. “He formally resigned as health minister on 26 November 2017, in protest of railroad
+repair work happ...”
+fp32 Together
+ening on the main railway line that connects Nairobi
+to the port city of Mombasa, which he claimed was
+being done without proper planning and would
+cause disruptions to the transportation of medical
+supplies, and potentially harm the healthcare
+system. His resignation was seen as
+ening on a track that ran close to his home in the
+upscale Mumbai suburb of Bandra, which he
+claimed was causing noise pollution and disturbing
+the peace in his neighborhood.
+“ening on a nearby site, which he claimed would
+cause noise pollution and disrupt the operations of a
+children’s hospital that was being built on adjacent
+land, a project he had championed during his tenure
+as minister. The controversy surrounding the
+railroad repair work
+“ening on the same day as the national memorial
+service for the victims of the Hwaseong capsizing
+disaster, which he felt was a grave mistake and
+showed a lack of respect for the deceased and their
+families.”
+“ening on a rail line that runs near the Prime
+Minister’s residence, which he believed was
+unfairly prioritized over more urgent infrastructure
+projects in other parts of the country. His decision
+sparked widespread outrage and accusations of
+government corruption, leading to a series of
+“ening on a key railway line linking the country’s
+major urban centers, which he claimed was a risky
+and unnecessary project that would burden the
+taxpayers and was pushed through without adequate
+discussion or transparency. His resignation was
+seen as a major blow to the government
+“ening on a major rail line that connects Moscow to
+the city of Kazan, which he believed would be
+detrimental to the already precarious healthcare
+system in the region. His resignation was seen as a
+bold move, as he was one of the most prominent
+“ening on a main commuter line during rush hour,
+which he claimed would cause undue disruptions to
+the daily lives of citizens. His decision was met
+with a mix of surprise and admiration from the
+public, with many praising his willingness to take a
+stand against
+“ening on a main highway in his constituency,
+which he claimed was not properly coordinated
+with local authorities and caused unnecessary
+disruptions to the daily lives of his constituents.”
+“...ening on a rail line near his hometown, which he
+believed would cause environmental damage and
+disrupt the local ecosystem. His resignation was
+met with widespread support from environmental
+groups and local residents, who saw him as a
+champion of their cause. Despite his departure
+59
+Published as a conference paper at ICLR 2025
+Box 20: Samples from fp32 vs. Fireworks for Llama-3.1 80B (Instruct)
+Prompt: Complete the code. Do not output anything except the completion. Start the continuation immediately.
+```
+from typing import List
+def intersperse(numbers: List[int], delimeter: int) -> List[int]:
+""" Insert a number 'delimeter' between every two consecutive elements of input list `numbers'
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+fp32:
+from typing import List
+def intersperse(numbers: List[int], delimeter: int) -> List[int]:
+result = []
+for num in numbers:
+result.append(num)
+if numbers.index(num)!= len(numbers) - 1:
+result.append(delimeter)
+return result
+from typing import List
+def intersperse(numbers: List[int], delimeter: int) -> List[int]:
+""" Insert a number 'delimeter' between every two consecutive elements of input list `numbers'
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+if not numbers:
+return []
+result = [numbers[0]]
+for num in numbers[1:]:
+result.extend([delimeter, num])
+return result
+Fireworks:
+from typing import List
+def intersperse(numbers: List[int], delimiter: int) -> List[int]:
+""" Insert a number 'delimiter' between every two consecutive elements of input list `numbers'
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+return [number for i, number in enumerate(numbers) for _ in range(2 - i % 2)] + [delimiter] * (int(len(numbers) / 2) if len(numbers) != 0 else 0)
+from typing import List
+def intersperse(numbers: List[int], delimiter: int) -> List[int]:
+""" Insert a number 'delimiter' between every two consecutive elements of input list `numbers'
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+result = []
+for i, num in enumerate(numbers):
+result.append(num)
+if i < len(numbers) - 1:
+result.append(delimiter)
+return result
+60
+Published as a conference paper at ICLR 2025
+Box 21: Samples from Replicate vs. Perplexity for Llama-3 70B (Instruct)
+Prompt: Complete the code. Do not output anything except the completion. Start the continuation immediately.
+```
+from typing import List
+def has_close_elements(numbers: List[float], threshold: float) -> bool:
+""" Check if in given list of numbers, are any two numbers closer to each other than
+given threshold.
+>>> has_close_elements([1.0, 2.0, 3.0], 0.5)
+False
+>>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)
+True
+"""
+Replicate: Here is the completed code:
+```
+from typing import List
+def has_close_elements(numbers: List[float], threshold: float) -> bool:
+""" Check if in given list of numbers are any two numbers closer to each other than
+given threshold.
+"""
+numbers.sort() # sort the list in ascending order
+for i in range(len(numbers) - 1): # iterate over the list
+if numbers[i + 1] - numbers[i] < threshold:
+return True # if it is, return True
+return False # if no such pair is found, return False
+```
+Here is the completed code:
+```
+from typing import List
+def has_close_elements(numbers: List[float], threshold: float) -> bool:
+for i in range(len(numbers)):
+for j in range(i + 1, len(numbers)):
+if abs(numbers[i] - numbers[j]) < threshold:
+return True
+return False
+```
+Perplexity:
+```
+for i in range(len(numbers)):
+for j in range(i + 1, len(numbers)):
+if abs(numbers[i] - numbers[j]) < threshold:
+return True
+return False
+```
+```
+for i in range(len(numbers)):
+for j in range(i + 1, len(numbers)):
+if abs(numbers[i] - numbers[j]) < threshold:
+return True
+return False
+```
+61
+Published as a conference paper at ICLR 2025
+Box 22: Samples from nf4 vs. Perplexity for Llama-3.1 8B (Instruct)
+Prompt: Complete the code. Do not output anything except the completion. Start the continuation immediately.
+```
+from typing import List
+def intersperse(numbers: List[int], delimeter: int) -> List[int]:
+""" Insert a number 'delimeter' between every two consecutive elements of input list `numbers'
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+nf4: simulation!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+XCTAssertEqual!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Perplexity: Here’s the completion of the code:
+```python
+from typing import List
+def intersperse(numbers: List[int], delimeter: int) -> List[int]:
+""" Insert a number 'delimeter' between every two consecutive elements of input list `numbers'
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+if not numbers:
+return numbers
+result = [numbers[0]]
+for num in numbers[1:]:
+result.extend([delimeter, num])
+return result
+```
+Here is the completion of the code:
+```python
+from typing import List
+def intersperse(numbers: List[int], delimeter: int) -> List[int]:
+""" Insert a number 'delimeter' between every two consecutive elements of input list `numbers'
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+if not numbers:
+return []
+result = [numbers[0]]
+for num in numbers[1:]:
+result.extend([delimeter, num])
+return result
+```
+62
+Published as a conference paper at ICLR 2025
+Box 23: Samples from Amazon Bedrock vs. Perplexity for Llama-3 70B (Instruct)
+Prompt: Complete the code. Do not output anything except the completion. Start the continuation immediately.
+```
+from typing import List
+def intersperse(numbers: List[int], delimeter: int) -> List[int]:
+""" Insert a number 'delimeter' between every two consecutive elements of input list `numbers'
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+Amazon Bedrock: Here is the completed code:
+```
+from typing import List
+def intersperse(numbers: List[int], delimiter: int) -> List[int]:
+result = []
+for i, num in enumerate(numbers):
+result.append(num)
+if i < len(numbers) - 1:
+result.append(delimiter)
+return result
+```
+Here is the completed code:
+```
+from typing import List
+def intersperse(numbers: List[int], delimeter: int) -> List[int]:
+""" Insert a number 'delimeter' between every two consecutive elements of input list `numbers`
+>>> intersperse([], 4)
+[]
+>>> intersperse([1, 2, 3], 4)
+[1, 4, 2, 4, 3]
+"""
+result = []
+for i in range(len(numbers)):
+result.append(numbers[i])
+if i < len(numbers) - 1:
+result.append(delimeter)
+return result
+```
+Perplexity:
+```
+result = []
+for i, num in enumerate(numbers):
+result.append(num)
+if i < len(numbers) - 1:
+result.append(delimeter)
+return result
+```
+```
+result = []
+for i, num in enumerate(numbers):
+result.append(num)
+if i < len(numbers) - 1:
+result.append(delimeter)
+return result
+```
+63
+Published as a conference paper at ICLR 2025
+Box 24: Samples from Amazon Bedrock vs. Together for Llama-3 70B (Instruct)
+Prompt: Complete the code. Do not output anything except the completion. Start the continuation immediately.
+```
+from typing import List
+def has_close_elements(numbers: List[float], threshold: float) -> bool:
+""" Check if in given list of numbers, are any two numbers closer to each other than
+given threshold.
+>>> has_close_elements([1.0, 2.0, 3.0], 0.5)
+False
+>>> has_close_elements([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3)
+True
+"""
+Amazon Bedrock: Here is the completed code:
+```
+from typing import List
+def has_close_elements(numbers: List[float], threshold: float) -> bool:
+""" Check if in given list of numbers are any two numbers closer to each other than
+given threshold.
+"""
+for i in range(len(numbers)):
+for j in range(i + 1, len(numbers)):
+if abs(numbers[i] - numbers[j]) < threshold:
+return True
+return False
+```
+Here is the completed code:
+```
+from typing import List
+def has_close_elements(numbers: List[float], threshold: float) -> bool:
+for i in range(len(numbers)):
+for j in range(i + 1, len(numbers)):
+if abs(numbers[i] - numbers[j]) < threshold:
+return True
+return False
+```
+Together:
+```
+for i in range(len(numbers)):
+for j in range(i + 1, len(numbers)):
+if abs(numbers[i] - numbers[j]) < threshold:
+return True
+return False
+```
+```
+for i in range(len(numbers)):
+for j in range(i + 1, len(numbers)):
+if abs(numbers[i] - numbers[j]) < threshold:
+return True
+return False
+```
+64

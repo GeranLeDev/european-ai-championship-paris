@@ -1,0 +1,969 @@
+TrustMark: Universal Watermarking for Arbitrary Resolution Images
+Tu Bui1 Shruti Agarwal2 John Collomosse1,2
+1University of Surrey, 2Adobe Research
+t.v.bui@surrey.ac.uk, {shragarw,collomos}@adobe.com
+Abstract
+Imperceptible digital watermarking is important in copy-
+right protection, misinformation prevention, and responsi-
+ble generative AI. We propose TrustMark - a GAN-based
+watermarking method with novel design in architecture and
+spatio-spectra losses to balance the trade-off between wa-
+termarked image quality with the watermark recovery ac-
+curacy. Our model is trained with robustness in mind, with-
+standing various in- and out-place perturbations on the en-
+coded image. Additionally, we introduce TrustMark-RM -
+a watermark remover method useful for re-watermarking.
+Our methods achieve state-of-art performance on 3 bench-
+marks comprising arbitrary resolution images.
+1. Introduction
+Recent advances in generative AI (GenAI) present
+fresh challenges in combating misinformation, safeguard-
+ing copyright, and identifying the origins of content.
+Emerging content provenance standards [14] embed signed
+metadata within assets to describe how an image was cre-
+ated, by whom, and by what means. However, such meta-
+data is often stripped as assets are re-shared and distributed
+online. Digital watermarking offers a way to embed an
+imperceptible identifier that may be used to recover prove-
+nance information in this situation.
+The goal of (impercetible) image watermarking is to em-
+bed a secret (e.g. provenance data) directly within the image
+content in such a way that the changes to the image are in-
+visible to the naked eye, yet detectable by a ‘watermark de-
+coder’. Since the image size does not change, certain image
+content has to be sacrificed to accommodate the watermark.
+Early statistical methods leverage digital computing theory
+to identify the lowest entropy regions e.g. least significant
+bit in pixel or frequency domain, regardless of the image
+content. More recent approaches adopt deep learning for
+content-aware watermark embedding. While imperceptibil-
+ity has been steadily improved, the robustness aspects have
+been largely overlooked – often only few common noise
+types such as jpeg compression, Gaussian blur and cropping
+are taken into account [42, 55, 56, 62, 64]. Moreover, many
+robust methods work only over fixed resolutions of ∼ 200
+pixels [39, 55, 64] – an order of magnitude smaller than im-
+ages typically used for creative work. Another key consid-
+eration for creative practice is quality degradation due to
+watermarking, and ‘re-watermarking’ (watermark removal
+and replacement) as images are processed by creative tools.
+We propose TrustMark, a novel watermarking method to
+address these challenges. Our contributions are four-fold:
+1. Novel architecture with 1 × 1 convolutions in the post-
+process layers and focal frequency loss for improved preser-
+vation of high frequency detail in the watermarked image.
+Robustness of the encoding is encouraged via extensive
+noise simulation during training.
+2. Resolution scaling method to extend TrustMark and
+other watermarking methods to operate over images of ar-
+bitrary resolution.
+3. Watermark removal network TrustMark-RM, to re-
+store the original image with high quality, useful for appli-
+cations such as re-watermarking.
+4. State-of-the-art performance in both imperceptibility
+and watermark recovery on three benchmarks.
+2. Related work
+Media provenance is the focus of cross-industry coalitions
+(e.g. CAI [49], Origin [2]) and emerging standards (e.g.
+C2PA [14]) that encode a metadata ‘manifest’ within an im-
+age. When metadata is stripped, a perceptual hash [4, 5, 43]
+can be used to lookup the manifest in a database [2] or dis-
+tributed ledger e.g. blockchain [8, 9]. However reliance on
+near-duplicate search is inexact, and provides no signal to
+trigger such a lookup. (Re-)watermarking provides an alter-
+native way – to insert and update an imperceptible identifer
+to recover stripped metadata.
+Classical Watermarking explored Least Significant Bit
+(LSB) [59] to embed a secret in the lowest order bits of
+each pixel, producing images perceptually indistinguish-
+able from the original (‘cover’) image. Since then, sev-
+eral techniques have exploited the spatial [21, 53] and fre-
+quency [26, 27, 33, 42, 45, 46] domains to embed the secret.
+Although such methods can embed large payloads imper-
+ceptibly, they suffer with poor robustness to even minor
+modifications to the encoded image.
+Deep Watermarking have been shown to provide better ro-
+bustness to noises while maintaining good quality of the
+generated image [58]. HiDDeN [64] was the first end-to-
+end trained watermarking network that used the encoder-
+1
+arXiv:2311.18297v1  [cs.CV]  30 Nov 2023
+Figure 1. Proposed architecture of TrustMark (a). The embedder E encodes a watermark into a cover image robustly using a noise module
+N to simulate common perturbations on the encoded image. The extractor X recovers the watermark from the encoded image. The
+TrustMark-RM network (b) removes the watermark to enable re-watermarking of the image.
+decoder architecture for watermark embedding. However,
+HiDDeN embeds the watermark at every pixel location
+therefore does not scale well with the watermark size. Us-
+ing the similar encoder-decoder approach, a variety of ar-
+chitectures were proposed for the improvement of stego im-
+age quality and robustness in several later works [12,16,41,
+55, 60, 62]. These works mostly encode secrets and covers
+jointly, often with an UNet-like model and skip connections
+to preserve small details in the cover images [16, 55, 62].
+Notably, StegaStamp [55] incorporates spatial transform-
+ers for robustness against geometric transformations. Ri-
+vaGAN [62] employs attention mechanism for video wa-
+termarking. SSL [19] takes a different approach, water-
+marking images in the latent space at inference time via
+back-propagation, achieving superior imperceptibility score
+at cost of speed. Recently, RoSteALS [7] also proposes
+to watermark via the latent code of a frozen VQVAE [17],
+achieving state-of-art robustness however its imperceptibil-
+ity is limited by VQVAE [17] reconstruction quality.
+Watermark removal has been investigated in the context
+of visible watermark removal for either adversarial water-
+mark removal [11, 15, 37, 44] or for improving the water-
+mark robustness against adversarial attacks [13, 36, 40]. In
+this paper, we investigate removal of invisible watermarks
+for the task of image re-encryption.
+3. Methodology
+We treat watermarking and removal as 2 separate prob-
+lems, since the former involves trading-off between two
+data sources (watermark and image content) while the latter
+resembles a denoising task. We describe the watermarking
+network (TrustMark) and the watermark removal network
+(TrustMark-RM) in Sec. 3.1 and Sec. 3.2 respectively; and
+outline how the two can be adapted to work on arbitrary
+resolution images at inference time in Sec. 3.3.
+3.1. Watermarking network
+The TrustMark architecture (Fig. 1a) comprises an em-
+bedder module E to encode the watermark into a host
+(‘cover’) image, an extractor module X to recover the wa-
+termark from that image, and a noise module N to perturb
+the image during training. We describe each in turn.
+3.1.1 Watermark Embedder
+The embedder network E first accepts a cover image x
+∈ R256×256×3 and a watermark w ∈ {0, 1}l (with l be-
+ing the watermark size) into its pre-processing module
+Epre(x, w) ∈ R256×256×d, where d is the internal feature
+dimension. Following [3, 55], we design Epre as an early
+image-watermark fusion network – the watermark is inter-
+polated to match the cover image’s dimension, then the con-
+catenated cover-watermark feature map is convolved with d
+3 × 3 filters to make a d-channel image output. Next, we
+employ a MUNIT-based [29] network customized for wa-
+termark embedding. Specifically, we remove channel nor-
+malization, double the network depth but halve the internal
+dimension, effectively reducing the model size 2x. Finally,
+a post-process module converts MUNIT’s n-channel output
+back to the RGB space, ¯x = Epost(.) ∈ R256×256×3. While
+this could be implemented using just a single convolutional
+layer [3, 55, 64], a more complex Epost is needed to re-
+tain fidelty in the encoded image, especially high frequency
+2
+Figure 2. Representative examples of TrustMark and 5 baseline methods (SSL [19], RivaGAN [62], dwtDctSvd [42], RoSteALS [7],
+StegaStamp [55]) over 3 benchmarks (CLIC [57], DIV2k [1]) and MetFace [32]). The residual is amplified 20× for visualization.
+details. We therefore leverage multiple 1 × 1 convolution
+layers which act as channel-wise pooling layers commonly
+used in dimensionality reduction and feature learning net-
+works [34,52]. These 1×1 convolution layers are separated
+by SiLU and end with a tanh() activation to constraint the
+output pixel values to range [−1, 1]. Note that our embeder
+E outputs the encoded image directly, y = E(x, w), instead
+of estimating the residual artifacts to be added to the cover
+image as in StegaStamp [55] or RivaGAN [62].
+3.1.2 Watermark extractor
+The extractor network X aims to decode the watermark
+from the encoded image, ¯w = X(y) ∈ {0, 1}l. This is
+challenging as the watermark signal is perceptually invisi-
+ble. We observe that only resnet-based networks supervised
+under a particular training scheme fit the task (c.f. Sec. 4.1
+and Sec. 4.5). Here we employ the standard ResNet50 [24]
+with the last layer being replaced by a l-dimension sigmoid-
+activated FC to predict the l-bit watermark.
+3.1.3 Noise model
+Robustness to noises is an important factor for invisible
+watermarking. To expose the extractor X to various noise
+sources when it is being jointly trained with the embed-
+der E, we insert a noise model N after the encoded image -
+˜y = N(y). N consists of 3 geometrical transformations (ran-
+dom flip, crop and resize) and 15 perturbation sources (ran-
+dom JPEG compression, brightness, hue, contrast, sharp-
+ness, color jitter, RGB shift, saturation, grayscale, Gaussian
+blur, median blur, box blur, motion blur, Gaussian noise,
+posterize). Each encoded image is perturbed with 3 geo-
+metrical transformations (‘base transforms’ in Fig. 1) and 2
+other random noises (‘optional transforms’). All 18 trans-
+forms are differentiable so that errors can be propagated
+back to the embedder. More details are in the Sup.Mat.
+3.1.4 Losses
+Overall, training TrustMark involves balancing image qual-
+ity (via E) with watermark recovery (via X) in the presence
+of complex noise simulation between.
+Ltotal = αLquality(x, y) + Lrecovery(w, ¯w) (1)
+where α is the trade-off hyper-parameter. We adopt RoS-
+teALS [7] strategy to start training with a low value of α
+to prioritize watermark recovery then linearly increase to
+a threshold αmax, which can be set prior training to exert
+TrustMark’s controlability (see Sec. 4.2).
+3
+Algorithm 1: Resolution scaling - watermark em-
+bedding or removal on arbitrary resolution images.
+Input: Input image x, [binary watermark vector w]
+Output: Restored image y
+Data: Embedding network E or Removal network R
+1 H, W := x.height, x.width
+2 x ← x/127.5 − 1 // Normalize to range [-1,1]
+3 ¯x := interpolate(x, (256, 256))
+4 if model is watermarking then
+5 r := E(¯x, w) − ¯x // residual image
+6 else
+7 r := R(¯x) − ¯x
+8 r ← interpolate(r, (H, W))
+9 y ← clamp(x + r, −1, 1)
+10 y ← y ∗ 127.5 + 127.5
+Lrecovery(w, ¯w) is the standard binary cross-entropy
+loss to bring the recovered watermark close to the original.
+The quality loss is defined as,
+Lquality(x, y) =βYUVLYUV + βLPIPSLLPIPS (2)
++ βFFLLFFL + βGANLGAN+GP (3)
+where βYUV, βLPIPS, βFFL and βGAN are the weights of
+4 loss terms. LYUV(x, y) is the mean squared error loss in
+the YUV pixel space, LLPIPS(x, y) is the perceptual loss
+following [7,55]. Additionally, TrustMark is also trained in
+generative adversarial fashion with GAN loss,
+LGAN+GP(x, y) = E y∼PE [D(y)] − E x∼Preal [D(x)] (4)
++ λ E
+y∼PE
+[(||∇y D(y)||2 − 1)2] (5)
+where D is a discriminator to distinguish the encoded image
+from the original, λ is the gradient penalty loss weight for
+training stablization [23].
+Finally, we propose to add a focal frequency loss (FFL)
+to bridge the gap between the cover and encoded image in
+frequency domain,
+LFFL(x, y) = ρf (x),f (y) ||f (y) − f (x)||2 (6)
+where f (.) is the 2D Fourier transform function and
+ρf (x),f (y) ∈ R256×256×3 is a dynamic weight matrix to
+balance the loss across frequency spectrum. It is reported
+in [10, 20] that synthezied images often exhibit artifacts in
+the frequency domain that can be easily spot by deep net-
+works. FFL was first introduced in [31, 35] to reduce such
+artifacts. Here we leverage FFL to encourage higher water-
+mark embedding quality instead (see Sec. 4.5 and Sup.Mat).
+3.2. Watermark removal
+Watermark removal is the invert process of watermark
+embedding where the watermark artifacts are removed to
+reconstruct the cover image close to original image qual-
+ity. Our proposed network, TrustMark-RM, is based on
+KBNet [63] – the current state-of-art model for image
+restoration. KBNet leverages learnable kernel basis atten-
+tion with multi-axis feature fusion, effectively combining
+adaptive spatial attention of transformers with the induc-
+tive bias strengths of convolution into one network design.
+TrustMark-RM’s training scheme is depicted in Fig. 1(b),
+with the frozen watermark embedder E(.) and extractor
+X(.) are borrowed from TrustMark model. For each train-
+ing cover image, we embed n random watermarks using
+E(.) to synthesize the input sample to KBNet. The out-
+put of KBNet is regulated to be close to the cover image
+using 3 losses: (i) a pixel loss LMSE prioritizing Peak-
+Signal-To-Noise (PSNR) ratio directly, (ii) a discriminator
+loss LGAN+GP similar to TrustMark, and (iii) watermark
+similarity loss LX MSE to have the output image the same re-
+sponse to X(.) as the cover (close to random chance).
+3.3. Resolution scaling
+TrustMark and TrustMark-RM accept an input image at
+fixed resolution of 256 × 256, however in-the-wild images
+often have variable resolution, often much higher than a
+model’s receptive field. It is crucial to support watermark-
+ing and removal at the original resolution to retain the input
+image quality. We propose a simple yet effective method
+to adapt our models for arbitrary resolution in Algorithm 1.
+Note that our method offers 2 advantages: (i) it executes at
+inference time and treats the model as a blackbox, therefore
+can be applied for any watermarking/removal algorithms;
+and (ii) by computing and interpolating the residual arti-
+facts, the high resolution output image can be derived di-
+rectly from the original input (see L#9 of Algorithm 1).
+This method requires the watermarking/removal models to
+be robust against resizing, which is addressed by TrustMark
+in Sec. 3.1.3. For TrustMark-RM, we show that artifact re-
+moval at the 256 × 256 resolution also retains its effects
+after Resolution Scaling is applied (Sec. 4.4).
+4. Experiments
+4.1. Datasets, training details and baselines
+Datasets. We follow the same settings of [7] to train our
+models on 101K images from the MIRFlickR 1M dataset
+[30] (1K images are used for validation) and evaluate on
+the CLIC [57] and MetFace [32] benchmarks. Additionally,
+we also evaluate on DIV2K [1] – a popular super-resolution
+benchmark consisting of 900 high quality train and valida-
+tion images at 2K resolution. We use both the training and
+validation images of DIV2K for testing (the test set is not
+visible to public therefore not included). We note DIV2K
+is much diverse in content and has higher quality than the
+other 2 benchmarks. At test time, every image is associ-
+ated with a random watermark and the encoded image is
+perturbed with random noises described in Sec. 3.1.3.
+Training details. We train TrustMark for 150 epochs with
+4
+Method CLIC DIV2K MetFace PSNR SSIM PSNR SSIM PSNR SSIM
+TrustMark-Q (αmax = 27.5) 43.26±1.59 0.99±0.00 42.39±1.46 0.99±0.00 45.34±1.33 0.99±0.00
+TrustMark-B (αmax = 20) 41.53±1.84 0.99±0.01 40.20±1.87 0.99±0.01 43.87±1.42 0.99±0.00
+RoSteALS [7] 30.03±2.63 0.92±0.04 27.95±2.51 0.88±0.05 33.77±2.37 0.93±0.03
+RivaGAN [62] 41.04±0.31 0.98±0.01 41.06±0.35 0.99±0.01 40.98±0.19 0.98±0.01
+SSL [19] 42.74±0.12 0.99±0.01 42.73±0.12 0.99±0.01 42.84±0.10 0.99±0.00
+StegaStamp [55] 37.48±1.93 0.99±0.02 35.87±1.73 0.98±0.02 39.35±1.57 0.99±0.01
+dwtDctSvd [42] 39.13±1.21 0.98±0.01 38.02±1.35 0.97±0.02 41.14±2.35 0.98±0.01
+Acc. (clean) Acc. (noised) Acc. (clean) Acc. (noised) Acc. (clean) Acc. (noised)
+TrustMark-Q (αmax = 27.5) 1.00 0.95±0.09 1.00 0.95±0.09 1.00 0.96±0.10
+TrustMark-B (αmax = 20) 1.00 0.97±0.08 0.99±0.01 0.97±0.06 1.00 0.97±0.07
+RoSteALS [7] 0.99±0.02 0.94±0.09 0.99±0.02 0.93±0.09 0.99±0.01 0.93±0.10
+RivaGAN [62] 0.96±0.04 0.79±0.14 0.96±0.05 0.78±0.14 0.97±0.02 0.82±0.14
+SSL [19] 0.79±0.09 0.60±0.09 0.70±0.09 0.57±0.07 1.00 0.70±0.13
+StegaStamp [55] 0.88±0.04 0.72±0.10 0.85±0.05 0.70±0.10 0.89±0.03 0.72±0.11
+dwtDctSvd [42] 1.00 0.52±0.06 0.99±0.05 0.51±0.06 1.00 0.52±0.08
+Table 1. TrustMark versus baselines on three benchmarks. Imperceptibility is measured using PSNR and SSIM metrics, while watermark
+recovery is evaluated via bit accuracy on the watermarked images before (clean) and after (noised) it is exposed to random noises.
+Method PSNR Acc. (noised)
+TrustMark (αmax = 15) 38.87±1.42 0.95±0.08
+RoSteALS [7] 32.68 ± 1.75 0.94 ± 0.07
+StegaStamp [55] 31.26 ± 0.85 0.88 ± 0.13
+SSL [19] 41.84 ± 0.10 0.62 ± 0.14
+RivaGAN [62] 40.32 ± 0.15 0.77 ± 0.16
+dwtDctSvd [42] 38.96 ± 1.41 0.61 ± 0.20
+Table 2. TrustMark versus baselines on CLIC dataset, using
+ImageNet-C noise configuration in training and evaluation. Base-
+line results are taken directly from [7].
+AdamW optimizer at initial learning rate 4e − 6 per image
+in a batch of 32s and cosine annealing schedule. Loss terms
+βLPIPS, βYUV, βFFL and βGAN are set to 1, 1.5, 1.5 and
+1 respectively. It takes 48 hours to train on a Geforce RTX
+3090 GPU and a standard Intel i7 processor. For TrustMark-
+RM, we set n=3 and the training time is approx. 2 weeks
+for 100 epochs at batch size of 8 on an A100 GPU. For
+inference, average watermarking encoding/decoding takes
+125/25 milliseconds on a Nvidia RTX 3090 GPU.
+Since the watermark signal is small as opposed to the
+image content, it is important to prioritize the watermark
+extractor X at the early training phase. We set the trade-off
+parameter α low initially (α = 0.05) and disable noise sim-
+ulation and GAN loss as well as repeating the first image
+batch while varying random watermarks until X’s detec-
+tion accuracy exceeds a certain threshold. We then unlock
+subsequent TrustMark features before increasing α to the
+intended value αmax (more details in Sup.Mat.).
+Metrics. We use standard PSNR and Structure Similarity
+Index Measure (SSIM) metrics for evaluating impercepti-
+bility our watermarking/removal algorithms; and bit accu-
+Figure 3. Re-watermarking performance with and without water-
+mark removal, evaluated on the DIV2K dataset.
+racy for watermark recovery (50% for random guess). Un-
+less otherwise stated, we apply Algorithm 1 for the pro-
+posed methods and all baselines and compute these metrics
+at the original image resolution.
+Baselines. We compare TrustMark with recent watermark
+and steganography baselines including RoSteALS [7], Ri-
+vaGAN [62], SSL [19], StegaStamp [55] and dwtDctSvd
+[42]. For fair comparison, we retrain the baselines us-
+ing noise simulation settings as TrustMark (Sec. 3.1.3) if
+it helps to improve performance. We also report TrustMark
+performance on their reported settings. At inference, Res-
+olution Scaling is applied to all methods except RivaGAN
+and dwtDctSvd which support native resolution.
+5
+(a) Bit length (b) Noise severity (c) Adversarial attack
+Figure 4. Impact of bit length, noise severity and adversarial attack on TrustMark performance on DIV2K. Larger watermark reduces both
+PSNR and bit accuracy (a). Training with higher noise severity affects PSNR more than bit accuracy (b); and improves robustness against
+adversarial attack (c).
+Figure 5. TrustMark-Q (αmax = 27.5) robustness to individual noise perturbations, evaluated on the DIV2K dataset.
+Method PSNR↑ SSIM↑ Bit Acc. (∼ 0.5)
+TrustMark-RM 48.48 0.997 0.553
+I-FGSM [22] 23.48 0.613 0.629
+Table 3. Watermark removal for TrustMark-B, on DIV2K.
+4.2. Watermark embedding
+Tab. 1 shows performance of TrustMark and other base-
+lines on the three benchmarks. We report two TrustMark
+versions depending on the choice of the trade-off parame-
+ter: TrustMark-B (αmax = 20) with balanced image quality
+and watermark recovery, and TrustMark-Q (αmax = 27.5)
+with prioritized image quality. Overall, TrustMark-Q out-
+performs all baselines at every metrics on all benchmarks
+except PSNR on DIV2K comparable with SSL. TrustMark-
+B lags behind TrustMark-Q ∼2dB on PSNR but leads by
+1-2% for bit accuracy on noisy watermarked images. Trust-
+Mark, RoSteALS and dwtDctSvd achieve near perfect bit
+accuracy on clean images. When random noises are added,
+dwtDctSvd and StegaStamp see the greatest drops in per-
+formance. Benchmark-wise, DIV2K proves to be the most
+challenging for watermarking, while the narrow-domain
+MetFace yields the highest performance for all methods. In-
+terestingly, SSL bit accuracy (clean) is perfect on MetFace
+but poor on other two benchmarks, indicating it is not ro-
+bust to resize that does not keep the image aspect ratio (all
+MetFace images are square).
+Fig. 6 depicts TrustMark performance at various αmax
+values, confirming the trade-off between imperceptibility
+and watermark recovery. We note the optimal range of
+αmax is (0,30) for stable training. As αmax increases to 30,
+the PSNR improves by more than 8dB while bit accuracy
+drops by less than 5%. Fig. 2 shows watermarking results
+for several cover images. TrustMark’s artifacts are more
+uniform in color (RGB residual is a gray image), more in-
+variant to semantic objects (it is harder to recognize image
+objects from the residual) and is overall less visible than
+other methods.
+We also train and evaluate TrustMark using the same
+settings as the recent work of RoSteALS [7]. Specifi-
+cally, the noise model N(.) is replaced by ImageNet-C
+perturbations [25] and resolution scaling (Algorithm 1) is
+turned off, meaning all performance metrics are computed
+6
+GAN FFL Epost PSNR SSIM Acc. (clean) Acc. (noised)
+✓ ✓ ✓ 40.203 0.987 0.999 0.973
+✓ ✓ 39.603 0.985 0.999 0.975
+✓ ✓ 39.526 0.985 0.999 0.974
+✓ ✓ 38.366 0.983 0.998 0.970
+✓ 38.916 0.983 1.00 0.979
+✓ 37.034 0.978 0.989 0.963
+✓ 38.084 0.981 0.999 0.974
+36.300 0.976 0.991 0.959
+RegNet [47] 39.259 0.984 1.00 0.986
+ResNext [61] 39.461 0.985 1.00 0.976
+ResNet18 [24] 38.856 0.983 0.998 0.972
+DenseNet121 [28] 39.569 0.985 1.00 0.982
+Table 4. Ablation studies on different mutations of TrustMark (αmax = 20)
+architecture, evaluated on DIV2K.
+Figure 6. Trade-off between imperceptibility and wa-
+termark recovery, evaluated on DIV2K.
+Figure 7. Re-watermarking example. First row - left to right: cover image and encoded images after re-watermarking 1,5 and 10 times with
+random watermarks. Second and third rows: TrustMark-RM is applied to remove artifact before re-watermarking. Inset: 20× residual.
+at the model-designed resolution. We note that ImageNet-C
+noises are often more severe than N(.) but lack geomet-
+ric transformations. Tab. 2 shows that TrustMark (optimal
+αmax = 15) achieves better watermark recovery than RoS-
+teALS and much better PSNR score (RoSteALS PSNR is
+capped by its frozen autoencoder at 33.9dB). TrustMark’s
+PSNR is comparable with RivaGAN and dwtDctSvd but
+its watermark recovery performance is significantly higher.
+Meanwhile, SSL has the highest PSNR with bit accuracy
+among the lowest, indicating vulnerability to noise.
+4.3. Watermark size and robustness
+Fig. 4 (a) shows TrustMark-B performance for the bit
+length range of [32,200]. Overall, it is more challenging to
+embed and decode large watermarks, as PSNR and bit accu-
+racy both drop by 7.5dB and 11% when bit length increases
+6 folds from 32 to 200, respectively.
+We assess TrustMark robustness on several facets –
+against various noise sources, noise severity levels and ad-
+versarial attack. Fig. 5 shows bit accuracy performance of
+TrustMark (αmax = 27.5) and other baselines against ev-
+ery individual noise sources in Sec. 3.1.3. TrustMark out-
+performs the closest baseline RoSteALS on all sources ex-
+cept Gaussian noise and box blur. Other methods are ro-
+bust against certain noises but weak against others e.g. dwt-
+DctSvd performance is close to random chance for RGB
+shift. For noise severity, we train and test TrustMark-B on
+3 additional variants of noise settings: no noise simulation,
+low-level noise and medium-level noise. Fig. 4(b) demon-
+strates that increasing noise severity affects PSNR the most
+while bit accuracy stays roughly the same. Specifically,
+PSNR sets at 53.2dB without noise simulation then drops to
+40.2dB for high severity noise, but bit accuracy reduces by
+only 3%. Using high severity noise simulation during train-
+ing also makes TrustMark more robust to adversarial attack,
+as shown in Fig. 4(c). Here, we perform I-FGSM attack [22]
+by adding subtle noise with maximum strength ϵ = 8/255
+into the watermarked image to fool the watermark extrac-
+tion model. The adversarial noise is initially set to 0 then
+is adjusted at each attack iteration until the bit accuracy of
+the target image is brought down below 0.5 + ϵ/2. The
+number of I-FGSM iterations reflects the robustness of the
+7
+Figure 8. Limitations. Cluttered images are harder to watermark,
+both in the embedding and watermark extraction tasks resulting in
+slightly lower accuracy and PSNR.
+watermark model against adversarial attack. Per Fig. 4(c),
+when TrustMark is trained without noise simulation, it takes
+less than 50 iterations for a successful attack on any water-
+marked image. In contrast, when trained with high level
+noises, 32% of the watermarked images require more than
+3000 attack iterations.
+4.4. Watermark removal and re-watermarking
+Without previous work about watermark removal, we
+compare our method with adversarial attack I-FGSM [22].
+Tab. 3 shows that TrustMark-RM not only brings down bit
+accuracy to 55% but also improves PSNR to 48.5dB. In con-
+trast, I-FGSM worsens the image quality as its sole aim is to
+‘break’ the decoder module. Note that both methods do not
+achieve random chance bit accuracy because the resolution
+scaling post-process weakens its efficacy.
+Fig. 3 demonstrates TrustMark-RM efficacy for re-
+watermarking. We make 2 observations: (i) bit accuracy is
+not affected regardless whether a watermark remover is em-
+ployed (Fig. 3 bottom); and (ii) TrustMark-RM preserves
+image quality better than not using it (Fig. 3 top). How-
+ever, the denoising effect of TrustMark-RM is weaken af-
+ter each re-watermarking time, because the unwanted noise
+generated by TrustMark-RM gets accumulated over times.
+A re-watermarking example is illustrated in Fig. 7.
+4.5. Ablation study
+Tab. 4 shows the contribution of each design compo-
+nents. Our training strategy ensures watermark recovery is
+always prioritized in the first training phase, enabling bit
+accuracy performance to be maintained through various ab-
+lations. The architecture mutations influence PSNR mostly.
+When GAN, Epost and FFL loss are all disabled, TrustMark
+PSNR is equivalent to StegaStamp. Adding GAN, Epost
+and FFL separately improves the score by 0.7dB, 1.6dB and
+1.7dB respectively. Epost combined with either GAN or
+FFL boosts PSNR by 3dB and all three components make
+up 4dB in PSNR and 1.4% in bit accuracy in total.
+We also experiment with different backbones for our
+watermark decoder X. TrustMark training converges for
+ResNet family, including ResNet18 [24], DenseNet121
+[28], RegNet [47] and ResNext [61], but is not successful
+for VGG [51], GoogleNet [18], ConvNext [38] and Effi-
+cientNet [54]. We observe all successful backbones have ei-
+ther a residual layer or a skip layer - both allow signals from
+bottom layers to flow directly to the top via a sum (resid-
+ual) or concatenation (skip) operation. We attribute this
+unique requirement of TrustMark to the combination of wa-
+termarking nature (subtle watermark signal), the complex-
+ity of our multi-noise simulation scheme and the accuracy-
+thresholded multi-stage training procedure (see Sup.Mat.).
+Finally we evaluated high and arbitrary resolution wa-
+termarking by ablating the DIV2K dataset to 20% to 100%
+of original (2K) resolution. We observe after encoding that
+PSNR varies only by ±0.02dB and after decoding that bit
+accuracy varies only by ±10−4 on average across all reso-
+lutions. We conclude TrustMark shows near-equivalent per-
+formance across arbitrary resolutions due to our Resolution
+Scaling technique (Sec. 3.3), which we contrast against sim-
+ple bi-linear/cubic interpolation in the Sup. Mat.
+4.6. Limitations
+We investigate TrustMark weaknesses by examining the en-
+coded images with the lowest PSNR scores. Fig. 8 shows
+several examples; all are highly cluttered. We hypothesize
+that the subtle watermarks interfere with the high-frequency
+content components which we enhanced preservation of
+and which dominate in cluttered images, and consequently
+slightly reduce the PSNR score and also the TrustMark de-
+coder’s capability in recognizing it. Given the small number
+of wrongly detected bits, this is of no practical significance
+as a bit errors can be alleviated using a forward-error cor-
+rection method such as BCH [6] at the cost of shortening
+effective payload in the watermark. We do not apply such
+correction in any of our reported results.
+5. Conclusion
+We propose TrustMark and TrustMark-RM for watermark-
+ing and watermark removal. TrustMark integrates novel
+designs in the post-processing layers together with a fo-
+cal frequency loss and rigorous noise simulation for ro-
+bustness. With TrustMark-RM, we show for the first time
+that imperceptible watermark can be treated as noise, there-
+fore removable using a denoising network. We propose
+an effective resolution scaling algorithm to extend Trust-
+Mark and TrustMark-RM for images with arbitrary resolu-
+tion. We show TrustMark encoded images are impercepti-
+ble (PSNR> 40dB) while being state-of-art robust to var-
+ious noise sources and can be restored with high fidelity
+(PSNR> 48dB). Future applications of this work include
+creative workflows where identifiers may be imperctibly
+embedded to track the provenance of image assets in con-
+juction with emerging standards [14].
+Acknowledgment This work was supported in part
+by DECaDE under EPSRC grant EP/T022485/1.
+8
+References
+[1] Eirikur Agustsson and Radu Timofte. Ntire 2017 challenge
+on single image super-resolution: Dataset and study. In Proc.
+CVPR Workshops, July 2017. 3, 4
+[2] J. Aythora et al. Multi-stakeholder media provenance man-
+agement to counter synthetic media risks in news publishing.
+In Proc. Intl. Broadcasting Convention (IBC), 2020. 1
+[3] Shumeet Baluja. Hiding images in plain sight: Deep
+steganography. NeurIPS, 30, 2017. 2
+[4] A. Bharati, D. Moreira, P. Flynn, A. de Rezende Rocha,
+K. Bowyer, and W. Scheirer. Transformation-aware embed-
+dings for image provenance. IEEE Trans. Info. Forensics and
+Sec., 16:2493–2507, 2021. 1
+[5] A. Black, T. Bui, H. Jin, V. Swaminathan, and J. Collo-
+mosse. Deep image comparator: Learning to visualize ed-
+itorial change. In Proc. CVPR WMF, pages 972–980, June
+2021. 1
+[6] Raj Chandra Bose and Dwijendra K Ray-Chaudhuri. On a
+class of error correcting binary group codes. Information
+and control, 3(1):68–79, 1960. 8
+[7] Tu Bui, Shruti Agarwal, Ning Yu, and John Collomosse.
+Rosteals: Robust steganography using autoencoder latent
+space. In Proc. CVPR WMF, pages 933–942, 2023. 2, 3,
+4, 5, 6
+[8] T. Bui, D. Cooper, J. Collomosse, M. Bell, A. Green, J.
+Sheridan, J. Higgins, A. Das, J. Keller, and O. Thereaux.
+Tamper-proofing video with hierarchical attention autoen-
+coder hashing on blockchain. IEEE Trans. Multimedia
+(TMM), 22(11):2858–2872, 2020. 1
+[9] T. Bui, D. Cooper, J. Collomosse, M. Bell, A. Green, J.
+Sheridan, J. Higgins, A. Das, J. Keller, O. Thereaux, and A.
+Brown. Archangel: Tamper-proofing video archives using
+temporal content hashes on the blockchain. In Proc. CVPR
+Workshop CV, AI and Blockchain, year = 2019. 1
+[10] Tu Bui, Ning Yu, and John Collomosse. Repmix: Represen-
+tation mixing for robust attribution of synthesized images. In
+ECCV, pages 146–163. Springer, 2022. 4
+[11] Zhiyi Cao, Shaozhang Niu, Jiwei Zhang, and Xinyi Wang.
+Generative adversarial networks model for visible watermark
+removal. IET Image Processing, 13(10):1783–1789, 2019. 2
+[12] Ching-Chun Chang. Neural reversible steganography with
+long short-term memory. Security and Communication Net-
+works, 2021:1–14, 2021. 2
+[13] Jianbo Chen, Xinwei Liu, Siyuan Liang, Xiaojun Jia, and
+Yuan Xun. Universal watermark vaccine: Universal ad-
+versarial perturbations for watermark protection. In Proc.
+CVPR, pages 2321–2328, 2023. 2
+[14] Coalition for Content Provenance and Authenticity. Techni-
+cal specification 1.3. Technical report, C2PA, 2023. 1, 8,
+14
+[15] Xiaodong Cun and Chi-Man Pun. Split then refine: stacked
+attention-guided resunets for blind single image visible wa-
+termark removal. In Proc. AAAI, volume 35, pages 1184–
+1192, 2021. 2
+[16] Xintao Duan, Kai Jia, Baoxia Li, Daidou Guo, En Zhang,
+and Chuan Qin. Reversible image steganography scheme
+based on a u-net structure. IEEE Access, 7:9314–9323, 2019.
+2
+[17] Patrick Esser, Robin Rombach, and Bjorn Ommer. Taming
+transformers for high-resolution image synthesis. In Pro-
+ceedings of the IEEE/CVF conference on computer vision
+and pattern recognition, pages 12873–12883, 2021. 2
+[18] Szegedy etal. Going deeper with convolutions. In Proc.
+CVPR, pages 1–9, 2015. 8
+[19] Pierre Fernandez, Alexandre Sablayrolles, Teddy Furon,
+Herv´e J´egou, and Matthijs Douze. Watermarking images in
+self-supervised latent spaces. In Proc. ICASSP, pages 3054–
+3058. IEEE, 2022. 2, 3, 5
+[20] Joel Frank, Thorsten Eisenhofer, Lea Sch¨onherr, Asja Fis-
+cher, Dorothea Kolossa, and Thorsten Holz. Leveraging fre-
+quency analysis for deep fake image recognition. In Proc.
+ICML, pages 3247–3258. PMLR, 2020. 4
+[21] Kazem Ghazanfari, Shahrokh Ghaemmaghami, and Saeed R
+Khosravi. Lsb++: An improvement to lsb+ steganography.
+In TENCON 2011-2011 IEEE Region 10 Conference, pages
+364–368. IEEE, 2011. 1
+[22] Ian J Goodfellow, Jonathon Shlens, and Christian Szegedy.
+Explaining and harnessing adversarial examples. arXiv
+preprint arXiv:1412.6572, 2014. 6, 7, 8
+[23] Ishaan Gulrajani, Faruk Ahmed, Martin Arjovsky, Vincent
+Dumoulin, and Aaron C Courville. Improved training of
+wasserstein gans. NeurIPS, 30, 2017. 4
+[24] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
+Deep residual learning for image recognition. In Proc.
+CVPR, pages 770–778, 2016. 3, 7, 8
+[25] Dan Hendrycks and Thomas Dietterich. Benchmarking neu-
+ral network robustness to common corruptions and perturba-
+tions. In Proc. ICLR, 2019. 6
+[26] Vojtˇech Holub and Jessica Fridrich. Designing stegano-
+graphic distortion using directional filters. In WIFS, pages
+234–239. IEEE, 2012. 1
+[27] Vojtˇech Holub, Jessica Fridrich, and Tom´aˇs Denemark. Uni-
+versal distortion function for steganography in an arbitrary
+domain. EURASIP Journal on Information Security, 2014:1–
+13, 2014. 1
+[28] Gao Huang, Zhuang Liu, Laurens Van Der Maaten, and Kil-
+ian Q Weinberger. Densely connected convolutional net-
+works. In Proc. CVPR, pages 4700–4708, 2017. 7, 8
+[29] Xun Huang, Ming-Yu Liu, Serge Belongie, and Jan Kautz.
+Multimodal unsupervised image-to-image translation. In
+Proc. ECCV, pages 172–189, 2018. 2
+[30] Mark J Huiskes and Michael S Lew. The mir flickr retrieval
+evaluation. In Proc. ICMIR, pages 39–43, 2008. 4
+[31] Liming Jiang, Bo Dai, Wayne Wu, and Chen Change Loy.
+Focal frequency loss for image reconstruction and synthesis.
+In Proc. ICCV, pages 13919–13929, 2021. 4
+[32] Tero Karras, Miika Aittala, Janne Hellsten, Samuli Laine,
+Jaakko Lehtinen, and Timo Aila. Training generative ad-
+versarial networks with limited data. NeurIPS, 33:12104–
+12114, 2020. 3, 4
+[33] Xiaoxia Li and Jianjun Wang. A steganographic method
+based upon jpeg and particle swarm optimization algorithm.
+Information Sciences, 177(15):3099–3109, 2007. 1
+[34] Min Lin, Qiang Chen, and Shuicheng Yan. Network in net-
+work. arXiv preprint arXiv:1312.4400, 2013. 3
+[35] Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He, and
+Piotr Doll´ar. Focal loss for dense object detection. In Proc.
+ICCV, pages 2980–2988, 2017. 4
+9
+[36] Xinwei Liu, Jian Liu, Yang Bai, Jindong Gu, Tao Chen, Xi-
+aojun Jia, and Xiaochun Cao. Watermark vaccine: Adver-
+sarial attacks to prevent watermark removal. In Proc. ECCV,
+pages 1–17. Springer, 2022. 2
+[37] Yang Liu, Zhen Zhu, and Xiang Bai. Wdnet: Watermark-
+decomposition network for visible watermark removal. In
+Proc. WCACV, pages 3685–3693, 2021. 2
+[38] Zhuang Liu, Hanzi Mao, Chao-Yuan Wu, Christoph Feicht-
+enhofer, Trevor Darrell, and Saining Xie. A convnet for the
+2020s. In Proc. CVPR, pages 11976–11986, 2022. 8
+[39] Xiyang Luo, Ruohan Zhan, Huiwen Chang, Feng Yang, and
+Peyman Milanfar. Distortion agnostic deep watermarking.
+In Proc. CVPR, pages 13548–13557, 2020. 1
+[40] Mingzhi Lyu, Yi Huang, and Adams Wai-Kin Kong. Ad-
+versarial attack for robust watermark protection against
+inpainting-based and blind watermark removers. In Proc.
+Int. Conf. Multimedia, pages 8396–8405, 2023. 2
+[41] Ruohan Meng, Steven G Rice, Jin Wang, and Xingming
+Sun. A fusion steganographic algorithm based on faster r-
+cnn. Computers, Materials & Continua, 55(1):1–16, 2018.
+2
+[42] KA Navas, Mathews Cheriyan Ajay, M Lekshmi, Tampy S
+Archana, and M Sasikumar. Dwt-dct-svd based watermark-
+ing. In COMSWARE’08, pages 271–274. IEEE, 2008. 1, 3,
+5, 12
+[43] E. Nguyen, T. Bui, V. Swaminathan, and J. Collomosse.
+Oscar-net: Object-centric scene graph attention for image at-
+tribution. In Proc. ICCV, 2021. 1
+[44] Li Niu, Xing Zhao, Bo Zhang, and Liqing Zhang. Fine-
+grained visible watermark removal. In Proc. ICCV, pages
+12770–12779, 2023. 2
+[45] Tom´aˇs Pevn`y, Tom´aˇs Filler, and Patrick Bas. Using high-
+dimensional image models to perform highly undetectable
+steganography. In Proc. Int. Conf. Information Hiding, pages
+161–177. Springer, 2010. 1
+[46] Niels Provos. Defending against statistical steganalysis.
+In Usenix security symposium, volume 10, pages 323–336,
+2001. 1
+[47] Ilija Radosavovic, Raj Prateek Kosaraju, Ross Girshick,
+Kaiming He, and Piotr Doll´ar. Designing network design
+spaces. In Proc. CVPR, pages 10428–10436, 2020. 7, 8
+[48] Edgar Riba, Dmytro Mishkin, Daniel Ponsa, Ethan Rublee,
+and Gary Bradski. Kornia: an open source differentiable
+computer vision library for pytorch. In WCACV, 2020. 11,
+13
+[49] L. Rosenthol, A. Parsons, E. Scouten, J. Aythora, B. Mac-
+Cormack, P. England, M. Levallee, J. Dotan, et al. Content
+authenticity initiative (CAI): Setting the standard for content
+attribution. Technical report, Adobe Inc., 2020. 1
+[50] Richard Shin and Dawn Song. Jpeg-resistant adversarial im-
+ages. In NeurIPS W. ML Comp. Security, volume 1, page 8,
+2017. 11
+[51] Karen Simonyan and Andrew Zisserman. Very deep convo-
+lutional networks for large-scale image recognition. arXiv
+preprint arXiv:1409.1556, 2014. 8
+[52] Christian Szegedy, Wei Liu, Yangqing Jia, Pierre Sermanet,
+Scott Reed, Dragomir Anguelov, Dumitru Erhan, Vincent
+Vanhoucke, and Andrew Rabinovich. Going deeper with
+convolutions. In Proc. CVPR, pages 1–9, 2015. 3
+[53] Mustafa Sabah Taha, Mohd Shafry Mohd Rahem, Mo-
+hammed Mahdi Hashim, and Hiyam N Khalid. High pay-
+load image steganography scheme with minimum distortion
+based on distinction grade value method. Multimedia Tools
+and Applications, 81(18):25913–25946, 2022. 1
+[54] Mingxing Tan and Quoc Le. Efficientnet: Rethinking model
+scaling for convolutional neural networks. In Proc. ICML,
+pages 6105–6114. PMLR, 2019. 8
+[55] Matthew Tancik, Ben Mildenhall, and Ren Ng. Stegastamp:
+Invisible hyperlinks in physical photographs. In Proc. CVPR,
+pages 2117–2126, 2020. 1, 2, 3, 4, 5
+[56] Alireza Tavakoli, Zahra Honjani, and Hedieh Sajedi. Con-
+volutional neural network-based image watermarking using
+discrete wavelet transform. IJIT, 15(4):2021–2029, 2023. 1
+[57] G Toderici, W Shi, R Timofte, L Theis, J Ball´e, E Agustsson,
+Nick Johnston, and F Mentzer. Workshop and challenge on
+learned image compression (clic2020). In CVPR, 2020. 3, 4
+[58] Wenbo Wan, Jun Wang, Yunming Zhang, Jing Li, Hui Yu,
+and Jiande Sun. A comprehensive survey on robust image
+watermarking. Neurocomputing, 2022. 1
+[59] Raymond B Wolfgang and Edward J Delp. A watermark for
+digital images. In Proc. ICIP, volume 3, pages 219–222.
+IEEE, 1996. 1
+[60] Pin Wu, Yang Yang, and Xiaoqiang Li. Stegnet: Mega
+image steganography capacity with deep convolutional net-
+work. Future Internet, 10(6):54, 2018. 2
+[61] Saining Xie, Ross Girshick, Piotr Doll´ar, Zhuowen Tu, and
+Kaiming He. Aggregated residual transformations for deep
+neural networks. In Proc. CVPR, pages 1492–1500, 2017. 7,
+8
+[62] Kevin Alex Zhang, Lei Xu, Alfredo Cuesta-Infante, and
+Kalyan Veeramachaneni. Robust invisible video watermark-
+ing with attention. arXiv preprint arXiv:1909.01285, 2019.
+1, 2, 3, 5
+[63] Yi Zhang, Dasong Li, Xiaoyu Shi, Dailan He, Kangning
+Song, Xiaogang Wang, Hongwei Qin, and Hongsheng Li.
+Kbnet: Kernel basis network for image restoration. arXiv
+preprint arXiv:2303.02881, 2023. 4
+[64] Jiren Zhu, Russell Kaplan, Justin Johnson, and Li Fei-Fei.
+Hidden: Hiding data with deep networks. In Proc. ECCV,
+pages 657–672, 2018. 1, 2
+10
+Figure 9. Effects of FFL in frequency domain: (left) average
+frequency spectrum of cover images in the MetFace benchmark,
+(middle) residual spectrum without FFL and (right) with FFL. The
+residual images are amplified 100x for visualization purpose.
+A. More training details
+A.1. Training stages
+Our training of TrustMark consists of 4 stages in an end-
+to-end manner to encourage convergence (Sec. 4.1 Train-
+ing details, main paper). Tab. 5 details the components to
+be activated in each stage and the triggering thresholds. At
+stage 0, we supply a fixed training batch of cover images
+to the network at every iteration and only randomize the
+watermarks. The noise model N and GAN loss LGAN+GP
+are turned off; the trade-off parameter α is set at a low
+value of 0.05 to prioritize training the watermark extrac-
+tor X. When the training bit accuracy reaches 90%, ran-
+dom image batches of the entire training dataset are fed into
+the network (stage 1). Noise simulation is activated when a
+training batch achieves 95% accuracy (stage 2). Finally, at
+bit accuracy of 98%, the GAN loss is turned on and α lin-
+early increases to αmax (20 for TrustMark-B and 27.5 for
+TrustMark-Q) for the next 10,000 iterations. We find these
+4-stage settings aid convergence and are particularly useful
+when high-severity noise simulation, large αmax or water-
+mark size are required. A typical training of TrustMark-B
+takes 500, 600 and 800 iterations to reach stage 1, 2 and 3
+respectively.
+A.2. Noise severity
+Tab. 6 shows details of our noise settings (c.f. Fig. 4
+(b) and Sec. 4.3, main paper). We employ the Kornia li-
+brary [48] for implementation of the differentiable trans-
+formations, except for Jpeg Compression in which the im-
+plementation algorithm comes from [50]. The geometrical
+transformations (not shown in Tab. 6) are kept fixed in all
+settings, specifically random flip with probability of 50%,
+random resize with scale range 0.8–1.0 and aspect ratio
+range 3/4–4/3 and crop size of 244 out of 256. Examples
+of the noises are shown in Fig. 14.
+B. Resolution Scaling robustness
+We examine the robustness of Resolution Scaling against
+resolution change in term of preserving image quality and
+watermark recovery. We first create multiple versions of
+the DIV2K benchmark by downsampling every image with
+a factor 0 < ρ < 1, then evaluate our watermark embedding
+Figure 10. Resolution Scaling performance versus Bilinear and
+Bicubic interpolations for the watermarking task, evaluated with
+TrustMark (αmax = 27.5) on DIV2K at different resolutions.
+Figure 11. Resolution Scaling performance versus Bilinear and
+Bicubic interpolation for the watermarking removal task, evalu-
+ated with TrustMark-RM on DIV2K.
+(TrustMark, Fig. 10) and removal (TrustMark-RM, Fig. 11)
+on these newly created benchmarks. We also compare with
+Bilinear and Bicubic interpolation methods i.e. output im-
+ages at 256×256 resolution are scaled to the target resolu-
+tion via Bilinear or Bicubic samplings instead of Resolution
+Scaling. Fig. 10 and Fig. 11 show that all methods drop per-
+formance in PSNR when the target resolution increases be-
+yond 256×256 towards the original image resolution, how-
+ever the drop for Resolution Scaling is negligible (0.1dB for
+both TrustMark and TrustMark-RM) as compared with Bi-
+11
+Stage Settings Triggered Fixed batch Rnd. batch Noise simulation α ramping GAN bit acc.
+0 ✓ -
+1 ✓ 0.90
+2 ✓ ✓ 0.95
+3 ✓ ✓ ✓ ✓ 0.98
+Table 5. Four stages of TrustMark in an end-to-end training pipeline. The next stage is automatically triggered once a training batch bit
+accuracy exceed a corresponding threshold.
+Figure 12. TrustMark pre- and post-process activation maps, best with zoom-in.
+Figure 13. Watermarking on a set of control images. All achieves 100% bit accuracy. First row: host images , middle row: encoded images
+with a same random watermark; bottom row: residual images scaled up 20x.
+linear and Bicubic interpolations. On the other hand, the
+bit accuracy for Resolution Scaling is lower than Bicubic
+by 1% for TrustMark (higher is better) and TrustMark-RM
+(lower is better).
+Note on PSNR’s resolution dependence. We conducted
+an experiment to assess the dependence of the PSNR met-
+ric to image resolution (Fig. 16). Here, we compute PSNR
+on a pair of 2 totally different images (x1, x2) and a pair of
+cover and watermarked images (x1, ˆx1). All images x1, x2
+and ˆx1 have the same resolution of 512×512 and the water-
+marking algorithm is dwtDctSvd [42]. PSNR is computed
+at the original resolution, and also at various downsampling
+and upsampling resolutions of the 2 pairs. While the PSNR
+scores for (x1, x2) vary slightly with 0.35dB maximum dif-
+12
+Jpeg Compress. Brightness Contrast Color Jiggle Grayscale Gaussian Blur Gaussian Noise
+(min q) (bri.) (con.) (bri., con., sat., hue) (p) (k, σ) (std.)
+Low 70 0.9–1.1 0.9–1.1 0.05, 0.05, 0.05, 0.01 0.5 3, 0.1–1.0 0.02
+Medium 50 0.75–1.25 0.75–1.25 0.1, 0.1, 0.1, 0.02 0.5 5, 0.1–1.5 0.04
+High 40 0.5–1.5 0.5–1.5 0.1, 0.1, 0.1, 0.05 0.5 7, 0.1–2.0 0.08
+Hue Posterize RGB Shift Saturation Sharpness Median blur Box blur Motion blur
+(hue) (bits) (shift limit) (sat.) (sha.) (k) (k) (k,β, t)
+Low 0.01 5 0.02 0.9-1.1 0.5 3 3 3-5,-25–25,-0.25–0.25
+Medium 0.02 4 0.05 0.75-1.25 1.0 3 5 3-7,-45–45,-0.5–0.5
+High 0.05 3 0.1 0.5-1.5 2.5 3 7 3-9,-90–90,-1.0–1.0
+Table 6. Noise simulation settings at low, medium and high levels. ‘a–b’ refers to the value range between a and b that a parameter is
+randomly drawn from. For Jpeg compression, q is the compression factor (or image quality). For blurring operations, k is the kernel size.
+Additionally, for motion blur, β and t are the angle and direction of the simulated motion. bri., con., sat. and sha. are the brightness,
+contrast, saturation and sharpness factors in Kornia [48].
+Figure 14. Examples of different noise sources applied during TrustMark training.
+ference, the change in PSNR for (x1, ˆx1) is significantly
+higher (4.7dB). This behavior does not depend on the inter-
+polation (Bilinear, Bicubic) nor the watermarking methods.
+This indicates that PSNR is more sensitive to similar im-
+age pairs (as is the case of watermarking) when evaluated
+at different resolutions. It is because the subtle watermark
+degrades after up/down-sampling, increasing PSNR in over-
+all. In the broader context, if two watermark models work
+on two different image resolutions and are evaluated at its
+model-designed resolution, the resulting PSNR scores will
+not be directly comparable. This highlights the contribu-
+tion of our Resolution Scaling algorithm in extending fixed-
+resolution watermarking methods to work on original reso-
+lution, therefore can be directly compared with each other
+and with other arbitrary-resolution methods.
+C. Trade-off control at inference time
+We demonstrate in Sec. 4.2 and Fig. 6 of the main paper
+that the trade-off between imperceptibility and watermark
+recovery can be controlled via the loss weight parameter
+αmax, which must be decided at training time. Here, we
+show that the trade-off can also be controlled at inference
+time by inserting a control parameter λ > 0 to L#9 of Alg.
+1;
+y ← clamp(x + λ ∗ r, −1, 1) (7)
+Decreasing λ towards 0 would lessen the watermarking
+artifacts therefore improve imperceptibility but at the same
+time decrease bit accuracy. In contrast, higher value of λ
+(up to the clamping upper bound of 1) would strengthen the
+residual term r and effectively increase bit accuracy at cost
+of image quality. Fig. 15 demonstrates this trade-off con-
+trol. A reasonable range of λ that satisfies both the PSNR
+13
+Figure 15. Control of the imperceptibility and watermark recovery
+trade-off can be achieved at inference time via the parameter λ in
+Eq. (7), tested on DIV2K.
+and bit accuracy metrics is [0.75, 1.50]. We note that this
+trade-off can be controlled at sample level, meaning end-
+users can set their preferred trade-off for individual cover
+images.
+D. Qualitative evaluation
+D.1. FFL effects
+Fig. 9 shows the impact of FFL on the frequency spec-
+trum of the watermarked images. Compared with Trust-
+Mark without FFL (Fig. 9 middle), having this loss im-
+proves image quality across multiple frequency bands (note
+the brightness of the 4 regions at upper, lower, left and right
+of Fig. 9 right image).
+D.2. Post-processing layers
+We visualize several activation maps of the pre- and post-
+process layers in Fig. 12, along with the learned watermark
+and output image. The watermark is shown to located at the
+center of the image where salient objects are dominant and
+also probably because of random crop simulation during
+training. The watermark is shown visibly blended within
+the image content after pre-processing and perceptually in-
+visible after the post-processing layers.
+D.3. TrustMark on control images
+We visualize the watermarking artifacts by applying
+TrustMark on a set of control images with a fixed watermark
+in Fig. 13. The learned watermark is shown to be adaptive
+to the image content (most visible when comparing the third
+column with the first and second columns). Additionally,
+the watermark complexity increases along with the content
+(left to right), also the diagonal object edges tend to cause
+more artifacts than the horizontal and vertical edges.
+E. Application demo
+We enclose a video demo demonstrating an use case of
+TrustMark for content provenance. Here, the watermark
+Figure 16. PSNR is dependent to the evaluating resolution and
+is more sensitive if the two images are similar (as in the case of
+watermarking). * refers to the original resolution of the evaluated
+images. ˆx1 inset: pixel residual scaled 20 times for visualization
+purpose.
+contains the hash key of the provenance manifest associated
+with the image. When uploaded to a social media platform
+(X), the provenance information can be recovered by using
+the extracted watermark to perform a key-value lookup in
+the provenance database. TrustMark works seamlessly with
+the C2PA open standards [14], as shown in the demo.
+14

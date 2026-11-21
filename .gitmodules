@@ -1,0 +1,12 @@
+[submodule "repos/videoseal"]
+	path = repos/videoseal
+	url = https://github.com/facebookresearch/videoseal.git
+	ignore = untracked
+[submodule "repos/model-equality-testing"]
+	path = repos/model-equality-testing
+	url = https://github.com/i-gao/model-equality-testing.git
+	ignore = untracked
+[submodule "repos/SCRUB"]
+	path = repos/SCRUB
+	url = https://github.com/Meghdad92/SCRUB.git
+	ignore = untracked

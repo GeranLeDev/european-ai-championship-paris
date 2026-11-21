@@ -1,0 +1,1820 @@
+EditGuard: Versatile Image Watermarking for Tamper Localization and
+Copyright Protection
+Xuanyu Zhang Runyi Li Jiwen Yu Youmin Xu Weiqi Li Jian Zhang†
+School of Electronic and Computer Engineering, Peking University, Shenzhen, China
+Please help protect my image 
+against intentional tampering. My 
+exclusive copyright information is 
+00111010110…
+I‘ve added the exclusive EditGuard 
+watermark to it. You can post the 
+picture on the left and I will be 
+responsible for its protection.
+The picture is cool. I will manipulate and share it.
+I find a picture online that looks 
+similar to mine. Can you provide 
+evidence to prove my copyright 
+and pinpoint tampered areas?
+I have marked the tampered 
+areas for you and extracted its 
+copyright as 00111010110..., 
+which matches your copyright. 
+Please use this as evidence to 
+defend your rights.
+Original Tampered Our Predicted mask Original Tampered Our Predicted mask
+Remove the woman
+ AI Fill, “A Picasso painting on the wall”
+Replace background, “A man in an office”Change the cloth, “A pink shirt, high quality”
+Secondary creation of artworks, “A straw hat”
+Swap FaceText Forgery
+Tamper with AI-generated images, “A volcano”
+Container Image
+Original Image
+Container Image Tampered Image
+Tampered Image
+Predicted Mask
+Users
+Users
+Tamperer
+Figure 1. We propose a versatile proactive forensics framework EditGuard. The application scenario is shown on the left, wherein users
+embed invisible watermarks to their images via EditGuard in advance. If suffering tampering, users can defend their rights via the tampered
+areas and copyright information provided by EditGuard. Some supported tampering methods (marked in blue) and localization results of
+EditGuard are placed on the right. Our EditGuard can achieve over 95% localization precision and nearly 100% copyright accuracy.
+Abstract
+In the era where AI-generated content (AIGC) models
+can produce stunning and lifelike images, the lingering
+shadow of unauthorized reproductions and malicious tam-
+pering poses imminent threats to copyright integrity and
+information security. Current image watermarking meth-
+ods, while widely accepted for safeguarding visual con-
+tent, can only protect copyright and ensure traceability.
+They fall short in localizing increasingly realistic image
+tampering, potentially leading to trust crises, privacy vi-
+olations, and legal disputes. To solve this challenge, we
+propose an innovative proactive forensics framework Edit-
+Guard, to unify copyright protection and tamper-agnostic
+localization, especially for AIGC-based editing methods. It
+can offer a meticulous embedding of imperceptible water-
+marks and precise decoding of tampered areas and copy-
+right information. Leveraging our observed fragility and
+†Corresponding author.
+locality of image-into-image steganography, the realiza-
+tion of EditGuard can be converted into a united image-bit
+steganography issue, thus completely decoupling the train-
+ing process from the tampering types. Extensive experi-
+ments demonstrate that our EditGuard balances the tamper
+localization accuracy, copyright recovery precision, and
+generalizability to various AIGC-based tampering meth-
+ods, especially for image forgery that is difficult for the
+naked eye to detect. The project page is available at
+https://xuanyuzhang21.github.io/project/editguard/.
+1. Introduction
+Owing to the advantageous properties of diffusion mod-
+els and the bolstering of extensive datasets, AI-generated
+content (AIGC) models like DALL·E 3 [19], Imagen [64],
+and Stable Diffusion [63], can produce lifelike and won-
+drous images, which greatly facilitate the endeavors of pho-
+tographers and image editors. Nonetheless, the remark-
+able capabilities of these models come with a double-edged
+1
+arXiv:2312.08883v1  [cs.CV]  12 Dec 2023
+sword, presenting new challenges in copyright protection
+and information security. The efficiency of image manipu-
+lation [9, 10, 51, 61, 63, 69, 77, 85, 90, 95] has blurred the
+line between fact and forgery, ushering in myriad security
+and legal concerns. For instance, artistic works are vulnera-
+ble to malicious tampering or unauthorized AI-facilitated
+recreations, making it challenging to protect their origi-
+nal creations [18, 73]. Meanwhile, forged images may be
+spread online or used as court evidence, causing adverse
+effects on public opinion, ethical issues, and social stabil-
+ity [37].
+Given the challenges of preventing image tampering
+from the source, image watermarking has become a con-
+sensus for proactive forensics [20, 67]. However, prevalent
+forensic image watermarking [17, 20, 52, 80] still focus
+on detecting image authenticity or protecting image copy-
+rights, but fall short when it comes to advanced demands,
+such as localizing tampered areas. Tamper localization fa-
+cilitates an evaluation of the severity of the image manipula-
+tion, and provides an understanding of the intent of attack-
+ers, potentially allowing for the partial reuse of the tam-
+pered images. However, passive forensics methods such
+as previous black-box localization networks [12, 68, 78]
+tend to seek anomalies like artifacts or flickers in images
+but struggle to detect more realistic textures and more ad-
+vanced AIGC models. Moreover, they inevitably need to in-
+troduce tampered data during the training and focus solely
+on specific “CheapFake” tampering like slicing and copy-
+and-paste [12, 53, 68], or on “DeepFake” targeting human
+faces [3, 62], restricted in generalizability. Thus, it is vital to
+develop an integrated watermarking framework that unites
+tamper-agnostic localization and copyright protection.
+To clarify our task scope, we re-emphasize the def-
+inition of dual forensics tasks as illustrated in Fig. 1:
+(1) Copyright protection: “Who does this image belong
+to?” We aspire to accurately retrieve the original copyright
+of an image, even suffering various tampering and degra-
+dation. (2) Tamper localization: “Where was this image
+manipulated?” We aim to precisely pinpoint the tampered
+areas, unrestrained by specific tampering types. To the best
+of our knowledge, no existing method accomplishes these
+two tasks simultaneously, while maintaining a balance of
+high precision and extensive generalizability.
+To address this urgent demand, we propose a novel
+proactive forensics framework, dubbed EditGuard, to pro-
+tect copyrights and localize tamper areas for AIGC-based
+editing methods. Specifically, drawing inspiration from our
+observed locality and fragility of image-into-image (I2I)
+steganography and inherent robustness of bit-into-image
+steganography, we can transform the realization of Edit-
+Guard into a joint image-bit steganography issue, which
+allows the training of EditGuard to be entirely decoupled
+from tampering types, thereby endowing it with exceptional
+generalizability and locate tampering in a zero-shot manner.
+In a nutshell, our contributions are as follows:
+❑ (1) We present the first attempt to design a versatile
+proactive forensics framework EditGuard for universal
+tamper localization and copyright protection. It embeds
+dual invisible watermarks into original images and accu-
+rately decodes tampered areas and copyright information.
+❑ (2) We have observed the fragility and locality of I2I
+steganography and innovatively convert the solution of
+this dual forensics task into training a united Image-Bit
+Steganography Network (IBSN), and utilize the core com-
+ponents of IBSN to construct EditGuard.
+❑ (3) We introduce a prompt-based posterior estimation
+module to enhance the localization accuracy and degrada-
+tion robustness of the proposed framework.
+❑ (4) The effectiveness of our method has been verified on
+our constructed dataset and classical benchmarks. Com-
+pared to other competitive methods, our approach has no-
+table merits in localization precision, generalization abil-
+ities, and copyright accuracy without any labeled data or
+additional training required for specific tampering types.
+2. Related works
+2.1. Tamper Localization
+Prevalent passive image forensic techniques have focused
+on localizing specific types of manipulations [30, 41, 42,
+65, 78, 100]. Meanwhile, some universal tamper localiza-
+tion methods [8, 29, 38, 43, 81, 87–89] also tend to ex-
+plore artifacts and anomalies in tampered images. For in-
+stance, MVSS-Net [12] employed multi-view feature learn-
+ing and multi-scale supervision to jointly exploit boundary
+artifacts and the noise view of images. OSN [78] proposed
+a novel robust training scheme to address the challenges
+posed by lossy operations. Trufor [22] used a learned noise-
+sensitive fingerprint and extracted both high-level and low-
+level traces via transformer-based fusion. HiFi-Net [23] uti-
+lized multi-branch feature extractor and localization mod-
+ules for both CNN-synthesized and edited images. SAFL-
+Net [68] constrained a feature extractor to learn semantic-
+agnostic features with specific modules and auxiliary tasks.
+However, the above-mentioned passive localization meth-
+ods are often limited in terms of generalization and local-
+ization accuracy, which usually work on known tampering
+types that have been trained. Although MaLP [3] used tem-
+plate matching for proactive tamper localization, it still re-
+quires a large number of forgery images and cannot fully
+decouple the network training from the tamper types.
+2.2. Image Watermarking
+Image watermarking [74] can be broadly divided into two
+types based on their purposes, namely adversarial water-
+2
+FragilityLocality 1
+1 2 3 4 5
+4
+2
+3 5
+Figure 2. Fragility and locality of I2I steganography. The
+first line shows that when X′ con is changed, ˆXsec will also be
+fragilely demaged. The second line plots the attribution maps
+1
+|S|
+P
+(i,j)∈S
+∂ ˆXsec [i,j]
+∂X′con of five point sets S (marked by 1⃝- 5⃝) in
+ˆXsec. We observed that ˆXsec almost only has a strong response
+at the corresponding positions of X′ con and its neighborhoods.
+marking and forensic watermarking. Adversarial water-
+marking [16, 44, 54, 72, 86] intentionally confuse gener-
+ative models via embedding perturbations into images, thus
+creating anomalous adversarial examples. Forensic water-
+marking [99], on the other hand, is used for the verifi-
+cation, authenticity, and traceability of images. Previous
+methods tend to use deep encoder-decoder networks [2, 47,
+56, 80, 99] or flow-based models [15, 52] to hide and re-
+cover bitstream. Recently, researchers [11, 17, 32, 76, 98]
+have designed specialized watermarking mechanisms for
+large-scale image generation models, such as stable diffu-
+sion [63], to merge watermarking into the generation pro-
+cess. However, these watermarking methods have a singular
+function and cannot accurately localize the tampered areas.
+3. Overall Framework of EditGuard
+3.1. Motivation
+Challenges of existing methods: (1) How to equip existing
+watermark methods, which are solely for copyright protec-
+tion, with the ability to localize tampering is the crux of
+EditGuard. We will solve it via the framework design in
+Sec. 3.2. (2) Most previous tamper localization methods in-
+evitably introduce specific tampering data during network
+training but tend to raise generalization concerns in un-
+known tampering types, which will be addressed in Sec. 3.3.
+Our observations: Fortunately, we observed that image-
+into-image (I2I) steganography exhibits distinct fragility
+and locality, possessing great potential to address these is-
+sues. Concretly, I2I steganography [4, 33, 50, 55, 83, 91]
+aims to hide a secret image Xsec into a cover image Xcov to
+produce a container image Xcon, and reveal ˆXsec and ˆXcov
+with minimal distortion from the received image X′ con. We
+discover that when X′ con undergoes significant alteration
+compared to Xcon, ˆXsec will also be damaged and generate
+artifacts (the first row of Fig. 2), which is called fragility.
+Furthermore, we notice that the artifacts in ˆXsec are almost
+pixel-level corresponding to the changes in X′ con relative to
+Xcon, which is called locality. To demonstrate this locality,
+we select five 7×7 point sets on ˆXsec and calculated their
+attribution maps with respect to X′ con. As plotted in the
+second row of Fig. 2, ˆXsec only exhibits a strong response
+at the corresponding locations of X′ con and their immediate
+vicinity, almost irrelevant to other pixels. These properties
+inspire us to treat Xsec as a special localization watermark
+and embed it within existing watermarking frameworks.
+3.2. Framework Design and Forensics Process
+To realize united tamper localization and copyright protec-
+tion, EditGuard is envisioned to embed both a 2D localiza-
+tion watermark and a 1D copyright traceability watermark
+into the original image in an imperceptible manner, which
+allows the decoding end to obtain the copyright of the im-
+ages and a binary mask reflecting tampered areas. However,
+designing such a framework needs to solve the compatibil-
+ity issue of two types of watermarks.
+(1) Local vs. Global: The localization watermark is re-
+quired to be hidden in the corresponding pixel positions of
+the original image, while the copyright watermark should
+be unrelated to spatial location and embedded in the global
+area redundantly. (2) Semi-fragile vs. Robust: The de-
+sired attribute of the localization watermark is semi-fragile,
+which means it is fragile to tampering but robust against
+some common degradations (such as Gaussian noise, JPEG
+compression, and Poisson noise) during network transmis-
+sion. However, the copyright should be extracted nearly
+losslessly, irrespective of tampering or degradation.
+To address the two pivotal conflicts, EditGuard employs
+a “sequential encoding and parallel decoding” structure,
+which comprises a dual-watermark encoder, a tamper lo-
+cator, and a copyright extractor. As shown in Fig. 3, the
+dual-watermark encoder will sequentially add pre-defined
+localization watermark and global copyright watermark
+wcop provided by users to the original image Iori, form-
+ing the container image Icon. Our experiments have proved
+that parallel encoding cannot effectively add dual water-
+marks into images (in supplementary materials (S.M.)). In
+contrast, sequential embedding effectively prevents cross-
+interference by hiding these two watermarks. Furthermore,
+we model the network transmission process in which the re-
+ceived (tampered) image Irec is transformed from Icon as:
+Irec = D(Icon ⊙ (1 − M) + T (Icon) ⊙ M), (1)
+where T (·), D(·) and M respectively denote the tamper
+function, degradation operation, and tempered mask. More-
+over, the parallel decoding processes allow us to flexibly
+train each branch under different levels of robustness and
+obtain the predicted mask ˆM via the tamper locator and
+traceability watermark ˆwcop via the copyright extractor. We
+can categorize the dual forensic process of EditGuard into
+the following scenarios.
+❑ Case 1: If ˆwcop ̸≈ wcop, suspicious Irec is either not
+3
+Localization 
+Watermarking
+Copyright 
+Watermarking
+Malicious Tampering
+Network Transmission
+Dual-Watermark 
+Encoder Copyright Extractor
+Tamper
+Locator
+1
+ 0
+ 0
+ 1
+ 0
+ 0…
+ 1
+ 0
+ 0
+ 1
+ 0
+ 0…
+Verified
+Not certified
+Figure 3. Illustration of the proposed proactive forensics framework EditGuard. The dual-watermark encoder sequentially embeds the
+pre-defined localization watermark and copyright watermark wcop into the original image Iori, generating the container image Icon. After
+encountering potential malicious tampering and degradation during network transmission, tampered mask ˆM and copyright information
+ˆwcop are respectively extracted via the tamper locator and copyright extractor from the received image Irec.
+registered in our EditGuard or underwent extremely severe
+global tampering, rendering it unreliable as evidence.
+❑ Case 2: If ˆwcop ≈ wcop and ˆM ̸≈ 0, suspicious Irec
+has undergone tampering, disqualifying it as valid evidence.
+Users may infer the intention of tamperers based on ˆM and
+decide whether to reuse parts of the image.
+❑ Case 3: If ˆwcop ≈ wcop and ˆM ≈ 0, Irec remains un-
+tampered and trustworthy under the shield of EditGuard.
+3.3. Transform Dual Forensics into Steganography
+To realize universal and tamper-agnostic localization, we
+resort to our observed locality and fragility of I2I steganog-
+raphy. As described in Sec. 3.1, localization watermark-
+ing and tamper locator in Fig. 3 can be effectively real-
+ized via image hiding and revealing. Meanwhile, comb-
+ing with the robustness of current bit-into-image steganog-
+raphy, copyright watermarking and extractor in Fig. 3 are
+achieved via bit encryption and recovery. Thus, we can
+convert the realization of the dual forensics framework Ed-
+itGuard into a united image-bit steganography network.
+Our training objective is just a self-recovery mechanism,
+meaning it only needs to ensure the input and output of
+the steganography network maintain high fidelity under
+various robustness levels, with no need to introduce any
+labeled data or tampered samples. During inference, it
+can naturally locate tampering via simple comparisons in a
+zero-shot manner and extract copyright exactly.
+4. United Image-bit Steganography Network
+4.1. Network Architecture
+As plotted in Fig. 4, the proposed IBSN includes an image
+hiding module (IHM), a bit encryption module (BEM), a
+bit recovery module (BRM), and an image revealing module
+(IRM). First, the IHM aims to hide a localization watermark
+Wloc∈RH×W ×3 into the original image Iori∈RH×W ×3,
+resulting in an intermediate output Imed∈RH×W ×3. Sub-
+sequently, Imed is fed to the BEM for feature refinement,
+while the copyright watermark wcop∈{0, 1}L is modu-
+lated into the BEM, forming the final container image
+Icon∈RH×W ×3. After network transmission, the BRM will
+faithfully reconstruct the copyright watermark ˆwcop from
+the received container image Irec. Meanwhile, Irec predicts
+the missing information ˆZ via the prompt-based posterior
+estimation and uses it as the initialization for the invertible
+blocks, producing ˆIori and semi-fragile watermark ˆWloc.
+4.2. Invertible Blocks in IHM and IRM
+Given the inherent capacity of flow-based models to pre-
+cisely recover multimedia information, we harness stacked
+invertible blocks to construct image hiding and reveal-
+ing modules. The original image Iori∈RH×W ×3 and lo-
+calization watermark Wloc∈RH×W ×3 will undergo dis-
+crete wavelet transformations (DWT) to yield frequency-
+decoupled image features. We then employ enhanced ad-
+ditive affine coupling layers to project the original image
+and its corresponding localization watermark branches. The
+transformation parameters are generated from each other.
+The enhanced affine coupling layer is composed of a five-
+layer dense convolution block [55] and a lightweight feature
+interaction module (LFIM) [7]. The LFIM can enhance the
+non-linearity of transformations and capture the long-range
+dependencies with low computational cost. More details are
+presented in S.M.. Finally, the revealed features are then
+transformed to the image domain via the inverse DWT.
+4.3. Prompt-based Posterior Estimation
+To bolster the fidelity and robustness of the image hiding
+and revealing module, we introduce a degradation prompt-
+based posteriori estimation module (PPEM). Since the en-
+coding network tends to compress [Iori; Wloc]∈RH×W ×6
+into the container image Icon∈RH×W ×3, previous meth-
+ods [50, 83] typically utilized a random Gaussian initial-
+ization or an all-zero map at the decoding end to compen-
+sate for the lost high-frequency channels. Yet, our obser-
+vations suggest that discarded information lurks within the
+4
+     Random Images and Bit
+Invertible Block
+modulation
+Invertible Block Invertible Block
+Prompt-based 
+Posterior Estimation
+0
+ 1
+ 0
+ 1
+ 0
+ 1
+Random Noise Pool
+Compression
+Gaussian Noise
+Poisson Noise
+1
+ 0
+ 0
+ 1
+ 0
+ 0
+ 1
+ 0
+ 0
+ 1
+ 0
+ 0
+User Input
+Image Hiding Module (IHM) Bit Encryption Module (BEM)
+Invertible BlockInvertible BlockInvertible Block
+Prompt Pool
+Image Revealing Module (IRM)
+0
+ 1
+ 0
+ 1
+ 0
+ 1
+IHM
+BEM
+BRM
+IRM
+ME
+Dual-Watermark Encoder
+Tamper Locator
+Copyright Extractor
+(a): Training Process
+(b): Inference Process
+Bit Recovery Module (BRM)
+… …
+……
+Pre-defined
+Figure 4. Illustration of the united Image-bit Steganography Network (IBSN). In the training process, we randomly sample original image
+Iori, localization watermark Wloc (a natural RGB image) and copyright watermark wcop and expect the IBSN to recover ˆIori, ˆWloc and
+ˆwcop with high fidelity. In the inference process, we use core components of the pre-trained IBSN with a mask extractor (ME) to construct
+our EditGuard, and pre-define a simple solid color image as a localization watermark.
+Prompt Pool
+ResBlock-1
+ResBlock-M
+TransBlock-1
+TransBlock-m
+ResBlock-m
+TransBlock-M
+… … … …
+GAP
+Conv
+s
+* ↑
+Conv
+＋
+Conv
+Global Average Pooling
+GAP * Linear Combination s Softmax ↑ Upsampling
+DWT
+Figure 5. Illustration of the proposed prompt-based posterior es-
+timation. It will dynamically fuse degraded representations and
+extracted features to obtain posterior mean ˆZ=E[Z|Irec].
+edges and textures of the container image. Thus, deploy-
+ing a dedicated network proves to be a more potent strategy
+in predicting the posterior mean of the vanished localiza-
+tion watermark information ˆZ=E[Z|Irec]. Specifically, as
+shown in Fig. 5, we stack M residual blocks Res(·) [25]
+and M channel-wise transformer blocks Trans(·) [92] to
+extract the local and non-local features Fc.
+Fc = Trans(Res(DWT(Irec))) + Res(DWT(Irec)). (2)
+Considering that the container image is prone to various
+degradations during network transmission, we pre-define N
+learnable embedding tensors as degradation prompts P =
+[P1, P2, . . . , PN ], where N denotes the number of degra-
+dation types and is set to 3. These learned prompts P can
+adaptively learn a diverse range of degradation representa-
+tions and are integrated with the intrinsic features extracted
+from Irec, enabling the proposed IBSN to handle multiple
+types of degradations using a single set of parameters. To
+better foster the interaction between the input features Fc
+and the degradation prompt P, the features Fc are passed to
+a global average pooling (GAP) layer, a 1×1 convolution,
+and a softmax operator to produce a set of dynamic weight
+coefficients. Each degradation prompt Pi is combined us-
+ing these dynamic coefficients wp⊛i and subsequently inte-
+grated via an upsampling operator ↑ and 3×3 convolution
+to obtain the enhanced representation Pc.
+Pc = Conv3×3((
+XN
+i=1
+wp⊛iPi)↑),
+where wp = Softmax (Conv1×1 (GAP (Fc))) .
+(3)
+Finally, we utilize a 3 × 3 convolution to fuse the learned
+degradation representation with extracted features Fc to en-
+rich the degradation-specific context, obtaining ˆZ.
+ˆZ = Conv3×3 ([Pc; Fc]) ∈ R
+H
+2 × W 2 ×12. (4)
+4.4. Bit Encryption and Recovery Modules
+As shown in Fig. 4, to encode the copyright watermark
+wcop into Imed, we firstly expand wcop∈{0, 1}L via stacked
+MLPs and reshape it into several L×L message feature
+5
+Table 1. Localization precision (F1-Score) and bit accuracy (BA)
+comparison with other competitive methods on [13, 21, 26, 75].
+Method CAISAv1 [13] Coverage [75] NIST16 [21] Columbia [26] F1 BA(%) F1 BA(%) F1 BA(%) F1 BA(%)
+ManTraNet [81] 0.320 - 0.486 - 0.225 - 0.650 -
+SPAN [28] 0.169 - 0.428 - 0.363 - 0.873 -
+CAT-Net v2 [39] 0.852 - 0.582 - 0.417 - 0.923 -
+OSN [78] 0.676 - 0.472 - 0.449 - 0.836 -
+MVSS-Net [12] 0.650 - 0.659 - 0.372 - 0.781 -
+PSCC-Net [46] 0.670 - 0.615 - 0.210 - 0.760 -
+TruFor [22] 0.822 - 0.735 - 0.470 - 0.914 -
+EditGuard (Ours) 0.954 99.91 0.955 100 0.911 99.88 0.988 99.93
+Tampered
+ Ours
+ Ground Truth
+OSN
+MVSS-Net
+ PSCC-Net
+Figure 6. Localization comparisons of our EditGuard and compet-
+itive methods [12, 46, 78] on four classical benchmarks.
+maps. Meanwhile, Imed is fed to a U-style feature enhance-
+ment network to extract features of each downsampling and
+upsampling layer. Finally, the message features will be up-
+scaled and integrated with multi-level image features via the
+fusion mechanism [27, 80], achieving the modulation of bit-
+image information. In the decoding end, Irec is fed into a
+U-shaped sub-network and downsampled to a size of L×L.
+The recovered copyright watermark ˆwcop is then extracted
+via an MLP. More details are presented in S.M..
+4.5. Construct EditGuard via the IBSN
+To stabilize the optimization of the proposed IBSN, we pro-
+pose a bi-level optimization strategy. Given an arbitrary
+original image Imed and watermark wcop, we first train the
+bit encryption and recovery module via the ℓ2 loss.
+ℓcop = ∥Icon − Im∥2 2 + λ ∥ ˆwcop − wcop∥2 2 , (5)
+where λ is set to 10. Furthermore, we freeze the weights of
+BEM and BRM and jointly train the IHM and IRM. Given
+a random original image Iori, localization watermark Wloc
+and copyright watermark wcop, the loss function is:
+ℓloc = ∥ˆIori − Iori∥1 + α ∥Icon − Iori∥2 2 + β∥ ˆWloc − Wloc∥1, (6)
+where α and β are respectively set to 100 and 1. During
+training, we only introduced degradations to Icon without
+being exposed to any tampering. After acquiring a pre-
+trained IBSN, we can construct the proposed EditGuard via
+the components of IBSN. As plotted in Fig. 4, the dual-
+watermark encoder of EditGuard is composed of IHM and
+BEM, which correspond to the localization and copyright
+watermarking in Fig. 3 respectively. The copyright ex-
+tractor strictly corresponds to BRM. The tamper locater
+Table 2. Visual quality of the container image Icon and bit accu-
+racy comparison with other pure watermarking methods.
+Method Image Size M. L. PSNR (dB) SSIM NIQE(↓) BA(%)
+MBRS [31] 128×128 30 26.57 0.886 7.219 100
+CIN [52] 128×128 30 41.35 0.981 7.171 99.99
+PIMoG [14] 128×128 30 36.22 0.941 7.113 99.99
+SepMark [80] 128×128 30 35.42 0.931 7.095 99.86
+EditGuard 128×128 30 36.93 0.944 5.567 99.89
+EditGuard 512×512 64 37.77 0.949 4.257 99.95
+includes IRM and a mask extractor (ME). Note that we
+need to pre-define a localization watermark Wloc, which
+is shared between the encoding and decoding ends. The
+choice of Wloc is very general to our method. It can be any
+natural image or even a solid color image. Finally, by com-
+paring the pre-defined watermark Wloc with the decoded
+one ˆWloc, we can obtain a binary mask ˆM∈RH×W :
+ˆM[i, j] = θτ (max(| ˆWloc[i, j, :] − Wloc[i, j, :]|)). (7)
+where i ∈ [0, H) and j ∈ [0, W ). θτ (z) = 1 (z ≥ τ ). τ is
+set to 0.2. | · | is an absolute value operation.
+5. Experiments
+5.1. Implementation Details
+We trained our EditGuard via the training set of COCO [45]
+without any tampered data. Thus, for tamper localization,
+our method is actually zero-shot. The Adam [35] is used
+for training 250K iterations with β1=0.9 and β2=0.5. The
+learning rate is initialized to 1×10−4 and decreases by half
+for every 30K iterations, with the batch size set to 4. We
+embed a 64-bit copyright watermark and a simple localiza-
+tion watermark such as a pure blue image ([R, G, B] = [0, 0,
+255]) to original images. Following [12, 22, 46], F1-score,
+AUC, IoU, and bit accuracy are used to evaluate localization
+and copyright protection performance. Since no prior meth-
+ods can simultaneously achieve this dual forensics, we con-
+ducted separate comparisons with tamper localization and
+image watermarking methods.
+5.2. Comparison with Localization Methods
+For a fair comparison with tamper localization methods, we
+conducted extensive evaluations on four classical bench-
+marks [13, 21, 26, 75], as reported on Tab. 1. Since Ed-
+itGuard is a proactive approach, we initially embed water-
+marks into authentic images and then paste the tampered
+areas into the container images. Remarkably, even for
+tamper types that existing methods specialize in, the lo-
+calization accuracy of EditGuard consistently outperforms
+the SOTA method [22] across four datasets by margins of
+0.102, 0.116, 0.441, and 0.065 in F1-score without any la-
+beled data or tampered samples required, which verifies
+the superiority of our proactive localization mechanism. As
+shown in Fig. 6, our EditGuard can precisely pinpoint pixel-
+level tampered areas but other methods can only produce a
+rough outline or are only effective in some cases. Mean-
+6
+Table 3. Comparison with other competitive tamper localization methods under different AIGC-based editing methods. Note that † denotes
+the network finetuned in our constructed AGE-Set-C.
+Method Stable Diffusion Inpaint [63] Controlnet [95] SDXL [61] RePaint [51] Lama [69] FaceSwap [77] F1 AUC IoU BA(%) F1 AUC IoU BA(%) F1 AUC IoU BA(%) F1 AUC IoU BA(%) F1 AUC IoU BA(%) F1 AUC IoU BA(%)
+MVSS-Net [12] 0.178 0.488 0.103 - 0.178 0.492 0.103 - 0.037 0.503 0.028 - 0.104 0.546 0.082 - 0.024 0.505 0.022 - 0.285 0.612 0.192 -
+OSN [78] 0.174 0.486 0.101 - 0.191 0.644 0.110 - 0.200 0.755 0.118 - 0.183 0.644 0.105 - 0.170 0.430 0.099 - 0.308 0.791 0.171 -
+PSCC-Net [46] 0.166 0.501 0.112 - 0.177 0.565 0.116 - 0.189 0.704 0.115 - 0.140 0.469 0.109 - 0.132 0.329 0.104 - 0.157 0.346 0.180 -
+IML-VIT [53] 0.213 0.596 0.135 - 0.200 0.576 0.128 - 0.221 0.603 0.145 - 0.103 0.497 0.059 - 0.105 0.465 0.064 - 0.105 0.465 0.064 -
+HiFi-Net [23] 0.547 0.734 0.128 - 0.542 0.735 0.123 - 0.633 0.828 0.261 - 0.681 0.896 0.339 - 0.483 0.721 0.029 - 0.781 0.890 0.478 -
+MVSS-Net† [12] 0.694 0.939 0.575 - 0.678 0.925 0.558 - 0.482 0.884 0.359 - 0.185 0.529 0.111 - 0.393 0.829 0.275 - 0.459 0.739 0.333 -
+EditGuard (Ours) 0.966 0.971 0.936 99.95 0.968 0.987 0.940 99.96 0.965 0.989 0.936 99.96 0.967 0.977 0.938 99.95 0.965 0.969 0.934 99.95 0.896 0.943 0.876 99.86
+Original ImageContainer ImageError Map (×10)
+Figure 7. Visual results of the container image Icon and the error
+map of the proposed EditGuard. Here, localization and copyright
+watermarks are randomly selected from the dataset.
+while, our bit accuracy remains over 99.8% while all other
+methods can not realize effective copyright protection.
+5.3. Comparison with Watermarking Methods
+To evaluate the visual quality of Icon, we compared Edit-
+Guard with other watermarking methods on 1K testing im-
+ages from COCO [45] under the tampering of stable diffu-
+sion inpaint [63]. For a fair comparison, we also retrained
+our EditGuard on 128×128 original images and 30 bits.
+Tab. 2 reports that the fidelity of our container image far sur-
+passes that of SepMark [80], PIMoG [14], and MBRS [31]
+but is slightly inferior to CIN [52]. Meanwhile, our method
+exhibits the best performance in perceptual quality mea-
+sures like NIQE. As shown in Fig. 7, dual-watermarked
+images do not have noticeable artifacts and noise, making
+them imperceptible to the human eyes. When suffer mali-
+cious tampering, our method outperforms SepMark and is
+very close to PIMoG and CIN in bit accuracy. Note that
+other competitive methods only hide 30 bits, with a capac-
+ity of 30/(128×128). In contrast, our EditGuard hides both
+an RGB localization watermark and a 1D copyright water-
+mark, with a capacity far greater than 30/(128×128). Here,
+we do not claim to achieve the best visual quality and bit
+accuracy, but just to demonstrate that our method is compa-
+rable to the current image watermarking methods.
+5.4. Extension to AIGC-based Editing Methods
+Dataset Preparation: We constructed a dataset tailored
+for AIGC Editing methods, dubbed AGE-Set, comprising
+two sub-datasets. The first AGE-Set-C is a batch-processed
+coarse tamper dataset. Its original images are sourced from
+SD InpaintSDXLRePaint
+Tampered
+Original
+Lama
+GT
+Ours
+PSCC-Net
+ OSN
+MVSS-Net
+ HiFi-Net
+Figure 8. Localization performance comparisons of our EditGuard
+and other methods [12, 23, 46, 78] on our constructed AGE-Set-C.
+COCO 2017 [45] and CelebA [49], containing 30K training
+images and 1.2K testing images. We used some SOTA edit-
+ing methods such as Stable Diffusion Inpaint [63], Control-
+net [95], SDXL [61] to manipulate images with the prompt
+to be “None”, and employed some unconditional methods
+like Repaint [51], Lama [69], and Faceswap [77]. Note
+that we only use the tampered data to train other meth-
+ods, not our EditGuard. The second sub-dataset AGE-
+Set-F includes 100 finely edited images. It is edited man-
+ually via some sophisticated software such as SD-Web-UI,
+Photoshop, and Adobe Firefly. These AIGC-based editing
+methods can achieve a good fusion of the tampered and un-
+changed areas, making it hard for the naked eye to catch
+artifacts. More details are presented in S.M..
+AGE-Set-C: Tab. 3 presents the comparison of our Ed-
+itGuard and some SOTA tamper localization methods [12,
+23, 46, 53, 78]. We observe that the F1-scores of other pas-
+sive forensic methods are generally lower than 0.7 when
+applied to AGE-Set-C. Meanwhile, even when we try our
+best to finetune MVSS-Net using AGE-Set-C, the accu-
+racy of MVSS-Net† remains unsatisfactory, and they exhibit
+catastrophic forgetting across various tamper methods. In
+contrast, our method can guarantee an F1-score and AUC
+of over 95%, maintaining around 90% IOU, regardless of
+tampering types. As shown in Fig. 8, our EditGuard can ac-
+curately capture these imperceptible tampering traces pro-
+duced by AIGC-based editing methods, but other methods
+are almost ineffective. Moreover, our EditGuard can effec-
+tively recover copyright information with a bit accuracy ex-
+ceeding 99.8%. Noting that none of the comparison meth-
+ods offer copyright protection capabilities.
+AGE-Set-F: To further highlight the practicality of
+our EditGuard, we conducted subjective comparisons with
+other methods on the meticulously tampered AGE-Set-F.
+7
+Original
+ Container
+ Tampered
+ GT
+Ours
+IML-VIT
+ MVSS-Net
+ PSCC-Net
+ OSN
+ HiFi-Net
+Figure 9. Localization precision comparisons of our EditGuard and other competitive methods on the meticulously tampered AGE-Set-F.
+Table 4. Localization and bit recovery performance of our Edit-
+Guard and MVSS-Net† [12] under different levels of degradations.
+Methods Metrics Clean Gaussian Noise JPEG Poissonσ=1 σ=5 Q=70 Q=80 Q=90
+MVSS-Net† [12] F1 0.694 0.644 0.619 0.458 0.507 0.558 0.652 BA(%) - - - - - - -
+EditGuard (Ours) F1 0.966 0.937 0.932 0.920 0.920 0.925 0.943 BA(%) 99.95 99.94 99.37 97.69 98.16 98.23 99.91
+The tamper types in this subset did not appear in the training
+set. As shown in Fig. 9, when faced with real-world tam-
+pering, even the most powerful tamper localization meth-
+ods almost entirely fail. This is due to their mechanisms to
+look for image artifacts and explore instance-wise seman-
+tic information. However, our EditGuard, which locates
+tampered masks via the natural fragility and locality of I2I
+steganography, can still clearly annotate the tampered area.
+5.5. Robustness Analysis
+As shown in Tab. 4, we conducted robustness analysis
+on the tampering of “Stable Diffusion Inpaint” [63] under
+Gaussian noise with σ=1 and 5, JPEG compression with
+Q=70, 80 and 90, and Poisson noise with α=4 [93]. We
+observed that our method still maintains a high localization
+accuracy (F1-score>0.9) and bit accuracy with a very slight
+performance decrease under various levels of degradations,
+while MVSS-Net† [12] exhibits a noticeable performance
+degradation compared to its results in clean conditions. It
+is attributed to our prompt-based estimation that can effec-
+tively learn the degradation representation.
+5.6. Ablation Study
+To verify the effectiveness of each component of the Edit-
+Guard, we conducted ablation studies on bi-level optimiza-
+tion (BO), lightweight feature interaction module (LFIM),
+transformer block (TB), and prompt-based fusion (PF) un-
+der the tampering of “Stable Diffusion Inpaint”. As listed
+in Tab. 5, without BO, the joint training of all components
+Table 5. Abalation studies on the core components of EditGuard.
+Case Degradation Type D(·) PF TB LFIM BO F1 AUC IoU BA(%)
+(a) Clean ✓ ✓ ✓ - - - 49.17
+(b) Clean ✓ ✓ ✓ 0.950 0.960 0.904 99.73
+(c) Clean ✓ ✓ ✓ 0.957 0.966 0.927 99.51
+(d) Random Degradations ✓ ✓ ✓ 0.903 0.933 0.841 99.12
+Ours Clean ✓ ✓ ✓ ✓ 0.966 0.971 0.936 99.95 Random Degradations ✓ ✓ ✓ ✓ 0.938 0.964 0.887 99.36
+cannot converge effectively, resulting in bit accuracy that
+is close to random guessing. Without LFIM and TB, the
+IoU of EditGuard will suffer 0.032 and 0.009 declines since
+these two modules can better perform feature fusion. With-
+out PF, the robustness of the EditGuard will significantly de-
+cline. We observed that the F1/AUC/IoU of our method far
+surpasses that of case (d) by 0.035/0.031/0.046 under “Ran-
+dom Degradations”, which indicates that the PF effectively
+enables a single network to support watermark recovery un-
+der various degradations. “Random Degradations” denotes
+that we randomly set the D(·) to various levels of Gaussian
+noise, Poisson noise, and JPEG compression.
+6. Conclusion
+We present the first attempt to design a versatile watermark-
+ing mechanism EditGuard. It enhances the credibility of
+images by embedding imperceptible localization and copy-
+right watermarks, and decoding accurate copyright informa-
+tion and tampered areas, making it a reliable tool for artistic
+creation and legal forensic analysis. In the future, we will
+focus on improving the robustness of EditGuard and strive
+not only to offer pixel-wise localization results but also to
+provide semantic-wise outcomes. Additionally, we plan to
+further expand EditGuard to a broader range of modalities
+and applications, including video, audio, and 3D scenes.
+Our efforts at information authenticity serve not only the
+AIGC industry, but the trust in our digital world, ensuring
+that every pixel tells the truth and the rights of each individ-
+ual are safeguarded.
+8
+EditGuard: Versatile Image Watermarking for Tamper Localization and
+Copyright Protection
+Supplementary Material
+In the supplementary materials, we demonstrate additional
+experimental results, implementation details, discussion
+and analysis, and limitations of our methods as follows.
+Contents
+1. Introduction 1
+2. Related works 2
+2.1. Tamper Localization . . . . . . . . . . . . . 2
+2.2. Image Watermarking . . . . . . . . . . . . . 2
+3. Overall Framework of EditGuard 3
+3.1. Motivation . . . . . . . . . . . . . . . . . . 3
+3.2. Framework Design and Forensics Process . . 3
+3.3. Transform Dual Forensics into Steganography 4
+4. United Image-bit Steganography Network 4
+4.1. Network Architecture . . . . . . . . . . . . 4
+4.2. Invertible Blocks in IHM and IRM . . . . . . 4
+4.3. Prompt-based Posterior Estimation . . . . . 4
+4.4. Bit Encryption and Recovery Modules . . . . 5
+4.5. Construct EditGuard via the IBSN . . . . . . 6
+5. Experiments 6
+5.1. Implementation Details . . . . . . . . . . . . 6
+5.2. Comparison with Localization Methods . . . 6
+5.3. Comparison with Watermarking Methods . . 7
+5.4. Extension to AIGC-based Editing Methods . 7
+5.5. Robustness Analysis . . . . . . . . . . . . . 8
+5.6. Ablation Study . . . . . . . . . . . . . . . . 8
+6. Conclusion 8
+7. More Implementation Details 10
+7.1. Dataset Preparation . . . . . . . . . . . . . . 10
+7.2. Comparison Methods . . . . . . . . . . . . . 10
+7.3. Details of invertible blocks in IHM and IRM 10
+7.4. Details of BEM and BRM . . . . . . . . . . 10
+7.5. Training Details and Hyperparameters . . . . 11
+8. Addtional Experiments 11
+8.1. Time and Computational Cost . . . . . . . . 11
+8.2. More Results of Robustness . . . . . . . . . 12
+8.3. Ablation Study of Localization Watermark . 12
+8.4. Comparison with other Image-into-Image
+Steganography Methods . . . . . . . . . . 12
+8.5. Security Analysis . . . . . . . . . . . . . . . 13
+9. Discussion and Analysis 13
+9.1. Related Works about Image-into-Image (I2I)
+Steganography . . . . . . . . . . . . . . . 13
+9.2. Relationship to other Tamper Localization
+Works . . . . . . . . . . . . . . . . . . . . 14
+9.3. Why Choose a Sequential Encoder and Par-
+allel Decoder? . . . . . . . . . . . . . . . . 14
+9.4. Why Choose an Asymmetric Network over
+a Flow-based Model for Bit Encryption and
+Recovery? . . . . . . . . . . . . . . . . . . 14
+10. Limitations and Future Works 15
+11. More Visual Results 15
+9
+7. More Implementation Details
+7.1. Dataset Preparation
+To construct the AGE-Set-C, over 30K 512×512 original
+images were selected from the COCO [45] and CelebA [48]
+datasets and edited using Stable Diffusion Inpaint [63],
+ControlNet [95], SDXL [61], Repaint [51], Lama [69], and
+FaceSwap [77], where Segment Anything [36] was used to
+extract the tampered regions. Brief introductions of these
+editing methods are elaborated as follows.
+➢ Stable Diffusion Inpaint: Stable Diffusion inpainting
+concatenates the mask with random Gaussian noise as in-
+put and performs the diffusion process in the latent domain.
+It can adaptively generate high-quality image content based
+on the input mask and prompt, and blend well with un-
+changed areas.
+➢ ControlNet: ControlNet inpainting takes the mask and
+the prompt provided by uses as a condition and injects it into
+the base Stable Diffusion via an adapter, filling in the miss-
+ing areas. Note that although they share similar network ar-
+chitectures, ControlNet and Stable Diffusion inpainting are
+two distinctly different editing methods.
+➢ SDXL: SDXL inpainting is an advanced version of the
+Stable Diffusion inpainting, which is trained on multiple
+scales and incorporates a refinement model to enhance the
+visual fidelity of generated images.
+➢ RePaint: RePaint uses a pre-trained diffusion model and
+only alters the reverse diffusion iterations by sampling the
+unmasked regions. The prior model is trained on the human
+face data.
+➢ Lama: Lama is an unconditional inpainting model and
+addresses the challenge of inpainting large areas with com-
+plex structures by employing Fast Fourier Convolutions
+(FFCs) and an aggressive mask generation strategy.
+➢ FaceSwap: We utilize the open-source project [77] to
+swap a random face in CelebA [48] to another face.
+In a nutshell, we list the settings and division of AGE-
+Set-C in the Tab. 6. Considering the characteristics of
+various models, we conducted these four types of tam-
+pering [61, 63, 78, 95] on (20K + 1K) images from
+COCO [45], performed two types of tampering [51, 77] on
+(10K + 200) human faces respectively. Note that we only
+use the training set of AGE-Set-C to train passive localiza-
+tion networks such as MVSS-Net [12].
+7.2. Comparison Methods
+In this section, we will briefly introduce the settings and
+high-level functions of our comparison methods in Tab. 7.
+Our comparison methods include two aspects. On the
+one hand, we compared with many SOTA tamper local-
+ization networks to demonstrate that our proactive localiza-
+tion mechanism has extremely outstanding advantages. On
+the other hand, we compared our EditGuard with the SOTA
+pure bit-hiding image watermarking method. It shows that
+we are also close to the best methods in terms of recon-
+structed bit accuracy and copyright protection.
+7.3. Details of invertible blocks in IHM and IRM
+To hide and reveal images with high fidelity, we uti-
+lize invertible blocks [50, 55] in our EditGuard. The
+original image Iori∈RH×W ×3 and localization watermark
+Wloc∈RH×W ×3 undergo discrete wavelet transformations
+(DWT) to yield frequency-decoupled image features. Sub-
+sequently, we employ enhanced additive affine coupling
+layers to project the features in the original image and
+its corresponding localization watermark branches. Con-
+cretely, in k-th invertible block, the bijection of the forward
+propagation is:
+hk+1 ori = hk ori + Convk   ϕ1 k   hk loc  , (8)
+hk+1 loc = hk loc ⊗ Exp   ϕ2 k   hk+1 ori  + ϕ3 k   hk+1 ori  , (9)
+where hk ori and hk loc respectively denote the feature in the
+k-th layer of the original image and localization water-
+mark branch. Convk(·) and Exp(·) respectively denote the
+3×3 convolution in the k-th layer and exponential func-
+tion. ϕi k(·) (i = 1, 2, 3) denote the enhanced affine coupling
+layers, which is composed of a five-layer dense convolu-
+tion block [55] and a lightweight feature interaction mod-
+ule (LFIM) [7]. The dense block continuously cascades
+features extracted from preceding layers, thereby acquiring
+coarse-grained semantic information. The LFIM can en-
+hance the non-linearity of transformations and capture the
+long-range dependencies with low computational cost. As
+shown in Fig. 10, the LFIM consists of two-layer normal-
+izations, a simplified channel attention mechanism (SCA),
+a depth-wise separable 3×3 convolution, four 1×1 convo-
+lutions, and a gating function. This lightweight module
+can better promote feature fusion between channels, cap-
+ture long-distance dependencies, and filter out redundant
+information. Correspondingly, the backward propagation
+process is defined as:
+hk loc =   hk+1 loc − ϕ3 k   hk+1 ori  ⊗ Exp   −ϕ2 k   hk+1 ori  , (10)
+hk ori = hk+1 ori − Convk   ϕ1 k   hk loc  . (11)
+The revealed features are then transformed to the image do-
+main via the inverse discrete wavelet transform (IDWT).
+7.4. Details of BEM and BRM
+To encode the copyright watermark wcop into Imed, we
+firstly convert the copyright watermark wcop ∈ {0, 1}L into
+{−0.5, 0.5}L and feed it into stacked MLPs, and reshape
+it into several message feature maps {Mi}N i=1 ∈ RL×L.
+Meanwhile, Imed is fed to a U-style feature enhancement
+10
+Table 6. The settings of the training and testing set of AGE-Set.
+Division Data Source Tampering Method Number of Images
+Training COCO Stable Diffusion Inpaint, Controlnet, SDXL, Lama 20K×4 Celeba RePaint, FaceSwap 10K×2
+Testing
+COCO Stable Diffusion Inpaint, Controlnet, SDXL, Lama 1K×4
+Celeba RePaint, FaceSwap 200×2
+Online SD-Web-UI, Adobe firefly, Photoshop 100
+Table 7. The settings and high-level functions of our comparison methods, where T. L., T.D and C. P. respectively denote tamper localiza-
+tion, tamper detection, and copyright protection.
+Method Reference Type Function Need Tampered Samples Supported Tampering
+MVSS-Net [12] TPAMI 22 Passive T. L. ✓ copy-and-paste, slicing, inpainting
+OSN [78] CVPR 22 Passive T. L. ✓ splicing, removal, copy-and-paste
+PSCC-Net [46] TCSVT 22 Passive T. L. ✓ splicing, copy-and-paste, removal, pristine classes
+HiFi-Net [23] CVPR 23 Passive T. L. ✓ diffusion, GAN, CNN partial manipulation, copy-and-paste, splicing
+IML-VIT [53] Arxiv 23 Passive T. L. ✓ splicing, copy-and-paste, inpainting
+TruFor [22] CVPR 23 Passive T. L. ✓ splicing, copy-and-paste
+MBRS [31] ACM MM 21 Proactive C. P. × –
+CIN [52] ACM MM 22 Proactive C. P. × –
+PIMoG [14] ACM MM 22 Proactive C. P. × –
+SepMark [80] ACM MM 23 Proactive T. D. & C. P. ✓ StarGAN, GANimation, SimSwap
+EditGuard – Proactive T. L. & C. P. × slicing, copy-and-paste, FaceSwap [77], AIGC-based editing methods like [61, 63, 78, 95]
+LayerNorm
+1×1 Conv
+3×3 donv
+SimpleGate
+SCA
+1×1 Conv
+LayerNorm
+1×1 Conv
+SimpleGate
+1×1 Conv
+DenseBlock
+Figure 10. Network structure of our invertible blocks. The enhanced transformation module ϕi k is composed of a dense block and a
+lightweight feature interaction module(LFIM).
+network with N layers. In the downsampling, a convolution
+with stride=2 followed by a “Conv-ReLU” layer is used to
+halve the spatial resolution and double the feature channels,
+yielding the results {Di}N i=1. In the upsampling, we em-
+ploy nearest neighbor interpolation combined with “Conv-
+ReLU” layers to produce features {Ui}1 i=N . Subsequently,
+the message features {Mi}N i=1, derived from several MLPs,
+are up-scaled via nearest interpolation operation ↑ and inte-
+grated with {Di}N i=1 and {Ui}1 i=N , prompting the modula-
+tion of bit-image information.
+ˆUi = Fuse([Di; Ui; (Mi)↑]) ∈ R
+H
+2i × W 2i ×2i C (12)
+where Fuse(·) denote the residual blocks with channel at-
+tention module [27, 80]. [; ] denotes the concat operation.
+Finally, the BEM combines Imed and wcop at multiple lev-
+els to produce a dual-encoded container image Icon. In the
+decoding process, the received image Irec is fed into a U-
+shaped sub-network, subsequently downsampled to a size
+of L × L. The recovered copyright watermark ˆwcop is then
+extracted via an MLP and uses 0 as the threshold to trans-
+form it into {0, 1}L.
+7.5. Training Details and Hyperparameters
+The number of invertible blocks in the image hiding and re-
+vealing modules is 6. The number of residual convolution
+blocks and transformer blocks M is respectively set to 8.
+The degradation prompt P ∈ RC×L×H×W is a pre-defined
+learnable tensor, where C, L, H and W are respectively set
+to 72, 3, 36 and 36. L corresponds to the number of degra-
+dation types introduced in our training process. The num-
+ber of U-shaped feature enhancement layers N is 3. We
+introduced a JPEG simulator to train our EditGuard similar
+to [83], which consists of four main steps: color space trans-
+formation, discrete cosine transformation (DCT), quantiza-
+tion, and entropy encoding. To consider the ability of our
+model to hide extreme images (solid color images), we feed
+a pure blue image as a localization watermark every 10K
+iteration during training.
+8. Addtional Experiments
+8.1. Time and Computational Cost
+To evaluate the computational efficiency and complexity of
+our method, we input a 3 × 512 × 512 tensor on an NVIDIA
+11
+Ground 
+Truth
+Gaussian
+ Gaussian
+ JPEG
+ JPEG
+ JPEG
+ Poisson
+Original
+Image
+Tampered 
+Image
+ Wechat
+Figure 11. Localization results of our EditGuard on different simulation degradation and “WeChat” degradation. Zoom in for a better view.
+3090Ti to test our approach and various tamper localiza-
+tion methods [12, 23, 53, 78] in terms of inference time, the
+number of parameters, and FLOPs. We observe from Tab. 8
+that our method boasts the lowest number of parameters
+and the second lowest inference time and FLOPS, which
+demonstrates the computational efficiency and minimal de-
+mand on computational resources of our EditGuard com-
+pared to other methods. This can be attributed to the sym-
+metrical network structure of invertible neural networks,
+which can save a significant portion of parameters. Note
+that the inference time of EditGuard here only includes the
+time taken at the decoding end to obtain the mask and copy-
+right information.
+Table 8. Inference time, the number of parameters, and FLOPS
+comparison of our EditGuard and other methods.
+Methods Inference Time (s) # Params.(M) FLOPS (G)
+MVSS-Net [12] 2.929 142.78 163.57
+OSN [78] 0.062 128.82 161.07
+IML-VIT [53] 0.094 88.63 445.33
+HiFi-Net [23] 1.512 10.13 82.27
+EditGuard 0.069 5.45 102.73
+8.2. More Results of Robustness
+To further showcase the exceptional robustness of our
+method, we present the visualized localization results of our
+EditGuard under various degradation, including simulated
+degradation like Gaussian noise, JPEG compression, Pois-
+son noise, as well as real-world degradation. Specifically,
+we also display the results of our method under “WeChat”
+degradation. We send and receive tampered container im-
+ages via the pipeline of WeChat to implement network
+transmission. As illustrated in Fig. 11, our EditGuard con-
+tinues to display accurate localization results in comparison
+to the ground truth under different degradation. With the in-
+crease in degradation levels, it only shows a slight decrease
+in localization precision, which demonstrates the practical-
+ity and robustness of our method.
+8.3. Ablation Study of Localization Watermark
+To investigate the impact of different localization water-
+marks on the performance of our method, we embedded
+various localization watermarks into the original image and
+tampered with them using Stable Diffusion inpaint, explor-
+ing the localization accuracy and copyright recovery preci-
+sion of our EditGuard. As shown in Tab. 9, our method is
+applicable to all choices of localization watermark images,
+demonstrating good generalizability. Meanwhile, our Edit-
+Guard performs better on images with simpler textures and
+slightly worse on randomly selected natural images. Com-
+pared with pure red and pure green images, thanks to the
+fact that we added some pure blue images to the training
+samples, the localization accuracy of the pure blue water-
+mark is higher, which shows the effectiveness of our train-
+ing approach. Additionally, we observe that although using
+a natural image as a localization watermark can effectively
+reflect the tampered areas, it is challenging to select a suit-
+able threshold τ for the mask extractor, resulting in rela-
+tively low localization accuracy. Therefore, we recommend
+using a relatively simple localization watermark to enhance
+localization performance.
+8.4. Comparison with other Image-into-Image
+Steganography Methods
+To validate the superiority of our designed image-bit
+steganography network (IBSN) compared to other image-
+into-image steganography networks, we conducted experi-
+ments under the tampering of Stable Diffusion inpaint with
+12
+Table 9. Localization and bit accuracy performance of different
+localization watermarks.
+Localization Watermark F1 AUC IoU BA(%)
+Pure red image 0.946 0.965 0.923 99.92
+Pure green image 0.885 0.922 0.838 99.94
+Natural image 0.851 0.944 0.750 99.97
+Pure blue image (Ours) 0.966 0.971 0.936 99.95
+SOTA image-into-image steganography works, HiNet [33]
+and RIIS [83]. Firstly, it is important to note that these
+steganography networks do not possess the capability to
+hide 2D and 1D watermarks simultaneously and provide
+copyright protection. To fairly compare localization per-
+formance with other methods, we also embedded a pure
+blue image as a localization watermark into both RIIS and
+HiNet. We observed that while the localization accuracy of
+HiNet is acceptable in clean conditions, it completely de-
+teriorates with even a slight degradation. Meanwhile, RIIS
+sacrifices too much reconstruction fidelity for secret infor-
+mation in order to ensure robustness. Therefore, although
+it suffers a small performance decrease when faced with
+degradation, the localization accuracy of RIIS is still much
+lower than our EditGuard. In contrast, our EditGuard can
+simultaneously maintain high fidelity of the container im-
+age, the ability to hide both 1D and 2D watermarks, high
+accuracy of secret information recovery, and decent robust-
+ness. This makes it well-suited for the task of proactive
+localization and copyright protection.
+Table 10. Localization and bit accuracy performance of our
+method and other image-into-image steganography methods.
+Methods Depredation Type F1 AUC IoU BA(%)
+HiNet [33] Clean 0.952 0.962 0.911 - JPEG(Q=80) 0.025 0.473 0.013 -
+RIIS [83] Clean 0.854 0.901 0.821 - JPEG(Q=80) 0.833 0.874 0.802 -
+EditGuard (Ours) Clean 0.966 0.971 0.936 99.95 JPEG(Q=80) 0.920 0.949 0.869 98.16
+8.5. Security Analysis
+To verify the security of our EditGuard, we perform
+anti-steganography detection via StegExpose [5] on con-
+tainer images of various methods, including MBRS [31],
+CIN [52], SepMark [80], RIIS [83], HiNet [33] and our
+EditGuard. Among them, MBRS, CIN, and SepMark em-
+bedded a mere 30-bit copyright watermark, while RIIS and
+HiNet concealed a fragile watermark within an RGB im-
+age. In contrast, our EditGuard embedded both a 2D RGB
+localization watermark and a 1D copyright watermark. The
+detection set is built by mixing container images and orig-
+inal images with equal proportions. We vary the detection
+thresholds in a wide range in StegExpose [5] and draw the
+receiver operating characteristic (ROC) curve in Fig. 12.
+Note that the ideal case represents that the detector has a
+0.0 0.2 0.4 0.6 0.8 1.0
+False Positive Rate
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0True Positive Rate
+ROC curve
+MBRS
+CIN
+SepMark
+RIIS
+HiNet
+EditGuard(Ours)
+Reference
+Figure 12. ROC curve of different methods under steganogra-
+phy detector. The closer the curve is to the reference central axis
+(which means random guess), the corresponding method is better
+in security.
+50% probability of detecting stego from an equally mixed
+detection test, the same as a random guess. Evidently, the
+security of our method exhibits a significant advantage com-
+pared to some I2I steganography methods like HiNet and
+RIIS. It also surpasses most image watermarking methods
+such as SepMark and MBRS, only slightly lower than CIN.
+It fully demonstrates that our method is not easily detectable
+by steganalysis methods, ensuring a high level of security.
+9. Discussion and Analysis
+9.1. Related Works about Image-into-Image (I2I)
+Steganography
+Image-into-Image (I2I) steganography [4] aims to hide a
+cover image into the host image to produce a container
+image. Traditional steganography utilized spatial-based
+methods [57–59, 71, 71], adaptive methods [40, 60] and
+transform domain-based schemes [6, 34] to perform hid-
+ing and recovery. However, these methods often fail to of-
+fer high payload capacity and security. Recently, various
+deep learning-based steganography approaches have been
+proposed. Baluja [4] firstly proposed to hide a full-size im-
+age into another image via a deep network. Generative ad-
+versarial schemes [1, 66, 70, 84, 90, 91, 94] are also intro-
+duced to synthesize container images or minimize distor-
+tion. Owing to the intrinsic capability of reversible archi-
+tecture for lossless information retrieval, invertible neural
+networks [33, 50, 55, 82, 83] have been applied to informa-
+13
+tion hiding, greatly enhancing the capacity, visual quality,
+and fidelity of image steganography system.
+9.2. Relationship to other Tamper Localization
+Works
+Firstly, we want to reiterate the definitions of proactive and
+passive tamper localization. Passive tamper localization
+aims to identify and locate tampered areas in an image by
+analyzing specific features or anomalies, without any pre-
+ventive measures for the original images before foreseeable
+manipulations [80]. This approach often relies on detect-
+ing inconsistencies, unnatural artifacts, or areas that do not
+match with the surrounding environment in the image. It
+is entirely based on the analysis of the existing image con-
+tent. Proactive tamper localization refers to the approach
+of preemptively identifying and pinpointing tampered re-
+gions in an image by utilizing pre-embedded signals or
+markers. Unlike passive methods that rely solely on post-
+hoc analysis of image anomalies, proactive localization in-
+volves the prior integration of specific features, such as im-
+age watermarks, which can be subsequently detected and
+analyzed to reveal any alterations. Although previous ef-
+forts have also embedded signals into images for proactive
+tampering localization, we must emphasize that their appli-
+cations and approaches are completely orthogonal and dis-
+tinct from our methods.
+Comparison with DRAW [29]: DRAW aims to em-
+bed watermarks on RAW images and make passive tam-
+per localization networks more resistant to some lossy im-
+age operations such as JPEG compression, blurring, and re-
+scaling. Therefore, different from our proactive localization
+mechanism, DRAW fundamentally remains a passive local-
+ization method.
+Comparison with Imuge+ [89]: Imuge+ is employed to
+embed slight perturbations into the original images for im-
+munization and auto-recover the tampered contents via an
+invertible network. However, it still uses a passive tamper
+localization network to extract the masks.
+Comparison with MaLP [3]: Although MaLP employs
+a template matching approach to embed learnable templates
+into the network, a significant number of tampered samples
+are still required during the template and network learning
+process. In contrast, our method does not require any tam-
+pered samples during training and is a zero-shot localization
+method. Meanwhile, the template used by MaLP cannot be
+changed once it is learned, which results in the image in-
+put to the network being only of fixed resolution. But our
+EditGuard is naturally applicable to images of arbitrary res-
+olution.
+In a nutshell, to our knowledge, using a proactive mech-
+anism for tamper localization tasks without the need for
+tampered training samples remains a scarcely studied issue.
+Meanwhile, we also believe that the aforementioned excel-
+lent works [3, 29, 89] could be effectively combined with
+our method to achieve better robustness or self-recovery ca-
+pabilities.
+9.3. Why Choose a Sequential Encoder and Parallel
+Decoder?
+Apart from sequentially embedding localization and copy-
+right watermarks into original images, a more intuitive idea
+is to hide a 2D image and a 1D watermark in parallel.
+Specifically, we first reshape 64 bits into an 8 × 8 image,
+which is then replicated to match the size of the original
+image. Subsequently, we retrained a steganography net-
+work capable of hiding multiple images within a single im-
+age, embedding both the localization watermark and the bit
+image in parallel into the original image. The localization
+accuracy and copyright recovery precision are reported in
+Tab. 11. We found that the parallel encoding approach per-
+forms very well when no degradation is added. However,
+once even slight degradation is introduced, its bit accu-
+racy dramatically decreases, even approaching 50% under
+the JPEG compression (Q = 70), which is the same with
+random guessing. This is due to the fact that treating bits
+entirely as an image and parallel embedding them into the
+original images leads to local and fragile hiding, making it
+challenging to achieve adequate robustness.
+Meanwhile, the structure of sequential encoding and
+parallel decoding allows us to flexibly train the image
+hiding-revealing and bit encryption-recovery branches, en-
+abling these two branches to avoid interference with each
+other. Considering the different hiding capacities of the two
+branches, we can even introduce different degradation lay-
+ers and robustness levels to them, making the overall net-
+work more adaptable and flexible. These experimental re-
+sults and analysis demonstrate the rationality and signifi-
+cance of the framework design of our EditGuard.
+Table 11. The comparison results of the localization and bit recov-
+ery performance between our employed sequential encoding and
+its counterpart, parallel encoding under the tampering of Stable
+Diffusion inpaint.
+Methods Metrics Clean Gaussian Noise JPEG Poissonσ=1 σ=5 Q=70 Q=80 Q=90
+Parallel Encoding F1 0.979 0.953 0.911 0.852 0.866 0.879 0.941 BA(%) 100.00 85.29 70.28 58.12 65.24 70.52 79.29
+EditGuard (Ours) F1 0.966 0.937 0.932 0.920 0.920 0.925 0.943 BA(%) 99.95 99.94 99.37 97.69 98.16 98.23 99.91
+9.4. Why Choose an Asymmetric Network over a
+Flow-based Model for Bit Encryption and Re-
+covery?
+In the framework of our EditGuard, we employed asymmet-
+ric U-shaped network BEM (Bit Encryption Module) and
+BRM (Bit Recovery Module) for modulating and decoding
+bit information. A more intuitive approach would be to use
+14
+Original
+ Container
+ Tampered
+ GT
+Ours
+MVSS-Net
+ OSN
+ PSCC-Net
+ HiFi-Net
+Figure 13. Localization results of our EditGuard and other methods [12, 23, 46, 78] on the constructed AGE-Set-F. The original images
+are generated from Dalle3 [19]. The tampered images are manipulated by Adobe Firefly. It can be seen that our method can also achieve
+great localization performance in AI-generated images and mature commercial AIGC filling software, which shows the practicality of our
+method. Zoom in for a better view.
+a flow model [15] to hide and recover bits, similar to the
+image hiding and decoding modules. However, as shown in
+Tab. 12, we found that although flow models achieve high
+localization accuracy and fidelity in the absence of degra-
+dation, their bit reconstruction accuracy and robustness are
+relatively unsatisfactory, just slightly above 95%. Addition-
+ally, the performance of our variant significantly deterio-
+rates when subjected to some degradation. Therefore, we
+ultimately opted for the more flexible approach of using
+an asymmetric encoder-decoder for copyright protection,
+which reflects the non-trivial nature of our network design.
+Table 12. Localization and bit recovery performance of our Edit-
+Guard and the variant of our framework under different degrada-
+tion.
+Methods Metrics Clean Gaussian Noise JPEG Poissonσ=1 σ=5 Q=70 Q=80 Q=90
+Ours-variant F1 0.984 0.917 0.913 0.885 0.908 0.921 0.908 BA(%) 95.24 95.15 95.13 94.63 94.75 95.10 94.95
+EditGuard (Ours) F1 0.966 0.937 0.932 0.920 0.920 0.925 0.943 BA(%) 99.95 99.94 99.37 97.69 98.16 98.23 99.91
+10. Limitations and Future Works
+Our EditGuard provides a versatile watermarking solution
+to jointly achieve tamper localization and copyright pro-
+tection. Simultaneously, we design a united image-bit
+steganography network (IBSN) tailored for proactive dual
+forensics. However, there are several limitations that await
+future research and improvement:
+• Currently, our selection of localization watermarks is still
+empirical. In the future, we hope to learn an optimal lo-
+calization watermark via end-to-end optimization. Mean-
+while, we expect to use a grayscale image, instead of a
+three-channel RGB image, as the localization watermark.
+This approach is intended to reduce the information ca-
+pacity of our IBSN and further enhance its robustness.
+• Our framework can be effectively extended to foren-
+sics and copyright protection of video [79], hyperspectral
+data [96, 97], and 3D scenes [24]. The cross-modal verifi-
+cation of audio and temporal information has the potential
+to significantly enhance the localization accuracy of our
+method. At the same time, our framework will also ex-
+pand upon the existing framework to include some addi-
+tional functionalities, such as the self-recovery of original
+images [89].
+11. More Visual Results
+We present more visual results of our EditGuard and other
+competitive methods on our constructed AGE-Set-C (in
+Fig. 14) and AGE-Set-F (in Fig. 13 and Fig. 15). We found
+that our method can consistently achieve precise localiza-
+tion performance whether on batch-processed AGE-Set-C
+or careful editing with encapsulated editing software. How-
+ever, almost none of the other methods can achieve compa-
+rable localization accuracy and generalization ability.
+15
+Tampered
+Original
+ HiFi-Net
+ Ours
+ GT
+MVSS-Net
+ OSN
+PSCC-Net
+Container
+Figure 14. Visual comparisons of our EditGuard and other tamper localization methods [12, 23, 46, 78] on our constructed AGE-Set-
+C. Clearly, our method can pinpoint pixel-wise tampered areas, whereas other methods often struggle to effectively handle AIGC-based
+tampering. Zoom in for a better view.
+16
+Original
+ Container
+ Tampered
+ GT
+Ours
+MVSS-Net
+ PSCC-Net
+ OSN
+ HiFi-Net
+Figure 15. Localization results of our EditGuard and other methods [12, 23, 46, 78] on the constructed AGE-Set-F. The tampered images
+are manipulated by AIGC-based editing software with some customized models and well-designed prompts, and are hard for the naked eye
+to detect. In these cases, almost all methods fail but our EditGuard can still precisely produce the tampered masks. Zoom in for a better
+view.
+17
+References
+[1] Rameen Abdal, Yipeng Qin, and Peter Wonka. Im-
+age2stylegan: How to embed images into the stylegan la-
+tent space? In Proceedings of the IEEE/CVF International
+Conference on Computer Vision (ICCV), 2019. 13
+[2] Mahdi Ahmadi, Alireza Norouzi, Nader Karimi, Shadrokh
+Samavi, and Ali Emami. Redmark: Framework for residual
+diffusion watermarking based on deep networks. Expert
+Systems with Applications, 146:113157, 2020. 3
+[3] Vishal Asnani, Xi Yin, Tal Hassner, and Xiaoming Liu.
+Malp: Manipulation localization using a proactive scheme.
+In Proceedings of the IEEE/CVF Conference on Computer
+Vision and Pattern Recognition (CVPR), 2023. 2, 14
+[4] Shumeet Baluja. Hiding images in plain sight: Deep
+steganography. In Proceedings of the International Confer-
+ence on Neural Information Processing Systems (NeurIPS),
+2017. 3, 13
+[5] Benedikt Boehm. Stegexpose-a tool for detecting lsb
+steganography. arXiv preprint arXiv:1410.6656, 2014. 13
+[6] Yambem Jina Chanu, Kh Manglem Singh, and Themrichon
+Tuithung. Image steganography and steganalysis: A survey.
+International Journal of Computer Applications, 2012. 13
+[7] Liangyu Chen, Xiaojie Chu, Xiangyu Zhang, and Jian Sun.
+Simple baselines for image restoration. In Proceedings
+of the European Conference on Computer Vision (ECCV),
+2022. 4, 10
+[8] Xinru Chen, Chengbo Dong, Jiaqi Ji, Juan Cao, and Xirong
+Li. Image manipulation detection by multi-view multi-scale
+supervision. In Proceedings of the IEEE/CVF International
+Conference on Computer Vision (ICCV), 2021. 2
+[9] Xinhua Cheng, Tianyu Yang, Jianan Wang, Yu Li,
+Lei Zhang, Jian Zhang, and Li Yuan. Progressive3d:
+Progressively local editing for text-to-3d content cre-
+ation with complex semantic prompts. arXiv preprint
+arXiv:2310.11784, 2023. 2
+[10] Xinhua Cheng, Nan Zhang, Jiwen Yu, Yinhuai Wang, Ge
+Li, and Jian Zhang. Null-space diffusion sampling for zero-
+shot point cloud completion. In Proceedings of the Thirty-
+Second International Joint Conference on Artificial Intelli-
+gence (IJCAI), 2023. 2
+[11] Yingqian Cui, Jie Ren, Han Xu, Pengfei He, Hui Liu,
+Lichao Sun, and Jiliang Tang. Diffusionshield: A water-
+mark for copyright protection against generative diffusion
+models. arXiv preprint arXiv:2306.04642, 2023. 3
+[12] Chengbo Dong, Xinru Chen, Ruohan Hu, Juan Cao, and
+Xirong Li. Mvss-net: Multi-view multi-scale supervised
+networks for image manipulation detection. IEEE Transac-
+tions on Pattern Analysis and Machine Intelligence, 45(3):
+3539–3553, 2022. 2, 6, 7, 8, 10, 11, 12, 15, 16, 17
+[13] Jing Dong, Wei Wang, and Tieniu Tan. Casia image tam-
+pering detection evaluation database. In Proceedings of the
+IEEE China Summit and International Conference on Sig-
+nal and Information Processing (ChinaSIP), 2013. 6
+[14] Han Fang, Zhaoyang Jia, Zehua Ma, Ee-Chien Chang, and
+Weiming Zhang. Pimog: An effective screen-shooting
+noise-layer simulation for deep-learning-based watermark-
+ing network. In Proceedings of the 30th ACM International
+Conference on Multimedia (MM), 2022. 6, 7, 11
+[15] Han Fang, Yupeng Qiu, Kejiang Chen, Jiyi Zhang, Weim-
+ing Zhang, and Ee-Chien Chang. Flow-based robust wa-
+termarking with invertible noise layer for black-box distor-
+tions. In Proceedings of the AAAI Conference on Artificial
+Intelligence (AAAI), 2023. 3, 15
+[16] Weitao Feng, Jiyan He, Jie Zhang, Tianwei Zhang, Wenbo
+Zhou, Weiming Zhang, and Nenghai Yu. Catch you every-
+thing everywhere: Guarding textual inversion via concept
+watermarking. arXiv preprint arXiv:2309.05940, 2023. 3
+[17] Pierre Fernandez, Guillaume Couairon, Herv´e J´egou,
+Matthijs Douze, and Teddy Furon. The stable signature:
+Rooting watermarks in latent diffusion models. Proceed-
+ings of the IEEE/CVF International Conference on Com-
+puter Vision (ICCV), 2023. 2, 3
+[18] Anirban Ghoshal. Artists lose first copyright
+battle in the fight against ai-generated images.
+https://www.computerworld.com/article/
+3709691 / artists - lose - first - copyright -
+battle - in - the - fight - against - ai -
+generated-images.html, 2023. 2
+[19] Gabriel Goh, James Betker, Li Jing, Aditya Ramesh, et al.
+Improving image generation with better captions. https:
+/ / cdn . openai . com / papers / dall - e - 3 . pdf,
+2023. 1, 15
+[20] Google DeepMind. Synthid. https://deepmind.
+google/technologies/synthid/, 2023. 2
+[21] Haiying Guan, Mark Kozak, Eric Robertson, Yooyoung
+Lee, Amy N Yates, Andrew Delgado, Daniel Zhou, Tim-
+othee Kheyrkhah, Jeff Smith, and Jonathan Fiscus. Mfc
+datasets: Large-scale benchmark datasets for media foren-
+sic challenge evaluation. In Proceedings of the IEEE Win-
+ter Applications of Computer Vision Workshops (WACVW),
+2019. 6
+[22] Fabrizio Guillaro, Davide Cozzolino, Avneesh Sud,
+Nicholas Dufour, and Luisa Verdoliva. Trufor: Leverag-
+ing all-round clues for trustworthy image forgery detection
+and localization. In Proceedings of the IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition (CVPR),
+2023. 2, 6, 11
+[23] Xiao Guo, Xiaohong Liu, Zhiyuan Ren, Steven Grosz, Ia-
+copo Masi, and Xiaoming Liu. Hierarchical fine-grained
+image forgery detection and localization. In Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2023. 2, 7, 11, 12, 15, 16, 17
+[24] Ayaan Haque, Matthew Tancik, Alexei A Efros, Aleksander
+Holynski, and Angjoo Kanazawa. Instruct-nerf2nerf:
+Editing 3d scenes with instructions. arXiv preprint
+arXiv:2303.12789, 2023. 15
+[25] Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
+Deep residual learning for image recognition. In Proceed-
+ings of the IEEE Conference on Computer Vision and Pat-
+tern Recognition (CVPR), 2016. 5
+[26] Yu-Feng Hsu and Shih-Fu Chang. Detecting image splicing
+using geometry invariants and camera characteristics con-
+sistency. In Proceedings of the IEEE International Confer-
+ence on Multimedia and Expo (ICME), 2006. 6
+18
+[27] Jie Hu, Li Shen, and Gang Sun. Squeeze-and-excitation
+networks. In Proceedings of the IEEE Conference on Com-
+puter Vision and Pattern Recognition (CVPR), 2018. 6, 11
+[28] Xuefeng Hu, Zhihan Zhang, Zhenye Jiang, Syomantak
+Chaudhuri, Zhenheng Yang, and Ram Nevatia. Span: Spa-
+tial pyramid attention network for image manipulation lo-
+calization. In Proceedings of the European Conference on
+Computer Vision (ECCV), 2020. 6
+[29] Xiaoxiao Hu, Qichao Ying, Zhenxing Qian, Sheng Li,
+and Xinpeng Zhang. Draw: Defending camera-shooted
+raw against image manipulation. In Proceedings of the
+IEEE/CVF International Conference on Computer Vision
+(ICCV), 2023. 2, 14
+[30] Ashraful Islam, Chengjiang Long, Arslan Basharat, and
+Anthony Hoogs. Doa-gan: Dual-order attentive generative
+adversarial network for image copy-move forgery detection
+and localization. In Proceedings of the IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition (CVPR),
+2020. 2
+[31] Zhaoyang Jia, Han Fang, and Weiming Zhang. Mbrs: En-
+hancing robustness of dnn-based watermarking by mini-
+batch of real and simulated jpeg compression. In Proceed-
+ings of the 29th ACM International Conference on Multi-
+media (MM), 2021. 6, 7, 11, 13
+[32] Zhengyuan Jiang, Jinghuai Zhang, and Neil Zhenqiang
+Gong. Evading watermark based detection of ai-generated
+content. arXiv preprint arXiv:2305.03807, 2023. 3
+[33] Junpeng Jing, Xin Deng, Mai Xu, Jianyi Wang, and Zhenyu
+Guan. Hinet: Deep image hiding by invertible network. In
+Proceedings of the IEEE/CVF International Conference on
+Computer Vision (ICCV), 2021. 3, 13
+[34] Inas Jawad Kadhim, Prashan Premaratne, Peter James Vial,
+and Brendan Halloran. Comprehensive survey of image
+steganography: Techniques, evaluations, and trends in fu-
+ture research. Neurocomputing, 2019. 13
+[35] Diederik P Kingma and Jimmy Ba. Adam: A method for
+stochastic optimization. arXiv preprint arXiv:1412.6980,
+2014. 6
+[36] Alexander Kirillov, Eric Mintun, Nikhila Ravi, Hanzi
+Mao, Chloe Rolland, Laura Gustafson, Tete Xiao, Spencer
+Whitehead, Alexander C Berg, Wan-Yen Lo, et al. Segment
+anything. arXiv preprint arXiv:2304.02643, 2023. 10
+[37] Alexey Kuznetsov, Yakov Severyukhin, Oleg Afonin,
+and Yuri Gubanov. Detecting forged (altered) images.
+https://www.forensicfocus.com/articles/
+detecting-forged-altered-images/, 2013. 2
+[38] Myung-Joon Kwon, In-Jae Yu, Seung-Hun Nam, and
+Heung-Kyu Lee. Cat-net: Compression artifact tracing net-
+work for detection and localization of image splicing. In
+Proceedings of the IEEE/CVF Winter Conference on Appli-
+cations of Computer Vision (WACV), 2021. 2
+[39] Myung-Joon Kwon, Seung-Hun Nam, In-Jae Yu, Heung-
+Kyu Lee, and Changick Kim. Learning jpeg compression
+artifacts for image manipulation detection and localization.
+International Journal of Computer Vision, 130(8):1875–
+1895, 2022. 6
+[40] Bin Li, Ming Wang, Jiwu Huang, and Xiaolong Li. A new
+cost function for spatial image steganography. In Proceed-
+ings of the International Conference on Image Processing
+(ICIP), 2014. 13
+[41] Haodong Li and Jiwu Huang. Localization of deep in-
+painting using high-pass fully convolutional network. In
+Proceedings of the IEEE/CVF International Conference on
+Computer Vision (ICCV), 2019. 2
+[42] Yuanman Li and Jiantao Zhou. Fast and effective image
+copy-move forgery detection via hierarchical feature point
+matching. IEEE Transactions on Information Forensics and
+Security, 14(5):1307–1322, 2018. 2
+[43] Yue Li, Dong Liu, Houqiang Li, Li Li, Zhu Li, and Feng
+Wu. Learning a convolutional neural network for image
+compact-resolution. IEEE Transactions on Image Process-
+ing, 28(3):1092–1107, 2018. 2
+[44] Chumeng Liang, Xiaoyu Wu, Yang Hua, Jiaru Zhang, Yim-
+ing Xue, Tao Song, Zhengui Xue, Ruhui Ma, and Haibing
+Guan. Adversarial example does good: Preventing painting
+imitation from diffusion models via adversarial examples.
+In Proceedings of the International Conference on Machine
+Learning (ICML), 2023. 3
+[45] Tsung-Yi Lin, Michael Maire, Serge Belongie, James
+Hays, Pietro Perona, Deva Ramanan, Piotr Doll´ar, and
+C Lawrence Zitnick. Microsoft coco: Common objects in
+context. In Proceedings of the European Conference on
+Computer Vision (ECCV), 2014. 6, 7, 10
+[46] Xiaohong Liu, Yaojie Liu, Jun Chen, and Xiaoming Liu.
+Pscc-net: Progressive spatio-channel correlation network
+for image manipulation detection and localization. IEEE
+Transactions on Circuits and Systems for Video Technology,
+32(11):7505–7517, 2022. 6, 7, 11, 15, 16, 17
+[47] Yang Liu, Mengxi Guo, Jian Zhang, Yuesheng Zhu, and
+Xiaodong Xie. A novel two-stage separable deep learning
+framework for practical blind watermarking. In Proceed-
+ings of the ACM International Conference on Multimedia
+(MM), 2019. 3
+[48] Ziwei Liu, Ping Luo, Xiaogang Wang, and Xiaoou Tang.
+Deep learning face attributes in the wild. In Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2015. 10
+[49] Ziwei Liu, Ping Luo, Xiaogang Wang, and Xiaoou Tang.
+Deep learning face attributes in the wild. In Proceedings
+of the IEEE International Conference on Computer Vision
+(ICCV), 2015. 7
+[50] Shao-Ping Lu, Rong Wang, Tao Zhong, and Paul L Rosin.
+Large-capacity image steganography based on invertible
+neural networks. In Proceedings of the IEEE/CVF Confer-
+ence on Computer Vision and Pattern Recognition (CVPR),
+2021. 3, 4, 10, 13
+[51] Andreas Lugmayr, Martin Danelljan, Andres Romero,
+Fisher Yu, Radu Timofte, and Luc Van Gool. Repaint: In-
+painting using denoising diffusion probabilistic models. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR), 2022. 2, 7, 10
+[52] Rui Ma, Mengxi Guo, Yi Hou, Fan Yang, Yuan Li, Huizhu
+Jia, and Xiaodong Xie. Towards blind watermarking: Com-
+19
+bining invertible and non-invertible mechanisms. In Pro-
+ceedings of the ACM International Conference on Multi-
+media (MM), 2022. 2, 3, 6, 7, 11, 13
+[53] Xiaochen Ma, Bo Du, Xianggen Liu, Ahmed Y Al
+Hammadi, and Jizhe Zhou. Iml-vit: Image manipula-
+tion localization by vision transformer. arXiv preprint
+arXiv:2307.14863, 2023. 2, 7, 11, 12
+[54] Yihan Ma, Zhengyu Zhao, Xinlei He, Zheng Li, Michael
+Backes, and Yang Zhang. Generative watermarking
+against unauthorized subject-driven image synthesis. arXiv
+preprint arXiv:2306.07754, 2023. 3
+[55] Chong Mou, Youmin Xu, Jiechong Song, Chen Zhao,
+Bernard Ghanem, and Jian Zhang. Large-capacity and flex-
+ible video steganography via invertible neural network. In
+Proceedings of the IEEE/CVF Conference on Computer Vi-
+sion and Pattern Recognition (CVPR), 2023. 3, 4, 10, 13
+[56] Paarth Neekhara, Shehzeen Hussain, Xinqiao Zhang, Ke
+Huang, Julian McAuley, and Farinaz Koushanfar. Face-
+signs: semi-fragile neural watermarks for media au-
+thentication and countering deepfakes. arXiv preprint
+arXiv:2204.01960, 2022. 3
+[57] Bui Cong Nguyen, Sang Moon Yoon, and Heung-Kyu Lee.
+Multi bit plane image steganography. In International
+Workshop on Digital Watermarking, 2006. 13
+[58] Michiharu Niimi, Hideki Noda, Eiji Kawaguchi, and
+Richard O Eason. High capacity and secure digital
+steganography to palette-based images. In Proceedings of
+the International Conference on Image Processing (ICIP),
+2002.
+[59] Feng Pan, Jun Li, and Xiaoyuan Yang. Image steganogra-
+phy method based on pvd and modulus function. In Inter-
+national Conference on Electronics, Communications and
+Control (ICECC), 2011. 13
+[60] Tom´aˇs Pevn`y, Tom´aˇs Filler, and Patrick Bas. Using high-
+dimensional image models to perform highly undetectable
+steganography. In Information Hiding: 12th International
+Conference (IHIP), 2010. 13
+[61] Dustin Podell, Zion English, Kyle Lacey, Andreas
+Blattmann, Tim Dockhorn, Jonas M¨uller, Joe Penna, and
+Robin Rombach. Sdxl: improving latent diffusion mod-
+els for high-resolution image synthesis. arXiv preprint
+arXiv:2307.01952, 2023. 2, 7, 10, 11
+[62] Aditya Ramesh, Prafulla Dhariwal, Alex Nichol, Casey
+Chu, and Mark Chen. Hierarchical text-conditional
+image generation with clip latents. arXiv preprint
+arXiv:2204.06125, 2022. 2
+[63] Robin Rombach, Andreas Blattmann, Dominik Lorenz,
+Patrick Esser, and Bj¨orn Ommer. High-resolution image
+synthesis with latent diffusion models. In Proceedings of
+the IEEE/CVF Conference on Computer Vision and Pattern
+Recognition (CVPR), 2022. 1, 2, 3, 7, 8, 10, 11
+[64] Chitwan Saharia, William Chan, Saurabh Saxena, Lala
+Li, Jay Whang, Emily Denton, Seyed Kamyar Seyed
+Ghasemipour, Raphael Gontijo-Lopes, Burcu Karagol
+Ayan, Tim Salimans, Jonathan Ho, David J. Fleet, and Mo-
+hammad Norouzi. Photorealistic text-to-image diffusion
+models with deep language understanding. In Proceedings
+of the International conference on Neural Information Pro-
+cessing Systems (NeurIPS), 2022. 1
+[65] Ronald Salloum, Yuzhuo Ren, and C-C Jay Kuo. Image
+splicing localization using a multi-task fully convolutional
+network (mfcn). Journal of Visual Communication and Im-
+age Representation, 51:201–209, 2018. 2
+[66] Haichao Shi, Jing Dong, Wei Wang, Yinlong Qian, and Xi-
+aoyu Zhang. Ssgan: secure steganography based on gen-
+erative adversarial networks. In Pacific Rim Conference on
+Multimedia, 2017. 13
+[67] Deepa Shivaram. The white house and big tech companies
+release commitments on managing ai. https://www.
+nprillinois.org/2023- 07- 21/the- white-
+house - and - big - tech - companies - release -
+commitments-on-managing-ai, 2023. 2
+[68] Zhihao Sun, Haoran Jiang, Danding Wang, Xirong Li, and
+Juan Cao. Safl-net: Semantic-agnostic feature learning net-
+work with auxiliary plugins for image manipulation detec-
+tion. In Proceedings of the IEEE/CVF International Con-
+ference on Computer Vision (ICCV), 2023. 2
+[69] Roman Suvorov, Elizaveta Logacheva, Anton Mashikhin,
+Anastasia Remizova, Arsenii Ashukha, Aleksei Silvestrov,
+Naejin Kong, Harshith Goka, Kiwoong Park, and Victor
+Lempitsky. Resolution-robust large mask inpainting with
+fourier convolutions. In Proceedings of the IEEE/CVF
+Winter Conference on Applications of Computer Vision
+(WACV), 2022. 2, 7, 10
+[70] Weixuan Tang, Bin Li, Shunquan Tan, Mauro Barni, and
+Jiwu Huang. Cnn-based adversarial embedding for image
+steganography. IEEE Transactions on Information Foren-
+sics and Security (TIFS), 2019. 13
+[71] Piyu Tsai, Yu-Chen Hu, and Hsiu-Lien Yeh. Reversible
+image hiding scheme using predictive coding and histogram
+shifting. Signal Processing, 2009. 13
+[72] Thanh Van Le, Hao Phung, Thuan Hoang Nguyen, Quan
+Dao, Ngoc N Tran, and Anh Tran. Anti-dreambooth: Pro-
+tecting users from personalized text-to-image synthesis. In
+Proceedings of the IEEE/CVF International Conference on
+Computer Vision (ICCV), 2023. 3
+[73] James Vincent. The scary truth about ai copyright
+is nobody knows what will happen next. https :
+//www.theverge.com/23444685/generative-
+ai - copyright - infringement - legal - fair -
+use-training-data, 2022. 2
+[74] Tao Wang, Yushu Zhang, Shuren Qi, Ruoyu Zhao, Zhihua
+Xia, and Jian Weng. Security and privacy on generative
+data in aigc: A survey. arXiv preprint arXiv:2309.09435,
+2023. 2
+[75] Bihan Wen, Ye Zhu, Ramanathan Subramanian, Tian-
+Tsong Ng, Xuanjing Shen, and Stefan Winkler. Cover-
+age—a novel database for copy-move forgery detection. In
+Proceedings of the IEEE International Conference on Im-
+age Processing (ICIP), 2016. 6
+[76] Yuxin Wen, John Kirchenbauer, Jonas Geiping, and Tom
+Goldstein. Tree-ring watermarks: Fingerprints for diffu-
+sion images that are invisible and robust. arXiv preprint
+arXiv:2305.20030, 2023. 3
+20
+[77] Huikai Wu, Shaocheng Xiang, Gabriben, and Niczem.
+Faceswap. https : / / github . com / wuhuikai /
+FaceSwap, 2020. 2, 7, 10, 11
+[78] Haiwei Wu, Jiantao Zhou, Jinyu Tian, and Jun Liu. Robust
+image forgery detection over online social network shared
+images. In Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), 2022.
+2, 6, 7, 10, 11, 12, 15, 16, 17
+[79] Jay Zhangjie Wu, Yixiao Ge, Xintao Wang, Stan Weixian
+Lei, Yuchao Gu, Yufei Shi, Wynne Hsu, Ying Shan, Xiaohu
+Qie, and Mike Zheng Shou. Tune-a-video: One-shot tuning
+of image diffusion models for text-to-video generation. In
+Proceedings of the IEEE/CVF International Conference on
+Computer Vision(ICCV), 2023. 15
+[80] Xiaoshuai Wu, Xin Liao, and Bo Ou. Sepmark: Deep sepa-
+rable watermarking for unified source tracing and deepfake
+detection. In Proceedings of the ACM international confer-
+ence on Multimedia (MM), 2023. 2, 3, 6, 7, 11, 13, 14
+[81] Yue Wu, Wael AbdAlmageed, and Premkumar Natarajan.
+Mantra-net: Manipulation tracing network for detection
+and localization of image forgeries with anomalous fea-
+tures. In Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), 2019.
+2, 6
+[82] Mingqing Xiao, Shuxin Zheng, Chang Liu, Yaolong Wang,
+Di He, Guolin Ke, Jiang Bian, Zhouchen Lin, and Tie-Yan
+Liu. Invertible image rescaling. In European Conference
+on Computer Vision (ECCV), 2020. 13
+[83] Youmin Xu, Chong Mou, Yujie Hu, Jingfen Xie, and Jian
+Zhang. Robust invertible image steganography. In Proceed-
+ings of the IEEE/CVF Conference on Computer Vision and
+Pattern Recognition (CVPR), 2022. 3, 4, 11, 13
+[84] Jianhua Yang, Danyang Ruan, Jiwu Huang, Xiangui Kang,
+and Yun-Qing Shi. An embedding cost learning framework
+using gan. IEEE Transactions on Information Forensics and
+Security (TIFS), 2019. 13
+[85] Shuzhou Yang, Xuanyu Zhang, Yinhuai Wang, Jiwen Yu,
+Yuhan Wang, and Jian Zhang. Difflle: Diffusion-guided do-
+main calibration for unsupervised low-light image enhance-
+ment. arXiv preprint arXiv:2308.09279, 2023. 2
+[86] Xiaoyu Ye, Hao Huang, Jiaqi An, and Yongtao
+Wang. Duaw: Data-free universal adversarial watermark
+against stable diffusion customization. arXiv preprint
+arXiv:2308.09889, 2023. 3
+[87] Qichao Ying, Zhenxing Qian, Hang Zhou, Haisheng Xu,
+Xinpeng Zhang, and Siyi Li. From image to imuge: Immu-
+nized image generation. In Proceedings of the ACM inter-
+national conference on Multimedia (MM), 2021. 2
+[88] Qichao Ying, Xiaoxiao Hu, Xiangyu Zhang, Zhenxing
+Qian, Sheng Li, and Xinpeng Zhang. Rwn: Robust water-
+marking network for image cropping localization. In Pro-
+ceedings of the IEEE International Conference on Image
+Processing (ICIP), 2022.
+[89] Qichao Ying, Hang Zhou, Zhenxing Qian, Sheng Li, and
+Xinpeng Zhang. Learning to immunize images for tamper
+localization and self-recovery. IEEE Transactions on Pat-
+tern Analysis and Machine Intelligence, 2023. 2, 14, 15
+[90] Jiwen Yu, Yinhuai Wang, Chen Zhao, Bernard Ghanem,
+and Jian Zhang. Freedom: Training-free energy-guided
+conditional diffusion model. In Proceedings of the
+IEEE/CVF International Conference on Computer Vision
+(ICCV), 2023. 2, 13
+[91] Jiwen Yu, Xuanyu Zhang, Youmin Xu, and Jian
+Zhang. Cross: Diffusion model makes controllable, ro-
+bust and secure image steganography. arXiv preprint
+arXiv:2305.16936, 2023. 3, 13
+[92] Syed Waqas Zamir, Aditya Arora, Salman Khan, Mu-
+nawar Hayat, Fahad Shahbaz Khan, and Ming-Hsuan Yang.
+Restormer: Efficient transformer for high-resolution image
+restoration. In Proceedings of the IEEE/CVF Conference on
+Computer Vision and Pattern Recognition (CVPR), 2022. 5
+[93] Kai Zhang, Yawei Li, Jingyun Liang, Jiezhang Cao, Yulun
+Zhang, Hao Tang, Radu Timofte, and Luc Van Gool. Prac-
+tical blind denoising via swin-conv-unet and data synthesis.
+arXiv preprint arXiv:2203.13278, 2022. 8
+[94] Kevin Alex Zhang, Alfredo Cuesta-Infante, Lei Xu,
+and Kalyan Veeramachaneni. Steganogan: High ca-
+pacity image steganography with gans. arXiv preprint
+arXiv:1901.03892, 2019. 13
+[95] Lvmin Zhang, Anyi Rao, and Maneesh Agrawala. Adding
+conditional control to text-to-image diffusion models. In
+Proceedings of the IEEE/CVF International Conference on
+Computer Vision (ICCV), 2023. 2, 7, 10, 11
+[96] Xuanyu Zhang, Yongbing Zhang, Ruiqin Xiong, Qilin
+Sun, and Jian Zhang. Herosnet: Hyperspectral expli-
+cable reconstruction and optimal sampling deep network
+for snapshot compressive imaging. In Proceedings of the
+IEEE/CVF Conference on Computer Vision and Pattern
+Recognition(CVPR), 2022. 15
+[97] Xuanyu Zhang, Bin Chen, Wenzhen Zou, Shuai Liu, Yong-
+bing Zhang, Ruiqin Xiong, and Jian Zhang. Progressive
+content-aware coded hyperspectral compressive imaging.
+arXiv preprint arXiv:2303.09773, 2023. 15
+[98] Yunqing Zhao, Tianyu Pang, Chao Du, Xiao Yang, Ngai-
+Man Cheung, and Min Lin. A recipe for watermarking dif-
+fusion models. arXiv preprint arXiv:2303.10137, 2023. 3
+[99] Jiren Zhu, Russell Kaplan, Justin Johnson, and Li Fei-Fei.
+Hidden: Hiding data with deep networks. In European Con-
+ference on Computer Vision (ECCV), 2018. 3
+[100] Xinshan Zhu, Yongjun Qian, Xianfeng Zhao, Biao Sun, and
+Ya Sun. A deep learning approach to patch-based image
+inpainting forensics. Signal Processing: Image Communi-
+cation, 67:90–99, 2018. 2
+21

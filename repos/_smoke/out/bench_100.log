@@ -1,0 +1,6 @@
+baseline/hidden      bits= 48 PSNR=30.4 FPR=0.00 unmarked=0.499 | identity=0.998/1.00 jpeg40=0.984/1.00 crop0.32=0.594/0.02 bright0.5=0.950/0.99 rot10=0.833/0.95 blur=0.795/0.76 resize0.5=0.950/1.00 combo=0.518/0.00 (170s)
+baseline/trustmark   bits=100 PSNR=42.9 FPR=0.00 unmarked=0.502 | identity=1.000/1.00 jpeg40=0.986/1.00 crop0.32=0.500/0.00 bright0.5=0.998/1.00 rot10=0.506/0.00 blur=0.999/1.00 resize0.5=1.000/1.00 combo=0.501/0.00 (33s)
+baseline/wam         bits= 32 PSNR=38.9 FPR=0.00 unmarked=0.488 | identity=1.000/1.00 jpeg40=0.973/0.98 crop0.32=0.982/0.99 bright0.5=1.000/1.00 rot10=0.772/0.40 blur=1.000/1.00 resize0.5=1.000/1.00 combo=0.529/0.00 (176s)
+baseline/mbrs        bits=256 PSNR=46.1 FPR=0.00 unmarked=0.502 | identity=0.990/1.00 jpeg40=0.958/1.00 crop0.32=0.497/0.00 bright0.5=0.961/1.00 rot10=0.498/0.02 blur=0.880/1.00 resize0.5=0.972/1.00 combo=0.496/0.00 (160s)
+videoseal_1.0        bits=256 PSNR=45.2 FPR=0.00 unmarked=0.501 | identity=0.999/1.00 jpeg40=0.971/1.00 crop0.32=0.524/0.06 bright0.5=0.998/1.00 rot10=0.985/1.00 blur=0.998/1.00 resize0.5=0.998/1.00 combo=0.503/0.00 (199s)
+pixelseal            bits=256 PSNR=46.1 FPR=0.00 unmarked=0.502 | identity=1.000/1.00 jpeg40=0.953/1.00 crop0.32=0.952/1.00 bright0.5=0.999/1.00 rot10=0.990/1.00 blur=0.996/1.00 resize0.5=0.999/1.00 combo=0.510/0.04 (216s)

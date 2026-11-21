@@ -1,0 +1,1531 @@
+Learning to Watermark in the Latent Space of Generative Models
+Sylvestre-Alvise Rebuffi 1 Tuan Tran 1 Valeriu Lacatusu 1 Pierre Fernandez 1 Tom´aˇs Souˇcek 1
+Nikola Jovanovi´c 1 2 † Tom Sander 1 Hady Elsahar 1 Alexandre Mourachko 1
+Abstract
+Existing approaches for watermarking AI-
+generated images often rely on post-hoc meth-
+ods applied in pixel space, introducing compu-
+tational overhead and visual artifacts. In this
+work, we explore latent space watermarking and
+introduce DISTSEAL, a unified approach for la-
+tent watermarking that works across both diffu-
+sion and autoregressive models. Our approach
+works by training post-hoc watermarking mod-
+els in the latent space of generative models. We
+demonstrate that these latent watermarkers can
+be effectively distilled either into the genera-
+tive model itself or into the latent decoder, en-
+abling in-model watermarking. The resulting la-
+tent watermarks achieve competitive robustness
+while offering similar imperceptibility and up
+to 20× speedup compared to pixel-space base-
+lines. Our experiments further reveal that dis-
+tilling latent watermarkers outperforms distill-
+ing pixel-space ones, providing a solution that
+is both more efficient and more robust. Code
+and model are available at https://github.
+com/facebookresearch/distseal.
+1. Introduction
+The rapid advancement of generative models has enabled
+the creation of increasingly realistic synthetic content, rais-
+ing serious concerns about potential misuse, including the
+generation of harmful content, deepfakes, and intellectual
+property violations (Chesney & Citron, 2019; Somepalli
+et al., 2023). As outputs of these models become more in-
+distinguishable from authentic content, the need for reliable
+provenance mechanisms grows. Invisible watermarking
+offers a promising solution by embedding imperceptible sig-
+nals into generated content that can later verify its synthetic
+origin, enabling accountability while preserving the utility
+and quality of generated outputs.
+1Meta FAIR 2ETH Zurich.†Work done during a Meta in-
+ternship. Correspondence to: Sylvestre-Alvise REBUFFI
+<sylvestre@meta.com>.
+Recent watermarking research can be categorized into post-
+hoc methods that modify already-generated content in pixel-
+space (Bui et al., 2023a; Fernandez et al., 2024), out-of-
+model generation-time methods that alter the sampling pro-
+cess (Wen et al., 2023; Yang et al., 2024; Jovanovi´c et al.,
+2025; Lukovnikov et al., 2025), and in-model methods
+where watermarks are directly integrated into the generative
+model weights (Yu et al., 2022b; Fernandez et al., 2023;
+Kim et al., 2024).
+While post-hoc pixel-space watermarking has emerged as
+the method of choice for industry deployment (Gowal et al.,
+2025; Castro, 2025) due to its flexibility and model-agnostic
+nature, it faces fundamental limitations. First, it incurs sub-
+stantial computational overhead and latency as it operates
+on high-resolution pixel representations (e.g., 512×512×3).
+Second, it provides weak to no security for open-source
+deployments, as users can trivially bypass watermarking
+by removing a single line of code. To this end, we explore
+whether it is possible to directly embed the watermarking
+into the generative models in such a way that (a) the wa-
+termarking does not introduce a latency penalty, and (b) it
+cannot be disabled even in the case of open-source models.
+Unlike the work of Fernandez et al. (2023), which adds
+watermarking capability into the Stable Diffusion decoder,
+we strive to watermark the latent outputs of a diffusion or
+autoregressive model directly.
+In this work, we introduce DISTSEAL, a unified framework
+for latent watermarking that operates across both diffusion
+and autoregressive generative models. DISTSEAL works by
+adapting post-hoc watermarking methods for latent space,
+allowing us to watermark both continuous latent represen-
+tations of diffusion models and discrete token sequences
+of autoregressive models. We show that these latent water-
+markers can be distilled directly into the generative model
+itself, while retaining the robustness characteristics of the
+teacher watermarkers. Not only that, we demonstrate that
+latent watermarks are easier to distill than their pixel-space
+counterparts. In detail, our contributions are:
+• We introduce DISTSEAL—a unified latent watermark-
+ing framework for both diffusion and autoregressive
+models. We show that DISTSEAL delivers up to
+20× speedup compared to pixel-space methods while
+achieving competitive robustness.
+1
+arXiv:2601.16140v1  [cs.CV]  22 Jan 2026
+Learning to Watermark in the Latent Space of Generative Models
+• We demonstrate that latent watermarkers can be effec-
+tively distilled into model weights (generative model or
+decoder). Critically, we show that distilling latent wa-
+termarkers is more effective than distilling pixel-space
+ones, allowing us to achieve state-of-the-art in-model
+watermarking for open-source generative models.
+• We conduct a comprehensive study of post-hoc and in-
+model watermarking trade-offs, multi-watermarking
+compatibility, and watermark forgetting, providing ac-
+tionable guidance for real-world deployment.
+2. Related Work
+Image generative models. Modern image generation re-
+lies on several paradigms, with diffusion models and au-
+toregressive models being the most prominent. Diffusion
+models (Ho et al., 2020; Song et al., 2020; Dhariwal &
+Nichol, 2021) learn to reverse a noise diffusion process,
+with Latent Diffusion Models (LDMs) (Rombach et al.,
+2022) like Stable Diffusion operating in a compressed la-
+tent space via a Variational Autoencoder (VAE) (Kingma &
+Welling, 2013). Some recent works improve compression
+autoencoders for efficient high-resolution generation (Chen
+et al., 2024a; Xie et al., 2024). Autoregressive models (Esser
+et al., 2021; Ramesh et al., 2021; Yu et al., 2022a) predict
+image tokens sequentially, with recent work including RAR-
+XL (Yu et al., 2024) and MaskBit (Weber et al., 2024). This
+approach notably allows for interleaved multimodal genera-
+tion (Chameleon Team, 2024; Zhan et al., 2024; Wu et al.,
+2024). Our work focuses on watermarking both diffusion
+and autoregressive models.
+Post-hoc image watermarking. Traditional image wa-
+termarking methods operate in either the spatial domain
+by directly modifying pixels (Van Schyndel et al., 1994;
+Bas et al., 2002), or the frequency domain by embedding
+watermarks in transform coefficients such as DFT, DCT,
+DWT, etc. (Cox et al., 1997; Barni et al., 1998; Xia et al.,
+1998). Deep learning-based post-hoc watermarking methods
+have emerged as robust alternatives, typically employing
+encoder-decoder architectures trained end-to-end to embed
+imperceptible watermarks while maintaining robustness to
+various transformations (Zhu et al., 2018; Zhang et al., 2019;
+2020; Yu, 2020; Luo et al., 2020; Ma et al., 2022; Jia et al.,
+2021). They are the method of choice for the industry (Bui
+et al., 2023a; Xu et al., 2024; Gowal et al., 2025; Sander
+et al., 2025; Fernandez et al., 2024) due to their flexibility
+and ease of deployment. Our work adapts current post-hoc
+watermarking schemes for watermarking the latent space of
+generative models, offering computational efficiency while
+maintaining competitive robustness.
+Generation-time image watermarking. Generation-time
+watermarking methods embed watermarks directly during
+content generation, eliminating post-processing overhead.
+For diffusion models, Stable Signature (Fernandez et al.,
+2023) performed in-model watermarking by fine-tuning
+the latent decoder, followed by extensions using hypernet-
+works (Kim et al., 2024) and adapters (Ci et al., 2024a;
+Rezaei et al., 2024). Out-of-model approaches like Tree-
+Ring (Wen et al., 2023) and its variants (Hong et al., 2024;
+Ci et al., 2024b; Lei et al., 2024) embed patterns in the
+initial noise of diffusion models or guide the generation
+process to produce watermarked outputs (Gesny et al.,
+2025). For autoregressive image models, several recent
+methods (Jovanovi´c et al., 2025; Lukovnikov et al., 2025;
+Tong et al., 2025; Wu et al., 2025; Hui et al., 2025; Meintz
+et al., 2025) address the challenge of watermarking dis-
+crete token sequences, each proposing different solutions
+to achieve reverse cycle consistency or robust embedding
+in the generation process. More related to our work of em-
+bedding watermarks directly into the generative models is
+AquaLoRA (Feng et al., 2024), which fine-tunes the diffu-
+sion U-Net with LoRA for coverless latent watermarking.
+In contrast, DISTSEAL is conditioned on the generated im-
+age; therefore, it can hide the watermark more effectively,
+ensuring its state-of-the-art robustness and imperceptibility.
+3. Background and Problem Statement
+3.1. Generative Models with Latent Representations
+Modern generative models rely on autoencoders to compress
+images into a latent space. Let x ∈ RH×W ×3 denote an im-
+age, and E, D denote the encoder and decoder. The encoder
+maps the image to z = E(x) ∈ Rh×w×c where h < H,
+w < W , and the decoder reconstructs ˆx = D(z). Latent dif-
+fusion models (Rombach et al., 2022) iteratively denoise a
+latent representation zT . The denoising network Gϕ predicts
+noise or clean latents at each timestep t, producing the final
+latent z0, which is decoded as x = D(z0). Autoregressive
+models (Esser et al., 2021) quantize continuous latents into
+discrete tokens via Q : Rh×w×c → {1, . . . , K}h×w . The
+model Gϕ predicts token sequences s = (s1, . . . , sN ) au-
+toregressively, which are then converted back to continuous
+latents and decoded to images.
+3.2. Problem Statement
+We aim to develop a unified method that addresses the two
+complementary tasks outlined below.
+Task 1: Post-hoc latent watermarking. The post-hoc
+latent watermarker embeds an imperceptible watermark en-
+coding a binary message m ∈ {0, 1}K into the latent repre-
+sentation before decoding, making it robust to transforma-
+tions such as compression or geometric changes. It can be
+deployed at inference time with different binary messages,
+for instance, to distinguish between different generative
+2
+Learning to Watermark in the Latent Space of Generative Models
+models trained on the same autoencoder, or to detect AI-
+generated content. It operates similarly to post-hoc methods
+in pixel space, but offers faster inference by operating in a
+spatially compressed space.
+Task 2: In-model watermarking. It modifies the gener-
+ative model (Gϕ) or decoder (D) to inherently embed a
+fixed watermark message during generation, eliminating the
+need for post-processing. This makes it a better option for
+open-source model releases where the watermark needs to
+be integrated directly into the model weights.
+4. Method
+DISTSEAL consists of two main training stages, illustrated
+in Fig. 1. First, we train a post-hoc watermark embedder-
+extractor pair (we refer to this pair as “watermarker”), where
+the embedder operates in the latent space of the generative
+model (Section 4.1). Second, we optionally distill this post-
+hoc watermarker into either the generative model itself or
+its latent decoder for in-model watermarking (Section 4.2).
+4.1. Latent Watermarking
+We consider a watermark embedder Wθ that takes as input
+the latent representation z and a K-bit binary message m
+and outputs a watermarked latent representation zw = z +
+ϵWθ (z, m) where ϵ is the scaling factor which controls the
+strength of the watermark. The watermarked image is then
+obtained as xw = D(zw). In comparison, a common post-
+hoc watermarking embedder directly modifies the pixels of
+x to produce a watermarked image xw = x + ϵWθ (x, m).
+For autoregressive models with discrete latent spaces, we
+apply the post-hoc embedder before quantization, obtain-
+ing a new sequence of discete tokens with zw = Q(z +
+ϵWθ (z, m)) where Q is the quantization function. We use
+straight-through estimation (Bengio et al., 2013) to back-
+propagate through the quantization step during training. We
+can also apply the embedder after quantization, meaning
+that we modify the embeddings of the discrete tokens rather
+than creating a new sequence of tokens.
+Then, the watermarked images are augmented with various
+valuemetric, geometric and compression augmentations to
+simulate plausible edits done by users. Finally, the aug-
+mented images are fed to the watermark extractor Eθ which
+predicts the watermark message.
+We train the watermark embedder Wθ and watermark ex-
+tractor Eθ using a combination of watermark extraction loss
+and discriminator loss. The watermarking extraction loss
+ensures that the watermark message m can be accurately
+extracted from the watermarked image xw. The discrimi-
+nator loss, applied in the pixel space, tries to enforce that
+the watermarked image xw is indistinguishable from real
+images. For the quantized latents, we observe that the per-
+turbations in the latent space introduced by the embedder
+can result in semantic modifications to the image. Therefore,
+we do not use reconstruction losses or perceptual losses for
+any of the post-hoc watermark embedder and only constrain
+the watermark with the watermarking strength ϵ and the
+discriminator loss. The overall loss function is given by:
+L = λwLw(xw, m) + λdiscLdisc(x, xw). (1)
+4.2. Distillation for In-Model Watermarking
+We may optionally distill the latent watermarker into the
+generative model (diffusion or autoregressive transformer)
+by watermarking the latents of the training images and fine-
+tuning on this watermarked data.
+Formally, given latents z and a fixed message m used
+across training images, we generate continuous or dis-
+crete watermarked latents zw = z + ϵWθ (z, m) or zw =
+Q(z + ϵWθ (z, m)) using the trained embedder Wθ . The
+generative model is then fine-tuned to reconstruct or predict
+zw instead of z, encouraging it to produce watermarked
+latents during the generation process. The loss function for
+(
+ (PE ([W
+
+RU
+  ő $5   ő
+7UDLQODWHQWZDWHUPDUNHU
+ı[HG /'0
+'
+/Z
+/GLVF
+
+( (PE
+
+)LQHWXQHJHQHUDWLYHPRGHO
+TXDQWL]H
+QRLVH
+Figure 1. Overview of DISTSEAL. We train a post-hoc embedder/extractor pair, where the embedder operates in the latent space (top). We
+may then distill the embedder into the diffusion or autoregressive model (bottom). Fig. 2 details the distillation in the latent decoder.
+3
+Learning to Watermark in the Latent Space of Generative Models
+distillation in the generative model reads:
+Lgen = Lrecon(Gϕ(x), zw), (2)
+where Gϕ denotes the generative model (diffusion or au-
+toregressive), Lrecon is the reconstruction loss (e.g., MSE or
+cross-entropy, resp.), and x represents the input (noisy latent
+or token sequence, resp.). After distillation, the generative
+model embeds the watermark during the generation phase,
+eliminating the need for a separate post-hoc step.
+This approach can also be applied to the latent decoder
+D by training it to reconstruct watermarked images from
+non-watermarked latents, i.e., by training D(z) to be close
+to Do(zw), where Do is the original decoder and zw the
+watermarked latent. We optimize a combination of a re-
+construction loss Lrec and a watermark extraction loss Lw,
+which drives the extractor Eθ to recover the message m
+from the distilled decoder’s output:
+Ldist = Lrec (Do(zw), D(z)) + λwLw (Eθ (D(z)), m) .
+(3)
+where Lrec = ℓ1 + λpLLPIPS combines pixel-wise ℓ1 loss
+and perceptual LPIPS loss (Zhang et al., 2018). Unlike
+Stable Signature, we train the decoder to reconstruct the
+watermarked image rather than just leveraging the signal
+from the extractor Eθ to guide the distillation.
+5. Experiments
+We first detail our experimental setup in Section 5.1, then
+we present our main results on post-hoc latent watermark-
+ing (Section 5.2) and in-model watermarking via distilla-
+tion in the latent decoder (Section 5.3.1) and in the gener-
+ative model (Section 5.3.2). Additional analysis on multi-
+watermarking, watermark formation, and watermark forget-
+ting are provided in Appendices E, F and H.
+5.1. Experimental Setup
+We detail the experimental setup for our main experiments,
+and refer to Appendix A for additional details.
+Generative models. For the diffusion model, we use
+the class-conditional ImageNet UViT-H model from
+DCAE (Chen et al., 2024b) generating 8×8×128 latents,
+(ﬁxed)
+E
+Emb.010..101
+D
+Do
+Ext.
+010..101
+Lw
+Lrec
+Figure 2. The decoder of the generative model can be distilled to
+produce watermarked images from non-watermarked latents.
+which are decoded into 512×512 images. For the autore-
+gressive model, we use RAR-XL (Yu et al., 2024), which is
+based on the MaskGIT-VQGAN (Chang et al., 2022) autoen-
+coder that compresses 256×256 images into 256 discrete
+tokens with a codebook size of 1024. We show additional
+results for MaskBit (Weber et al., 2024) in Appendix G.
+Watermarking models. For the pixel watermarking base-
+line, we utilize the default architecture from VideoSeal,
+which features a UNet embedder and a ConvNeXt-tiny ex-
+tractor. For the latent watermarkers, we modify the embed-
+der to accommodate the lower spatial resolution of the latent
+representations by removing all downsampling and upsam-
+pling layers while preserving the middle ResNet blocks.
+The extractor architecture remains unchanged across both
+methods. To perform a like-for-like comparison between
+pixel-space and latent-space watermarking, both approaches
+share identical training objectives, training schedules, aug-
+mentations, and hyperparameters, with only the watermark
+strength ϵ adjusted to account for the different value ranges
+between pixel and latent spaces. We do not use any JND
+masking for the pixel watermarker. We train all the models
+with 64-bit messages for 600k steps on ImageNet (Deng
+et al., 2009) with a batch size of 128. For all the models, the
+watermark strength is set to a higher value for the first 100k
+steps to kickstart training, and then it is decreased to its final
+value over the next 100k steps with a cosine decay. For the
+latent watermarker of DCAE, the watermark scaling factor
+goes from ϵ = 1.5 to ϵ = 0.5. For the latent watermarker of
+RAR, we consider two cases: (a) when the watermarker is
+applied after the quantization step, we use the initial ϵ = 2.0
+that is decreased to ϵ = 0.5 during training; and (b) when
+the latent watermarker is applied before the quantization
+step, we use ϵ = 3.0 decreased to the finial value of ϵ = 1.5.
+For the pixel-space watermarking experiments, we use the
+initial ϵ = 0.2 and final ϵ = 0.02. We provide additional
+training details in Appendix A.
+Distillation. For the distillation in the diffusion model, we
+simply resume the training of the pre-trained transformer as
+in the original DCAE paper (Chen et al., 2024b) but using
+watermarked latents instead of the original latents for 100k
+steps. For the distillation in the autoregressive model, we
+resume the training of the pre-trained transformer as in the
+original RAR-XL paper (Yu et al., 2024) for 10k steps using
+watermarked token sequences instead of the original ones.
+For distillation in the latent decoder, we fine-tune the pre-
+trained decoder using the loss from Eq. 3 with Adam for
+10k steps with batch size 16 and a learning rate ramping up
+for 1k steps to 1e-4 before a cosine decay. We use λp = 0
+for DCAE and λp = 1 for RAR-XL (λp = 0 leads to blurry
+reconstructions for RAR-XL, see Figure 14).
+4
+Learning to Watermark in the Latent Space of Generative Models
+Table 1. Comparing post-hoc watermarking methods on DCAE-generated images in terms of image quality and bit prediction robustness
+to various attacks. For post-hoc latent watermarking, we also report a coverless variant that is independent of the input.
+Method PSNR FID IS Identity Valuemetric Geometric Compression Combined Avg
+Post hoc pixel 43.48 10.84 99.53 100.00 99.89 94.70 99.90 97.29 97.78
+Post hoc latent 31.06 11.42 98.11 99.75 98.08 91.62 99.23 84.28 95.18
+Post hoc latent (coverless) 30.90 11.29 99.02 97.69 95.85 87.25 96.74 73.94 91.81
+Table 2. Comparing post-hoc methods on RAR-generated images on image quality and bit prediction after various attacks. For post-hoc
+latent watermarking, we compare the watermarking results before and after the quantization step (’before quant’ and ‘after quant’).
+Method PSNR FID IS Identity Valuemetric Geometric Compression Combined Avg
+Post hoc pixel 41.80 3.09 292.75 100 99.69 92.97 99.74 93.93 97.27
+Post hoc latent (before quant) N/A 3.56 239.00 96.92 95.91 87.20 95.98 77.00 90.60
+Post hoc latent (after quant) 24.54 3.44 250.50 99.52 98.56 91.37 97.97 82.35 93.96
+Metrics. To evaluate watermarking robustness, we mea-
+sure the bit accuracy of the extracted watermark after apply-
+ing various transformations to the watermarked images. For
+post-hoc watermarking methods, we evaluate them on 50k
+images generated by the respective generative models. For
+in-model watermarking, we directly generate 50k images
+from the distilled generative models. To assess visual qual-
+ity, we use (when available) the PSNR between original and
+watermarked images, which is better at assessing pixel-level
+distortions, and FID (Heusel et al., 2017) and IS (Salimans
+et al., 2016), which are more suitable for evaluating percep-
+tual quality and diversity of generated images. For FID and
+IS, we generate 50,000 images from the generative mod-
+els (with and without watermarking) and compare them to
+the ImageNet validation set. We use classifier guidance for
+RAR-XL as in their paper, and no guidance for DCAE.
+5.2. Post-Hoc Latent Watermarking Results
+Here, we compare post-hoc latent watermarking with post-
+hoc pixel watermarking on images outputted by the DCAE
+and RAR-XL generative models.
+Continuous latent space. Table 1 shows results for the
+DCAE diffusion model. The latent watermarker achieves
+competitive robustness across various attacks, with only
+a slight drop in average bit accuracy (95.2% vs. 97.8%)
+compared to the pixel watermarker. It maintains strong per-
+formance on valuemetric transformations (98.1%), and com-
+pression (99.2%), although combined attacks prove more
+challenging (84.3% vs 97.3%). Inspired by RoSteALS (Bui
+et al., 2023b), we also compare our approach against the
+coverless method by using our architecture and training, but
+removing the input dependency. The coverless approach
+achieves lower robustness (91.8% average accuracy), show-
+ing the importance of input-dependent watermarking.
+While the PSNR is lower for the latent watermarker (31.1
+dB vs. 43.5 dB), this metric is misleading because it mea-
+sures pixel-level differences rather than perceptual qual-
+ity. A lower PSNR is expected when operating in latent
+space, where small perturbations can propagate through
+the decoder. FID and IS provide more appropriate qual-
+ity assessments: compared to a baseline FID of 10.66 for
+non-watermarked images, both pixel and latent watermark-
+ers preserve high visual quality with FID increases of only
++0.18 and +0.76, respectively. Inception Score remains sim-
+ilarly high for both methods (99.53 vs 98.11).
+The latent watermarker achieves a 20× speedup during in-
+ference compared to the pixel watermarker (3m s vs 63 ms
+per image on CPU) by operating on lower-dimensional rep-
+resentations (8×8×128 vs 512×512×3). This substantial
+computational advantage makes latent watermarking a com-
+pelling alternative, offering competitive robustness and vi-
+sual quality at significantly reduced inference cost.
+Discrete latent space. Table 2 shows results for the RAR-
+XL autoregressive model. We evaluate two variants: water-
+marking before quantization (applied to continuous latents)
+and after quantization (applied to token embeddings). Wa-
+termarking after quantization achieves higher robustness
+(93.96% vs. 90.60% average bit accuracy) compared to
+before quantization. This is because the quantization step
+maps continuous latents to discrete tokens, removing subtle
+perturbations; the watermark must be strong enough to alter
+the token sequence itself. Compared to pixel watermark-
+ing, latent watermarking after quantization achieves slightly
+lower robustness (93.96% vs. 97.27% average bit accuracy).
+For visual quality, FID is similar across methods (3.44 for
+latent vs. 3.09 for pixel), indicating that quality is preserved.
+Note that only post-hoc watermarking before the quanti-
+zation step is suitable for distillation into the autoregres-
+sive model. Indeed, the resulting watermarked latents are
+then quantized into discrete tokens, forming a watermarked
+sequence of tokens (the tokens themselves are not water-
+marked) that can be directly used to fine-tune the autoregres-
+sive model. On the other hand, post-hoc watermarking after
+the quantization step modifies the continuous embedding of
+each token; therefore, it does not produce a new sequence of
+5
+Learning to Watermark in the Latent Space of Generative Models
+Table 3. Comparing visual quality and robustness after distillation
+of the post-hoc watermarkers in the latent decoder of DCAE. The
+first line of each subgroup corresponds to the post-hoc watermarker
+used as teacher for distillation. The following lines correspond to
+different extractor weights λw used during distillation.
+Method Extractor Weight PSNR FID IS Avg Combined
+Post Hoc Pixel (PHP) Teacher 43.48 10.84 99.53 97.78 97.29
+Distilled from PHP (1) 0 37.17 10.72 99.57 51.38 50.72
+Distilled from PHP (2) 0.1 33.65 11.37 97.45 89.16 62.16
+Distilled from PHP (3) 1.0 30.22 17.08 80.84 92.95 65.69
+Post Hoc Latent (PHL) Teacher 31.06 11.42 98.11 95.18 84.28
+Distilled from PHL (1) 0 31.39 11.34 97.75 94.41 82.58
+Distilled from PHL (2) 0.1 31.20 11.48 97.21 96.77 91.34
+tokens and cannot be used for distillation into the generative
+model. However, it can be distilled into the latent decoder.
+In terms of efficiency, post-hoc latent watermarking achieves
+a 2.4× speedup compared pixel watermarking (17m s
+vs 41 ms per image on CPU) by operating on lower-
+dimensional representations (16×16×256 vs 256×256×3).
+The speedup is lower than that of DCAE because the la-
+tent space of RAR-XL is less compressed (16×16 vs. 8×8
+spatially, and 256 vs. 128 channels).
+5.3. In-model Watermarking Results
+5.3.1. DISTILLATION IN THE LATENT DECODER
+For DCAE and RAR, we distill post-hoc latents and pixel
+watermarkers into the latent decoder as described in Eq. 3.
+Continuous latent space. We report in Table 3 the results
+of distilling both the post-hoc latent and pixel watermark-
+ers into the latent decoder of DCAE when using different
+extractor weights λw. If we only use the reconstruction
+loss (i.e., setting the extractor loss weight to 0), we observe
+that distilling the post-hoc latent watermarker into the la-
+tent decoder achieves 94.41% bit accuracy on average over
+transformations (compared to 95.18% for the teacher model)
+while preserving the visual quality (with 11.34 FID vs 11.42
+for the teacher). This shows that the latent decoder can learn
+to generate watermarked images when trained to reconstruct
+the watermarked outputs of the post-hoc latent watermarker.
+When using the extractor loss, the robustness further im-
+proves to 96.77% average bit accuracy, which is even better
+than the teacher post-hoc watermarker while maintaining a
+similar FID compared to the teacher model (11.48 vs 11.42).
+This demonstrates that incorporating the extractor loss dur-
+ing distillation effectively encourages the latent decoder to
+produce images with more robust watermarks. On the other
+hand, the pixel watermarker fails to be distilled in the latent
+decoder when using the reconstruction loss alone with only
+51.38% bit accuracy. When adding a strong weight on the
+extractor loss, the robustness improves to an average bit ac-
+curacy of 92.95%, but remains significantly lower than that
+of the teacher pixel watermarker (97.78%) or the distilled
+latent watermarker (96.77%), and it comes at the cost of a
+much higher FID (17.08). A potential explanation is that the
+pixel watermarker introduces high-frequency perturbations
+in the pixel space, which are difficult for the latent decoder
+to reconstruct due to its limited capacity. In contrast, the
+latent watermarker introduces more structured perturbations
+in the latent space, which are easier for the latent decoder to
+learn. We can see in figure 3 that the distilled latent decoder
+manages to reproduce the watermark patterns introduced
+by the post-hoc latent watermarker, whereas the distilled
+pixel watermarker fails to reproduce the high-frequency
+watermark patterns of the post-hoc pixel watermarker.
+Reference Post-hoc In-model Diff: Post-hoc Diff: In-model
+Pixel
+(bitacc = 1.00)
+ (bitacc = 1.00)
+Latent
+(bitacc = 1.00)
+ (bitacc = 1.00)
+Figure 3. We compare pixel (top) and latent (bottom) post-hoc watermarks on a DCAE-generated image (ImageNet class=360). In the
+second column, we show the watermarked images after applying the post-hoc watermarkers. In the third column, we show in-model
+outputs after distilling the respective watermarkers into the latent decoder. In the last two columns, we show the difference images
+between the watermarked and reference images.
+6
+Learning to Watermark in the Latent Space of Generative Models
+Discrete latent space. The post-hoc latent watermarker
+applied after the quantization step can also be distilled in the
+latent decoder of the autoregressive model, as shown in Ta-
+ble 4 and illustrated in Figure 4. Without the extractor loss,
+distillation achieves 81.40% average bit accuracy, which
+is lower than the teacher post-hoc watermarker (93.96%).
+When adding the extractor loss during distillation, the ro-
+bustness further improves to 90.57% average bit accuracy
+while preserving similar visual quality (3.62 vs 3.44 FID
+for the teacher model). Compared to the latent decoder of
+DCAE, the latent decoder of RAR seems to have a lower
+capacity, as the distilled latent watermarker cannot reach
+the same robustness as the teacher post-hoc watermarker
+even when using the extractor loss during distillation. The
+post-hoc pixel watermarker fails to be distilled in the la-
+tent decoder of RAR with only 50.15% average bit accuracy
+without the extractor loss and 71.25% with a strong extractor
+loss weight (and a high FID of 5.05).
+In Appendix C, we provide additional comparisons of dis-
+tilling other post-hoc pixel watermarking methods into the
+latent decoders of DCAE and RAR, along with ablation
+studies on our training loss formulation compared to Stable
+Signature in Appendix D.
+5.3.2. DISTILLATION IN THE GENERATIVE MODEL
+By definition, pixel watermarkers can only be applied to the
+image space and cannot be used to modify the training la-
+tents on which diffusion models and autoregressive models
+are trained. In contrast, we can use the post-hoc latent wa-
+termarkers to change the training latents into watermarked
+latents and use them to fine-tune the diffusion and autore-
+gressive models. We report in Table 5 the results of distilling
+Table 4. Comparing the visual quality and bit prediction robustness
+after distillation of the post-hoc watermarking models in the latent
+decoder of RAR. The first line of each subgroup corresponds to
+the post-hoc watermarking model used as teacher for distillation.
+The following lines correspond to different extractor weights used
+during the distillation process.
+Method Extractor Weight PSNR FID IS Avg Combined
+Post Hoc Pixel (PHP) Teacher 41.81 3.09 292.75 97.27 93.93
+Distilled from PHP (1) 0 48.20 3.12 294.14 50.15 49.61
+Distilled from PHP (2) 0.1 40.64 3.15 293.65 50.81 49.69
+Distilled from PHP (3) 1.0 22.95 5.05 263.39 71.25 49.84
+Post Hoc Latent (PHL) Teacher 24.54 3.44 250.50 93.96 82.35
+Distilled from PHL (1) 0 26.77 3.57 284.23 81.40 63.01
+Distilled from PHL (2) 0.1 26.06 3.62 281.39 90.57 69.77
+Distilled from PHL (2) 0.5 25.64 3.70 278.52 92.33 73.37
+the post-hoc latent watermarkers into the generative part of
+the diffusion model and into the autoregressive model, re-
+spectively. By simply fine-tuning on watermarked latents,
+the distilled generative models achieve comparable robust-
+ness compared to their teacher model (94.78% vs 95.18%
+average bit accuracy for DCAE and 89.13% vs 90.60% for
+RAR) while having better visual quality metrics than their
+teacher models (10.90 vs 11.42 FID for DCAE and 3.32 vs
+3.56 FID for RAR). It is a remarkable result that the dis-
+tilled autoregressive model can generate new watermarked
+sequences of tokens that have the same robustness to trans-
+formations as the post-hoc latent watermarker. Similarly,
+for the diffusion model, the distilled diffusion model can
+generate new watermarked latents with the same robustness
+as its teacher. Furthermore, compared to distillation in the
+latent decoder, distillation in the generative model achieves
+slightly lower robustness (94.78% vs 96.77% average bit ac-
+curacy for DCAE and 89.13% vs 90.57% for RAR) but with
+better visual quality (10.90 vs 11.48 FID for DCAE and 3.32
+vs 3.62 FID for RAR). This suggests that both distillation
+approaches are effective for in-model watermarking.
+Reference Post-hoc In-model Diff: Post-hoc Diff: In-model
+Pixel
+(bitacc = 1.00)
+ (bitacc = 0.91)
+Latent
+(bitacc = 1.00)
+ (bitacc = 1.00)
+Figure 4. We compare pixel (top) and latent (bottom) post-hoc watermarks on a RAR-generated image (ImageNet class=975). In the
+second column, we show the watermarked images after applying the post-hoc watermarkers. In the third column, we show in-model
+outputs after distilling the respective watermarkers into the latent decoder. Here, the post-hoc latent watermarker is applied after the
+quantization step. In the last two columns, we show the difference images between the watermarked and reference images.
+7
+Learning to Watermark in the Latent Space of Generative Models
+Table 5. Distillation results for DCAE and RAR. The lines in gray
+correspond to the post-hoc latent watermarkers used as teacher for
+distillation. The following lines correspond to either distilling into
+the generative model or the latent decoder. For RAR, the post-hoc
+latent watermarker before quantization is used for distillation into
+the generative model, while the post-hoc latent watermarker after
+quantization is used for distillation into the latent decoder.
+DCAE FID IS Identity Valuemetric Geometric Compression Combined Avg
+Post hoc Latent 11.42 98.11 99.75 98.08 91.62 99.23 84.28 95.18
+In-model (diffusion model) 10.90 101.25 99.53 97.67 91.27 98.88 83.37 94.78
+In-model (latent decoder) 11.48 97.21 99.99 99.36 93.35 99.73 91.34 96.77
+RAR FID IS Identity Valuemetric Geometric Compression Combined Avg
+Post hoc (before quantization) 3.56 239.00 96.92 95.91 87.20 95.98 77.00 90.60
+In-model (autoregressive model) 3.32 288.22 94.85 93.88 85.70 93.92 77.30 89.13
+Post hoc (after quantization) 3.43 250.50 99.52 98.56 91.37 97.97 82.35 93.96
+In-model (latent decoder) 3.62 281.39 99.09 97.65 89.95 96.37 69.77 90.57
+5.4. Analysis of Diffusion DISTSEAL
+We analyze how the watermark is formed during the diffu-
+sion process when using the distilled diffusion model. As
+illustrated in Figure 5, we observe that the bit accuracy
+progressively increases throughout the diffusion process,
+demonstrating that the watermark strengthens as the image
+is refined. Figure 15 illustrates this progressive watermark
+formation across different diffusion steps.
+In the right plot of Figure 5, we examine a hybrid approach
+where the original diffusion model handles the initial de-
+noising steps before switching to the distilled model for the
+final N steps. Remarkably, even when the distilled model is
+applied only during the last few diffusion steps, we maintain
+high bit accuracy, suggesting that watermark information
+can be effectively embedded in the final refinement stage.
+Unlike post-hoc watermarking, where we can directly vi-
+sualize watermark patterns through pixel differences, the
+distilled model generates watermarked images directly from
+random noise, making direct visualization of the watermark
+patterns challenging. However, when employing the dis-
+tilled model for only the final 5 steps, the resulting images
+remain visually similar to those from the reference model,
+enabling watermark visualization through difference images.
+Figure 17 presents several examples of these visualized wa-
+termark patterns. In Appendix H, we provide some analysis
+of autoregressive DISTSEAL.Bit accuracy
+0 2 4 6 8 10
+Diffusion Step
+0.5
+0.6
+0.7
+0.8
+0.9
+1.0Bit Accuracy
+0 2 4 6 8 10
+Diffusion Step
+0.5
+0.6
+0.7
+0.8
+0.9
+1.0Bit Accuracy
+Start: 0
+Start: 6
+Start: 8
+Start: 10
+Diffusion steps Diffusion steps
+Figure 5. Bit accuracy over diffusion steps: detection improves
+during the generation process, using the distilled model from the
+beginning (left), or only for the last N diffusion steps (right).
+Table 6. Generative model vs. latent decoder distillation.
+Criterion Generative Model Latent Decoder
+Ease of
+optimization
+Plug and play. No hy-
+perparameters to tune,
+simply fine-tuning on
+watermarked latents.
+Needs to tune extractor
+weight λw and LPIPS
+weight λp to trade-off
+quality and detection.
+Visual quality Same or better than the
+teacher model
+Higher FID and risk of
+blurry decoding if λp
+not properly tuned
+Watermark
+detection
+Retains the teacher’s
+robustness
+Retains the teacher’s
+robustness
+Watermark
+forgetting
+Susceptible to forget-
+ting with LoRA.
+Not affected by
+changes on the genera-
+tive model
+Latent decoder
+switching
+Robust to the latent de-
+coder fine-tuning
+Vulnerable to decoder
+replacement
+Comp. overhead None during inference None during inference
+Flexibility Fixed WM message Fixed WM message
+5.5. How to Choose Between Distilling in the Generative
+Model or in the Latent Decoder?
+Both distillation strategies offer distinct advantages and lim-
+itations. Table 6 summarizes the trade-offs when distilling
+the watermarker in the generative model versus the latent de-
+coder. The choice between these approaches depends on the
+specific deployment scenario. Distilling in the generative
+model is preferable when a non-watermarked version of the
+latent decoder is already publicly available or when deploy-
+ment simplicity and visual quality are prioritized. Distilling
+in the latent decoder is advantageous when the generative
+model is frequently updated or when stronger persistence
+against fine-tuning attacks is required.
+6. Conclusion and Limitations
+We introduced DISTSEAL, a framework for watermarking
+in the latent space of diffusion and autoregressive genera-
+tive models. We show that post-hoc latent watermarking
+can achieve competitive robustness compared to pixel wa-
+termarking while being significantly faster for compressed
+latent spaces, such as DCAE. Furthermore, we demonstrate
+that post-hoc latent watermarkers can be effectively distilled
+into the latent decoder or the generative model itself, en-
+abling in-model watermarking and facilitating open-sourced
+deployment of watermarked generative models.
+However, as with any watermarking technology, it is still
+possible to remove watermarks, as shown in Section 6.3.
+Furthermore, the distillation method is bounded by the post-
+hoc watermarker performance (as shown in the appendix),
+and in the case of autoregressive model, it is further bounded
+by the number of discrete tokens. Our method is still not
+robust enough against very strong attacks such as some
+8
+Learning to Watermark in the Latent Space of Generative Models
+geometric transformations, for which we are exploring the
+combination with post-hoc synchronisation methods such
+as (Fernandez et al., 2025).
+As future work, we plan to extend our method to video
+generative models, as latent watermarking could offer a
+significant speedup compared to watermarking every frame
+with pixel watermarking.
+Impact Statement
+The ability to watermark generated images is crucial for
+establishing content provenance and protecting intellectual
+property in the era of AI-generated media. DISTSEAL pro-
+vides a practical and efficient solution for embedding robust
+watermarks directly within generative models, facilitating
+open-sourced deployment while minimizing watermarking
+overhead.
+References
+Barni, M., Bartolini, F., Cappellini, V., and Piva, A. A dct-
+domain system for robust image watermarking. Signal
+processing, 1998.
+Bas, P., Chassery, J.-M., and Macq, B. Geometrically invari-
+ant watermarking using feature points. IEEE transactions
+on image Processing, 2002.
+Bengio, Y., L´eonard, N., and Courville, A. Estimating or
+propagating gradients through stochastic neurons for con-
+ditional computation. arXiv preprint arXiv:1308.3432,
+2013.
+Bui, T., Agarwal, S., and Collomosse, J. Trustmark: Univer-
+sal watermarking for arbitrary resolution images. arXiv
+preprint arXiv:2311.18297, 2023a.
+Bui, T., Agarwal, S., Yu, N., and Collomosse, J. Rosteals:
+Robust steganography using autoencoder latent space. In
+CVPR, 2023b.
+Castro, W. Invisible watermarking: Content provenance
+for videos at scale. https://engineering.
+fb.com/2025/11/04/video-engineering/
+video-invisible-watermarking-at-scale/,
+2025.
+Chameleon Team. Chameleon: Mixed-modal early-fusion
+foundation models. arXiv preprint arXiv:2405.09818,
+2024.
+Chang, H., Zhang, H., Jiang, L., Liu, C., and Freeman,
+W. T. Maskgit: Masked generative image transformer. In
+Proceedings of the IEEE/CVF conference on computer
+vision and pattern recognition, pp. 11315–11325, 2022.
+Chen, J., Cai, H., Chen, J., Xie, E., Yang, S., Tang, H.,
+Li, M., Lu, Y., and Han, S. Deep compression au-
+toencoder for efficient high-resolution diffusion mod-
+els. arXiv preprint arXiv:2410.10733, 2024a. URL
+https://arxiv.org/abs/2410.10733.
+Chen, J., Cai, H., Chen, J., Xie, E., Yang, S., Tang, H., Li,
+M., Lu, Y., and Han, S. Deep compression autoencoder
+for efficient high-resolution diffusion models. arXiv,
+2024b.
+Chesney, R. and Citron, D. Deep fakes: A looming chal-
+lenge for privacy, democracy, and national security. Cali-
+fornia Law Review, 107:1753–1819, 2019.
+Ci, H., Song, Y., Yang, P., Xie, J., and Shou, M. Z.
+Wmadapter: Adding watermark control to latent diffusion
+models. arXiv preprint arXiv:2406.08337, 2024a.
+Ci, H., Yang, P., Song, Y., and Shou, M. Z. Ringid: Re-
+thinking tree-ring watermarking for enhanced multi-key
+identification. arXiv preprint arXiv:2404.14055, 2024b.
+Cox, I. J., Kilian, J., Leighton, F. T., and Shamoon, T. Secure
+spread spectrum watermarking for multimedia. IEEE
+transactions on image processing, 1997.
+Deng, J., Dong, W., Socher, R., Li, L.-J., Li, K., and Fei-Fei,
+L. Imagenet: A large-scale hierarchical image database.
+In CVPR, 2009.
+Dhariwal, P. and Nichol, A. Diffusion models beat gans on
+image synthesis. NeurIPS, 2021.
+Esser, P., Rombach, R., and Ommer, B. Taming transformers
+for high-resolution image synthesis. In CVPR, 2021.
+Feng, W., Zhou, W., He, J., Zhang, J., Wei, T., Li, G., Zhang,
+T., Zhang, W., and Yu, N. Aqualora: Toward white-box
+protection for customized stable diffusion models via
+watermark lora. arXiv preprint arXiv:2405.11135, 2024.
+Fernandez, P., Couairon, G., J´egou, H., Douze, M., and
+Furon, T. The stable signature: Rooting watermarks in
+latent diffusion models. In ICCV, 2023.
+Fernandez, P., Elsahar, H., Yalniz, I. Z., and Mourachko,
+A. Video seal: Open and efficient video watermarking.
+arXiv preprint arXiv:2412.09492, 2024.
+Fernandez, P., Souˇcek, T., Jovanovi´c, N., Elsahar, H., Re-
+buffi, S.-A., Lacatusu, V., Tran, T., and Mourachko, A.
+Geometric image synchronization with deep watermark-
+ing. arXiv preprint arXiv:2509.15208, 2025.
+Gesny, E., Giboulot, E., Furon, T., and Chappelier, V. Guid-
+ance watermarking for diffusion models, 2025. URL
+https://arxiv.org/abs/2509.22126.
+9
+Learning to Watermark in the Latent Space of Generative Models
+Gowal, S., Bunel, R., Stimberg, F., Stutz, D., Ortiz-Jimenez,
+G., Kouridi, C., Vecerik, M., Hayes, J., Rebuffi, S.-A.,
+Bernard, P., Gamble, C., Horv´ath, M. Z., Kaczmarczyck,
+F., Kaskasoli, A., Petrov, A., Shumailov, I., Thotakuri,
+M., Wiles, O., Yung, J., Ahmed, Z., Martin, V., Rosen, S.,
+Savˇcak, C., Senoner, A., Vyas, N., and Kohli, P. Synthid-
+image: Image watermarking at internet scale, 2025. URL
+https://arxiv.org/abs/2510.09263.
+Heusel, M., Ramsauer, H., Unterthiner, T., Nessler, B., and
+Hochreiter, S. Gans trained by a two time-scale update
+rule converge to a local nash equilibrium. Advances in
+neural information processing systems, 30, 2017.
+Ho, J., Jain, A., and Abbeel, P. Denoising diffusion proba-
+bilistic models. NeurIPS, 2020.
+Hong, S., Lee, K., Jeon, S. Y., Bae, H., and Chun, S. Y. On
+exact inversion of dpm-solvers. In CVPR, 2024.
+Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang,
+S., Wang, L., and Chen, W. Lora: Low-rank adaptation of
+large language models, 2021. URL https://arxiv.
+org/abs/2106.09685.
+Hui, S., Song, Y., Zhou, S., Deng, Y., Huang, W., and Wang,
+J. Autoregressive images watermarking through lexical
+biasing: An approach resistant to regeneration attack.
+arXiv preprint arXiv:2506.01011, 2025.
+Jia, Z., Fang, H., and Zhang, W. MBRS: enhancing robust-
+ness of dnn-based watermarking by mini-batch of real
+and simulated JPEG compression. In ACM Multimedia,
+2021.
+Jovanovi´c, N., Labiad, I., Souˇcek, T., Vechev, M., and Fer-
+nandez, P. Watermarking autoregressive image genera-
+tion. arXiv preprint arXiv:2506.16349, 2025.
+Kim, C., Min, K., Patel, M., Cheng, S., and Yang, Y. Wouaf:
+Weight modulation for user attribution and fingerprinting
+in text-to-image diffusion models. In CVPR, 2024.
+Kingma, D. P. and Welling, M. Auto-encoding variational
+bayes. arXiv preprint arXiv:1312.6114, 2013.
+Lei, L., Gai, K., Yu, J., and Zhu, L. Diffusetrace: A transpar-
+ent and flexible watermarking scheme for latent diffusion
+model. arXiv preprint arXiv:2405.02696, 2024.
+Lukovnikov, D., M¨uller, A., Quiring, E., and Fischer, A.
+Towards robust red-green watermarking for autoregres-
+sive image generators. arXiv preprint arXiv:2508.06656,
+2025. URL https://arxiv.org/abs/2508.
+06656.
+Luo, X., Zhan, R., Chang, H., Yang, F., and Milanfar, P.
+Distortion agnostic deep watermarking. In CVPR, 2020.
+Ma, R., Guo, M., Hou, Y., Yang, F., Li, Y., Jia, H., and Xie,
+X. Towards blind watermarking: Combining invertible
+and non-invertible mechanisms. In ACM Multimedia,
+2022.
+Meintz, M., Dubi´nski, J., Boenisch, F., and Dziedzic, A. Ra-
+dioactive watermarks in diffusion and autoregressive im-
+age generative models. arXiv preprint arXiv:2506.23731,
+2025.
+Obukhov, A., Seitzer, M., Wu, P.-W., Zhydenko, S., Kyl,
+J., and Lin, E. Y.-J. High-fidelity performance metrics
+for generative models in pytorch, 2020. URL https:
+//github.com/toshas/torch-fidelity. Ver-
+sion: 0.3.0, DOI: 10.5281/zenodo.4957738.
+Ramesh, A., Pavlov, M., Goh, G., Gray, S., Voss, C., Rad-
+ford, A., Chen, M., and Sutskever, I. Zero-shot text-to-
+image generation. In ICML, 2021.
+Rezaei, A., Akbari, M., Alvar, S. R., Fatemi, A., and Zhang,
+Y. Lawa: Using latent space for in-generation image
+watermarking. arXiv preprint arXiv:2408.05868, 2024.
+Rombach, R., Blattmann, A., Lorenz, D., Esser, P., and
+Ommer, B. High-resolution image synthesis with latent
+diffusion models. In CVPR, 2022.
+Salimans, T., Goodfellow, I., Zaremba, W., Cheung, V.,
+Radford, A., and Chen, X. Improved techniques for
+training gans. Advances in neural information processing
+systems, 29, 2016.
+Sander, T., Fernandez, P., Durmus, A., Furon, T., and Douze,
+M. Watermark anything with localized messages. ICLR,
+2025.
+Somepalli, G., Singla, S., Goldblum, M., Geiping, J., and
+Goldstein, T. Diffuse to abuse: How intentional misuse
+can break safety-alignment of stable diffusion. arXiv
+preprint arXiv:2306.07857, 2023.
+Song, J., Meng, C., and Ermon, S. Denoising diffusion
+implicit models. arXiv preprint arXiv:2010.02502, 2020.
+Tong, Y., Pan, Z., Yang, S., and Zhou, K. Training-free
+watermarking for autoregressive image generation. arXiv
+preprint arXiv:2505.14673, 2025.
+Van Schyndel, R. G., Tirkel, A. Z., and Osborne, C. F. A
+digital watermark. In Proceedings of 1st international
+conference on image processing. IEEE, 1994.
+Weber, M., Yu, L., Yu, Q., Deng, X., Shen, X., Cre-
+mers, D., and Chen, L.-C. Maskbit: Embedding-free
+image generation via bit tokens, 2024. URL https:
+//arxiv.org/abs/2409.16211.
+10
+Learning to Watermark in the Latent Space of Generative Models
+Wen, Y., Kirchenbauer, J., Geiping, J., and Goldstein, T.
+Tree-ring watermarks: Fingerprints for diffusion images
+that are invisible and robust. NeurIPS, 2023.
+Wu, C., Chen, X., Wu, Z., Ma, Y., Liu, X., Pan, Z., Liu,
+W., Xie, Z., Yu, X., Ruan, C., et al. Janus: Decoupling
+visual encoding for unified multimodal understanding and
+generation. arXiv preprint arXiv:2410.13848, 2024.
+Wu, Y., Cui, X., Chen, R., Milis, G., and Huang, H. A
+watermark for auto-regressive image generation models.
+arXiv preprint arXiv:2506.11371, 2025.
+Xia, X.-G., Boncelet, C. G., and Arce, G. R. Wavelet
+transform based watermark for digital images. Optics
+Express, 1998.
+Xie, E., Chen, J., Chen, J., Cai, H., Tang, H., Lin, Y., Zhang,
+Z., Li, M., Zhu, L., Lu, Y., et al. Sana: Efficient high-
+resolution image synthesis with linear diffusion trans-
+formers. arXiv preprint arXiv:2410.10629, 2024.
+Xu, R., Hu, M., Lei, D., Li, Y., Lowe, D., Gorevski, A.,
+Wang, M., Ching, E., and Deng, A. Invismark: In-
+visible and robust watermarking for ai-generated im-
+age provenance, 2024. URL https://arxiv.org/
+abs/2411.07795.
+Yang, Z., Zeng, K., Chen, K., Fang, H., Zhang, W., and
+Yu, N. Gaussian shading: Provable performance-lossless
+image watermarking for diffusion models. In CVPR,
+2024.
+Yu, C. Attention based data hiding with generative adver-
+sarial networks. In AAAI, 2020.
+Yu, J., Xu, Y., Koh, J. Y., Luong, T., Baid, G., Wang, Z.,
+Vasudevan, V., Ku, A., Yang, Y., Ayan, B. K., et al. Scal-
+ing autoregressive models for content-rich text-to-image
+generation. arXiv preprint arXiv:2206.10789, 2022a.
+Yu, N., Skripniuk, V., Chen, D., Davis, L., and Fritz, M. Re-
+sponsible disclosure of generative models using scalable
+fingerprinting. In ICLR (ICLR), 2022b.
+Yu, Q., He, J., Deng, X., Shen, X., and Chen, L.-C. Ran-
+domized autoregressive visual generation. arXiv preprint
+arXiv:2411.00776, 2024.
+Zhan, J., Dai, J., Ye, J., Zhou, Y., Zhang, D., Liu, Z., Zhang,
+X., Yuan, R., Zhang, G., Li, L., et al. Anygpt: Unified
+multimodal llm with discrete sequence modeling. arXiv
+preprint arXiv:2402.12226, 2024.
+Zhang, H., Wang, H., Cao, Y., Shen, C., and Li, Y. Robust
+watermarking using inverse gradient attention. arXiv
+preprint arXiv:2011.10850, 2020.
+Zhang, K. A., Xu, L., Cuesta-Infante, A., and Veeramacha-
+neni, K. Robust invisible video watermarking with atten-
+tion. arXiv preprint arXiv:1909.01285, 2019.
+Zhang, R., Isola, P., Efros, A. A., Shechtman, E., and Wang,
+O. The unreasonable effectiveness of deep features as a
+perceptual metric. In CVPR, 2018.
+Zhu, J., Kaplan, R., Johnson, J., and Fei-Fei, L. Hidden:
+Hiding data with deep networks. In ECCV, 2018.
+11
+Learning to Watermark in the Latent Space of Generative Models
+A. Implementation Details
+Post-hoc watermarking training. We train all posthoc watermarkers for 600k steps using the Adam optimizer with a
+ramp-up of 20k steps to a learning rate of 5e-4 followed by a cosine decay. We use a batch size of 128. In Equation 1, we set
+the weights λw = 1.0 and λdisc = 0.1. We use the discriminator from (Weber et al., 2024) with 3 layers and we only start
+using the discriminator loss after 200k steps. For all the models, the watermark strength is set to higher value for the first
+100k steps to kickstart training and then it is decreased to its final value over the next 100k steps with a cosine decay. For the
+latent watermarker of DCAE, the watermark strength goes from ϵ = 1.5 to ϵ = 0.5. For the latent watermarker of RAR, it
+starts at ϵ = 2.0 to decrease at ϵ = 0.5 when the latent watermarker is after the quantization step. If the latent watermarker
+is before the quantization step, it starts at ϵ = 3.0 to decrease at ϵ = 1.5. Finally, for the pixel watermarker, it goes from
+ϵ = 0.2 to ϵ = 0.02.
+Autoregressive generator distillation training. We use the same training setting used to finetune RAR-XL (Yu et al.,
+2024), (effective batch size 2048 distributed over 32 GPUs, data are augmented with random flip and tencrop and are resized
+to 256x256 resolution). The only difference from the original RAR-XL training is that we set the learning rate to 1e-5 with
+zero warmup and a constant scheduler instead of cosine. This mimics the scenario where one continues the training of
+original RAR-XL after reaching stationary learning rate, but with watermarked tokens as targets. The model was trained for
+10k steps (about 2 epochs over the augmented dataset), which took 50 GPU-hours. We experiment with different watermark
+strengths ϵ (0.7, 1.0 and 1.5).
+B. Evaluation Details
+For the quality metrics, we report FID score using torch-fidelity implementation (Obukhov et al., 2020), computed over 50k
+generated samples against the ImageNet-1k validation set. For the posthoc watermarking methods, we also compute the
+PSNR and for the watermark detection metrics we report the bit accuracy over the transformations described below.
+Transformations. The watermarked images are evaluated under a series of transformations, shown in Table 7. For each
+parameter value, we apply the transformation to the entire set of 50,000 generated images. The reported average bit accuracy
+is obtained by averaging the scores computed for each transformation category.
+Table 7. Transformations applied during evaluation.
+Transformation Category Parameters
+Identity Identity
+Brightness Adjustment ValueMetric factor: [0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+Horizontal Flip Geometric
+Rotate Geometric angle: [5, 10, 30, 45, 90]
+Resize Geometric size: [0.32, 0.45, 0.55, 0.63, 0.71, 0.77, 0.84, 0.89, 0.95, 1.00]
+Crop Geometric size: [0.32, 0.45, 0.55, 0.63, 0.71, 0.77, 0.84, 0.89, 0.95, 1.00]
+Contrast ValueMetric factor: [0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+Saturation ValueMetric factor: [0.1, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+Gray scale ValueMetric
+Hue ValueMetric factor: [-0.4, -0.3, -0.2, -0.1, 0.0, 0.1, 0.2, 0.3, 0.4, 0.5]
+JPEG Compression Compression quality: [40, 50, 60, 70, 80, 90]
+Gaussian Blur ValueMetric kernel size: [3, 5, 9, 13, 17]
+JPEG - Crop - Brightness Combined (jpeg quality=[40, 60, 80], crop size=0.71, brightness factor=0.5)
+12
+Learning to Watermark in the Latent Space of Generative Models
+C. Distillation in the latent decoder
+We provide additional comparisons of distilling various post-hoc watermarking methods into the latent decoder of DCAE
+and RAR-XL in Table 8 and Table 9 respectively. We observe that it is much tougher to distill into the latent decoder of
+RAR than DCAE. In fact, besides the post-hoc latent watermarker, only WAM can be distilled in the latent decoder of
+RAR. For DCAE, all the methods except for the post-hoc pixel watermarker and MBRS can even be distilled with just the
+reconstruction loss (i.e. without any extractor loss (λw = 0)).
+Table 8. Distilling various post-hoc watermarking methods in the latent decoder of DCAE. For each watermarking method, we report the
+results of the teacher post-hoc watermarker and the distilled model in terms of visual quality (FID) and bit accuracy over transformations.
+Method Distillation FID Identity Valuemetric Geometric Compression Combined Avg
+Post-hoc pixel
+Teacher 10.84 100.00 99.89 94.70 99.90 97.29 97.78
+λw = 0 10.72 51.58 51.56 51.14 51.78 50.72 51.38
+λw = 0.1 11.37 99.99 93.65 87.35 78.92 62.16 89.16
+Post-hoc latent
+Teacher 11.42 99.75 98.08 91.62 99.23 84.28 95.18
+λw = 0 11.34 99.19 97.33 90.91 98.39 82.58 94.41
+λw = 0.1 11.48 99.99 99.36 93.35 99.73 91.34 96.77
+CIN
+Teacher 11.09 99.99 88.55 64.86 99.27 48.68 78.78
+λw = 0 10.89 98.81 86.72 64.74 94.28 48.61 77.48
+λw = 0.1 11.09 99.94 87.64 65.11 99.22 48.70 78.43
+MBRS
+Teacher 10.99 97.49 91.72 64.66 96.27 49.66 80.08
+λw = 0 10.87 51.22 50.89 50.07 51.14 49.56 50.54
+λw = 0.1 10.96 99.99 95.27 65.81 99.85 49.66 82.55
+TrustMark
+Teacher 11.28 99.78 97.15 75.61 98.94 51.68 87.31
+λw = 0 11.11 94.57 90.66 72.17 92.05 50.82 82.20
+λw = 0.1 11.51 99.99 97.72 75.89 99.33 51.42 87.73
+WAM
+Teacher 11.61 100.00 91.01 86.51 99.07 54.97 88.67
+λw = 0 11.39 92.98 84.52 79.03 92.30 50.33 81.83
+λw = 0.1 11.32 100.00 89.80 82.73 97.11 49.01 86.25
+13
+Learning to Watermark in the Latent Space of Generative Models
+Table 9. Distilling various post-hoc watermarking methods in the latent decoder of RAR. For each watermarking method, we report the
+results of the teacher post-hoc watermarker and the distilled model in terms of visual quality (FID) and bit accuracy over transformations.
+Method Distillation FID Identity Valuemetric Geometric Compression Combined Avg
+Post-hoc pixel
+Teacher 3.09 100 99.69 92.97 99.74 93.93 97.27
+λw = 0 3.12 50.15 50.12 50.32 50.57 49.61 50.15
+λw = 0.1 3.15 51.12 50.89 50.80 51.53 49.69 50.81
+Post-hoc latent
+(before quantization)
+Teacher 3.56 96.92 95.91 87.20 95.98 77.00 90.60
+λw = 0 3.99 57.06 56.53 55.06 56.26 50.71 55.12
+λw = 0.1 3.99 51.94 53.10 51.55 55.24 50.73 52.51
+Post-hoc latent
+(after quantization)
+Teacher 3.44 99.52 98.56 91.37 97.97 82.35 93.96
+λw = 0 3.57 89.92 87.45 80.58 86.03 63.01 81.40
+λw = 0.1 3.62 99.09 97.65 89.95 96.37 69.77 90.57
+CIN
+Teacher 3.11 100 88.87 58.22 92.32 47.32 77.35
+λw = 0 3.11 49.12 48.65 49.05 48.18 48.45 48.69
+λw = 0.1 3.14 56.79 53.56 50.50 50.02 48.41 51.86
+MBRS
+Teacher 3.09 100 94.29 59.51 99.63 49.58 80.60
+λw = 0 3.10 50.08 49.70 49.68 50.18 49.25 49.78
+λw = 0.1 3.10 51.39 50.69 49.90 50.96 49.23 50.43
+TrustMark
+Teacher 3.28 99.91 97.67 77.47 98.18 52.18 85.08
+λw = 0 3.20 49.96 50.04 50.08 50.12 50.27 50.09
+λw = 0.1 3.23 50.94 50.86 50.63 50.67 50.53 50.73
+WAM
+Teacher 3.42 100 86.85 86.49 95.25 44.75 82.67
+λw = 0 3.09 64.24 60.28 56.05 60.94 47.55 57.81
+λw = 0.1 3.16 99.47 84.01 67.24 76.39 45.40 74.50
+D. Comparison with Stable Signature
+Stable Signature also trains a post-hoc watermarking model, but during distillation, it discards the teacher’s embedder and
+uses only the watermark extractor as a guidance signal for the distillation into the latent decoder. In contrast, our method
+retains the teacher embedder during distillation and trains the latent decoder to reconstruct the watermarked image. We
+do a direct comparison between the two methods by using Stable Signature’s loss (i.e. replacing Lrec (Do(zw), D(z)) by
+Lrec (Do(z), D(z)) in Eq. 3) to distill our post-hoc latent watermarking model into the latent decoder of DCAE.
+The results are shown in Table 10, where we observe that Stable Signature performs similarly as the teacher model on
+valuemetric and geometric transformations. However, it performs significantly worse on combined transformations with
+77.65% bit accuracy even when increasing the extractor weight to λw = 0.5 compared to 84.28% for the teacher model. In
+contrast, DISTSEAL reaches 82.58% bit accuracy on combined transformations even with λw = 0 (i.e., without extractor
+guidance), and further improves to 91.34% with λw = 0.1. This shows that the embedder reconstruction term of DISTSEAL
+allows to preserve the robustness of the teacher model on all covered transforms.
+Furthermore, we notice that increasing the extractor weight beyond a certain point (like λw = 0.5 for DISTSEAL or
+λw = 1.0 for Stable Signature) continues to improve watermark detection on unmodified images (Identity) but degrades
+robustness against all the transformations for both Stable Signature and our method. This suggests that overemphasizing
+the extractor loss may lead to overfitting to unmodified images at the cost of robustness. Visual comparisons are shown in
+Figure 6. We see that the distilled watermark with Stable Signature does not look similar to the original watermark, while
+our method preserves the watermark patterns of the teacher model.
+14
+Learning to Watermark in the Latent Space of Generative Models
+Table 10. Comparing Stable Signature with DISTSEAL for distilling the same post-hoc latent watermarking model (in gray) into the
+latent decoder of DCAE. We sweep over several extractor weight λw and report the bit accuracy under different transformations as well
+as the FID. We observe that Stable Signature does not match the robustness of DISTSEAL on more complex transformations such as
+”Combined”.
+Method Distillation FID Identity Valuemetric Geometric Compression Combined Avg
+Post-hoc latent - 11.42 99.75 98.08 91.62 99.23 84.28 95.18
+DISTSEAL
+λw = 0 11.34 99.19 97.33 90.91 98.39 82.58 94.41
+λw = 0.01 11.36 99.88 98.77 92.65 99.40 88.07 96.07
+λw = 0.1 11.48 99.99 99.36 93.35 99.73 91.34 96.77
+λw = 0.5 13.42 100.00 91.68 81.26 82.97 69.81 86.35
+Stable Signature
+λw = 0.1 11.39 99.96 98.51 90.83 97.60 73.24 94.59
+λw = 0.5 12.09 100.00 99.16 91.61 98.61 77.65 95.44
+λw = 1.0 14.14 100.00 88.28 73.63 71.93 58.58 80.54
+Post-hoc DISTSEAL Stable Signature Diff: Post-hoc Diff: DISTSEAL Diff: StableSig
+(bitacc = 1.00)
+ (bitacc = 1.00)
+ (bitacc = 1.00)
+Figure 6. We compare the watermarks when distilling the same post-hoc latent watermarking model into the latent decoder of DCAE
+using DISTSEAL and Stable Signature respectively. The first column shows the watermarked images generated by the post-hoc model,
+followed by watermarked images generated by DISTSEAL (second column) and Stable Signature (third column). The last three columns
+show the respective diff images. We can see that DISTSEAL preserves the watermark pattern of the teacher model much better than Stable
+Signature.
+E. Watermark Forgetting
+We investigate the susceptibility of distilled diffusion and autoregressive models to forgetting the watermark when fine-tuned
+on non-watermarked data. A practical threat scenario for generative models would be a user who wants to perform LoRA
+fine-tuning (Hu et al., 2021) on their own data to tailor the model to their specific needs. As the generative models in our
+study are class-conditional, we simulate the LoRA scenario by fine-tuning both distilled diffusion and autoregressive models
+on a single class using a small set of 50 non-watermarked ImageNet images from the validation set.
+Figure 7 shows the bit accuracy over LoRA fine-tuning steps for both distilled diffusion (DC-AE) and autoregressive (RAR-
+XL) models. For small learning rates like 1e-5 (in orange), the model still retains some watermark detection performance
+after 2500 steps with 0.82% and 0.76% bit accuracy for the distilled diffusion and autoregressive models, respectively.
+However, with more aggressive fine-tuning (lr=1e-4), the bit accuracies drop to 0.70% (DC-AE) and 0.65% (RAR-XL).
+This indicates that distilling into the generative transformers is susceptible to forgetting the watermark when fine-tuned on
+non-watermarked data, which is a limitation compared to distillation into the latent decoder, as the latter remains unaffected
+by changes to the generative model.
+15
+Learning to Watermark in the Latent Space of Generative Models
+Bit accuracy
+0 500 1000 1500 2000 2500
+0.6
+0.7
+0.8
+0.9
+1.0 Learning Rate
+5e-5
+1e-5
+1e-4
+0 500 1000 1500 2000 2500
+0.65
+0.70
+0.75
+0.80
+0.85
+0.90
+0.95 Learning Rate
+lr=5e-05
+lr=1e-05
+lr=0.0001
+Step (Diffusion) Step (Autoregressive)
+Figure 7. Mean bit accuracy over LoRA-finetuning steps, trained on 50 non-watermarked images of a single ImageNet class. The left and
+right plots correspond to LoRA-finetuning of distilled diffusion (DCAE) and autoregressive (RAR-XL) models, respectively. Different
+colors correspond to different learning rates.
+F. Multi-watermarking
+We analyze whether our in-model watermark can coexist with other watermarking schemes, such as generation-time and post-
+hoc watermarking. For post-hoc watermarking, we apply various watermarking methods, such as CIN, MBRS, TrustMark,
+or WAM, to the images generated by the distilled generative models. Generation-time watermarking modifies the sampling
+procedure of the distilled generative model to incorporate the watermark. For this type of watermark, we only consider
+the distilled autoregressive model and we choose WMAR (Jovanovi´c et al., 2025) as a generation-time watermarking
+method to sample the tokens from the distilled autoregressive model. For WMAR, the main hyperparameters are the context
+window size h, the watermark strength δ and the proportion of the green tokens γ. We use h = 1, δ = [0.5, 2.0, 4.0] and
+γ = 0.25 in the experiments. Tables 11 and 12 show the results of combining the distilled models with various post-hoc
+watermarking methods (and generation-time method for RAR-XL). We observe that the distilled RAR-XL can coexist with
+other watermarking methods, resulting in a decrease in average bit accuracy of less than 1 point. However, we note that
+the distilled DCAE suffers from a greater degradation in watermark detection, with a decrease between 7 and 8 points in
+average bit accuracy for all the post-hoc watermarking methods.
+16
+Learning to Watermark in the Latent Space of Generative Models
+Table 11. Multi-watermarking evaluation results for the distilled RAR-XL models (distilled transformer and distilled latent decoder). The
+first row of each section shows the results of only using the distilled RAR-XL model without any other watermarker. Each subsequent row
+shows the change in % bit accuracy after combining with another watermarking method (compared to the first row). For the distilled
+RAR-XL transformer, we present results with both post-hoc and generation-time watermarking methods. For the distilled latent decoder,
+only post-hoc watermarking methods are applicable.
+In-model Auxiliary Identity Valuemetric Geometric Compression Combined Avg
+Distilled
+Transformer
+(none) 94.85 93.88 85.70 93.92 77.30 89.13
+CIN -0.51 -0.61 -0.57 -0.32 -0.34 -0.47
+MBRS -0.42 -0.46 -0.46 -0.28 -0.50 -0.42
+TrustMark -0.62 -0.71 -0.71 -0.44 -1.28 -0.75
+WAM -0.31 -0.65 -0.39 -0.09 -0.61 -0.41
+WMAR (δ = 0.5) -0.01 -0.02 -0.04 0.00 -0.17 -0.05
+WMAR (δ = 2.0) -0.22 -0.22 -0.20 -0.17 -0.38 -0.24
+WMAR (δ = 4.0) -0.64 -0.64 -0.57 -0.53 -0.97 -0.67
+Distilled
+Latent Decoder
+(none) 99.09 97.65 89.95 96.37 69.77 90.57
+CIN -1.48 -2.30 -3.41 -1.05 -0.40 -1.73
+MBRS -0.94 -1.36 -1.65 -0.90 -0.73 -1.11
+TrustMark -0.58 -0.94 -1.03 -0.84 -1.11 -0.90
+WAM -0.54 -1.47 -1.51 -0.26 -0.53 -0.86
+Table 12. Multi-watermarking evaluation results for the distilled DCAE models (distilled diffusion and distilled latent decoder). The first
+row of each section shows the results of only using the distilled DCAE model without any other watermarker. Each subsequent row shows
+the change in % bit accuracy after combining with another watermarking method (compared to the first row).
+In-model Auxiliary Identity Valuemetric Geometric Compression Combined Avg
+Distilled
+Diffusion
+(none) 99.53 97.67 91.27 98.88 83.37 94.78
+CIN -0.54 -2.97 -4.27 -7.40 -20.63 -7.16
+MBRS -1.19 -4.27 -4.77 -8.90 -20.61 -7.95
+TrustMark -0.98 -3.50 -4.61 -8.36 -20.39 -7.57
+WAM -0.62 -3.71 -4.69 -7.63 -21.46 -7.62
+Distilled
+Latent Decoder
+(none) 99.99 99.50 94.16 99.72 92.29 97.13
+CIN -0.12 -1.57 -3.20 -2.32 -22.67 -6.69
+MBRS -0.52 -2.61 -3.55 -3.20 -23.04 -7.30
+TrustMark -0.19 -1.75 -3.56 -3.16 -22.78 -7.00
+WAM -0.16 -2.42 -3.49 -2.34 -23.57 -7.11
+17
+Learning to Watermark in the Latent Space of Generative Models
+G. Additional Experiments with MaskBit
+Maskbit (Weber et al., 2024) builds on the improved VQGAN+ tokenizer by adding Lookup-Free Quantization (LFQ). Like
+for RAR, we would like to learn post-hoc latent watermarkers for this new type of latent (embedding-free bit representation)
+and then distill the post-hoc latent watermarkers into the autoregressive transformer and the latent decoder. However, we
+notice that for this type of latent representation, it is not easy to learn a post-hoc watermarker at the bottleneck just before
+the quantization step. In fact, we can see in the results shown in Table 13, that the post-hoc latent watermarker learned at the
+bottleneck before quantization (row 2) only reaches 78.06% average bit accuracy. So instead, we learn a post-hoc latent
+watermarker before the bottleneck projection from 512 channels to 14 channels (row 1), which achieves 88.72% average bit
+accuracy. We then distill this post-hoc latent watermarker into the autoregressive transformer of MaskBit, reaching 80.56%
+average bit accuracy (row 3). Next, we learn post-hoc latent watermarkers after the quantization step, either at the bottleneck
+(row 4) or after the projection from 14 channels to 512 channels (row 5). These two post-hoc latent watermarkers achieve
+higher average bit accuracy of 95.50% and 92.83% respectively. We then distill the post-hoc latent watermarker learned at
+the bottleneck after quantization (row 4) into the latent decoder of MaskBit, reaching 90.57% average bit accuracy (row 6).
+We provide visual comparisons between the post-hoc latent watermarker after quantization (row 4) and its distilled latent
+decoder (row 6) in Figure 8.
+Table 13. Distillation results for MaskBit. The first two rows correspond to post-hoc latent watermarkers learned before the quantization
+step, respectively before the bottleneck projection from 512 channels to 14 channels and at the bottleneck. Similarly, rows 4 and 5
+correspond to post-hoc latent watermarkers learned after the quantization step, respectively at the bottleneck and after projection from 14
+channels to 512 channels. The lines in gray correspond to the post-hoc latent watermarkers used as teacher for distillation either in the
+autoregressive transformer for the first group of rows or the latent decoder for the second group of rows.
+Method Before/after quantization FID IS Identity Valuemetric Geometric Compression Combined Avg
+Post hoc Latent (before bottleneck) Before 3.79 258.64 95.64 94.63 86.76 94.48 72.10 88.72
+Post hoc Latent (at bottleneck) Before 4.36 224.90 85.42 84.38 77.27 84.28 58.97 78.06
+In-model (autoregressive transformer) - 3.57 310.32 86.40 85.88 79.49 85.79 65.25 80.56
+Post hoc Latent (at bottleneck) After 3.09 285.14 99.78 99.78 92.03 99.50 86.90 95.50
+Post hoc Latent (after bottleneck) After 3.05 293.34 99.25 98.52 89.63 97.87 78.90 92.83
+In-model (latent decoder) - 3.43 305.52 96.95 95.98 83.52 95.49 57.64 90.57
+Reference Post-hoc In-model (latent decoder)
+(bitacc = 1.00)
+ (bitacc = 0.98)
+Figure 8. Comparison on a validation image of ImageNet between the post-hoc latent watermarker (after the quantization step) and its
+distillation into the latent decoder of MaskBit. The first column shows the reference image, the second column shows the watermarked
+image from the post-hoc latent watermarker, and the third column shows the watermarked image from the distilled latent decoder. The
+bottom row shows the respective difference images.
+18
+Learning to Watermark in the Latent Space of Generative Models
+H. Analysis of autoregressive DISTSEAL
+H.1. Robustness to latent decoder switching
+To address the lack of reverse cycle-consistency in the autoencoder of RAR, (Jovanovi´c et al., 2025) fine-tunes the latent
+decoder of RAR to enforce cycle-consistency. So, we can test the robustness of our distilled autoregressive model when
+switching the latent decoder to the fine-tuned cycle-consistent decoder from (Jovanovi´c et al., 2025). We report the results in
+Table 14, where we observe that the bit accuracy even increases for all the transformations when using the cycle-consistent
+decoder, showing that our distilled autoregressive model can be robust to changes in the latent decoder.
+Table 14. Robustness of the distilled autoregressive RAR-XL when switching the latent decoder to a cycle-consistent decoder from (Jo-
+vanovi´c et al., 2025) trained with (row 3) and without augmentations (row 2). We report the FID and bit accuracy under different
+transformations.
+Latent decoder FID IS Identity Valuemetric Geometric Compression Combined
+Original decoder 3.32 288.22 94.85 93.88 85.70 93.92 77.30
+Fine-tuned decoder (no augs) 4.35 274.44 96.19 95.34 87.08 95.46 81.00
+Fine-tuned decoder (with augs) 5.02 265.52 96.15 95.43 87.02 95.66 81.65
+H.2. Visualizing token distribution changes at generation time
+For the autoregressive distilled model, it is not straightforward to analyze the watermark formation token by token, as the
+watermark is detected on the full image and not at the token level. Instead, we analyse the changes induced by the distillation
+in the token distribution at generation time. To this end, we generate images where the first half of the tokens are sampled
+using the pretrained RAR-XL. Then, conditioning on these tokens, we generate the remaining tokens with the distilled
+model, and we can observe how the token distribution changes for the second half of the tokens. More specifically, for each
+generated token by the distilled model, we look whether this token belongs to the top-30 predicted tokens when we compute
+its logits using the reference RAR-XL transformer (conditioned on the tokens generated so far). This indicates whether the
+original auto-regressive model would have been likely to generate this token. We visualize these token distribution changes
+in Figure 9, where we also compare against applying WMAR (Jovanovi´c et al., 2025) for the second half of tokens. We
+observe that our distilled model leads to significantly more ”different” tokens than the KGW sampling (green/red scheme)
+of WMAR. Indeed, the green tokens of WMAR still correspond to very likely tokens for the original model, while the
+distillation leads to more significant changes to the token distribution. However, our distilled model still produces images
+that are visually similar to those of the reference model. Furthermore, the watermark remains detectable (bit accuracy =
+0.80) even when only half of the tokens are generated with the distilled model. In Appendix H, we provide more examples
+of such a comparison.
+Reference DISTSEAL (bit acc. 0.80) WMAR Tokens Diff. (DistSeal) Tokens Diff. (WMAR)
+x x x x
+x
+x
+x
+x
+x x x x
+x x x x
+x x x
+x x x x x
+x x x x x x
+x x x x
+x x x x
+x x x x x
+x x x x
+x
+x
+x
+x
+x x
+x x
+x
+x
+Figure 9. Generation of an image (ImageNet class=437) using different autoregressive watermarking models. The first half of tokens
+is generated using the reference RAR-XL, then the second half is generated by either: reference RAR-XL (left), DISTSEAL distilled
+transformer (middle), or WMAR on top of the refence RAR-XL (right). The blue ”■” or yellow ”×” indicates whether the tokens are
+more or less likely to be generated by the reference RAR-XL (whether the token belongs to the top-30 logits for the reference RAR-XL
+conditioned on the tokens generated so far). Despite only half of the tokens being generated by the distilled model, the watermark is still
+detectable (bit accuracy = 0.80).
+19
+Learning to Watermark in the Latent Space of Generative Models
+Reference Reference Tokens Watermarked Watermarked Tokens
+DISTSEAL
+x x
+x
+x
+x
+x x
+x
+x x
+x
+x x x x x x x
+x x x x x
+x x
+x
+x x x x x
+x x x x x x x
+x x x x x x x
+x
+Bit Acc. = 0.88WMAR
+x x
+x
+x
+x
+x x
+x
+x x
+x
+x x
+x
+x x
+x x
+x x x
+x x
+x xDISTSEAL
+x x x x x
+x x x x
+x
+x
+x
+x
+x x
+x x x x
+x
+x x x x x
+x x x x
+x
+x
+x
+x
+x x
+x x x x x
+x x x x x x
+x x x x
+x x x x x
+x x x x x x
+x x x x x x
+x x
+Bit Acc. = 0.77WMAR
+x x x x x
+x x x x
+x
+x
+x
+x
+x x
+x x x x
+x
+x x x x x
+x x x x
+x
+x
+x
+x
+x
+x x
+x x x x
+x x x
+x x x x x x
+x x x
+Figure 10. Qualitative results of autoregressive models with samples from 3 ImageNet-1k classes. For each class, we generate the first
+half of tokens using the pretrained RAR-XL model without watermarking, then use the distilled DISTSEALtransformer (top) or WMAR
+(bottom) to generate the second half of tokens auto-regressively. The token grids show the actual tokens generated by each method,
+where the blue/yellow tokens indicate whether the tokens are more / less likely to be generated by the reference RAR-XL (whether the
+token belongs to the top-20 logits for the reference RAR-XL conditioned on the tokens generated so far). For each watermarked image
+generated by DISTSEAL, we present the bit accuracy detected on the full images.
+20
+Learning to Watermark in the Latent Space of Generative Models
+I. Effect of the watermarking strength
+We provide additional visualizations of watermarked images generated by post-hoc latent watermarkers trained with different
+watermarking strengths ϵ in Figure 11, Figure 12 and Figure 13 for DCAE and RAR respectively. As expected, we can see
+that increasing the watermarking strength generally leads to more visible watermarks. For RAR, we observe that applying
+the watermark before the quantization step (Figure 12) produces more semantic modifications than applying the watermark
+after quantization (Figure 13). We also distill these latent watermarkers trained at different strengths into the diffusion
+model of DCAE and the autoregressive model of RAR-XL, and report the results in Table 15 and Table 16 respectively. We
+observe that for all watermarking strengths, the distilled models can closely match the robustness of the teacher models
+while achieving similar FID scores.
+Table 15. Distilling post-hoc latent watermarkers trained at at various strengths ϵ into the diffusion model of DCAE. For each watermark
+strength, we report the results of the teacher post-hoc watermarker and the distilled model in terms of visual quality (FID) and bit accuracy
+over transformations.
+Watermark
+strength FID (∆ ref.) Identity Valuemetric Geometric Compression Combined Avg
+ϵ = 0.5 Teacher 11.42 (+0.76) 99.75 98.08 91.62 99.23 84.28 95.18 Distilled 10.90 (+0.24) 99.53 97.67 91.27 98.88 83.37 94.78
+ϵ = 0.7 Teacher 11.53 (+0.87) 99.85 98.42 92.18 99.39 88.12 95.71 Distilled 11.02 (+0.36) 99.76 98.20 91.99 99.22 87.46 95.49
+ϵ = 0.9 Teacher 11.54 (+0.88) 99.90 99.03 92.62 99.53 89.45 96.24 Distilled 11.09 (+0.43) 99.85 98.88 92.47 99.42 88.83 96.08
+Table 16. Distilling post-hoc latent watermarkers trained at at various strengths ϵ into the autoregressive model of RAR-XL. For each
+watermark strength, we report the results of the teacher post-hoc watermarker and the distilled model in terms of visual quality (FID) and
+bit accuracy over transformations.
+Watermark
+strength FID (∆ ref.) Identity Valuemetric Geometric Compression Combined Avg
+ϵ = 0.7 Teacher 3.34 (+0.19) 87.90 86.13 79.02 86.01 59.94 79.80 Distilled 3.34 (+0.19) 86.97 85.59 78.79 85.50 62.54 79.88
+ϵ = 1.0 Teacher 3.42 (+0.28) 93.30 91.85 84.12 91.85 68.88 86.00 Distilled 3.36 (+0.22) 92.41 91.22 83.79 91.19 71.21 85.96
+ϵ = 1.5 Teacher 3.56 (+0.42) 96.92 95.91 87.20 95.98 77.00 90.60 Distilled 3.31 (+0.17) 94.85 93.88 85.70 93.92 77.30 89.13
+21
+Learning to Watermark in the Latent Space of Generative Models
+Reference Post-hoc: ϵ = 0.5 Post-hoc: ϵ = 0.7 Post-hoc: ϵ = 0.9
+Figure 11. Visualizing three DCAE post-hoc latent watermarkers on a validation image of ImageNet. Each latent watermarker was trained
+with different watermarking strengths ϵ. The first row shows the watermarked images generated by each post-hoc model, and the second
+row shows the respective diff images between the reference and watermarked images.
+Reference Post-hoc: ϵ = 0.7 Post-hoc: ϵ = 1.0 Post-hoc: ϵ = 1.5
+Figure 12. Visualizing three RAR post-hoc latent watermarkers (applied before the quantization step) on a validation image of ImageNet.
+Each latent watermarker was trained with different watermarking strengths ϵ. The first row shows the watermarked images generated by
+each post-hoc model, and the second row shows the respective diff images between the reference and watermarked images. We can see
+that the watermarks produce semantic modifications.
+22
+Learning to Watermark in the Latent Space of Generative Models
+Reference Post-hoc: ϵ = 0.5 Post-hoc: ϵ = 0.75 Post-hoc: ϵ = 1.0
+Figure 13. Visualizing three RAR post-hoc latent watermarkers (applied after the quantization step) on a validation image of ImageNet.
+Each latent watermarker was trained with different watermarking strengths ϵ. The first row shows the watermarked images generated by
+each post-hoc model, and the second row shows the respective diff images between the reference and watermarked images. We can see
+that the watermarks produce less semantic modifications than in Figure 12 where the watermarks are applied before quantization.
+23
+Learning to Watermark in the Latent Space of Generative Models
+J. More visualizations
+λp = 0
+λp = 1
+Figure 14. Influence of the LPIPS perceptual loss weight λp when distilling into the latent decoder of RAR. We observe that not using the
+perceptual loss (top row with λp = 0) results in blurrier images. Interestingly, the latent decoder of DCAE does not suffer from blurry
+images when not using LPIPS in the reconstruction loss.
+Step 2: Bit acc 0.516
+ Step 6: Bit acc 0.766
+ Step 8: Bit acc 0.953
+ Step 11: Bit acc 1.000
+Figure 15. Visualizing the image quality evolution over diffusion steps and reporting the bit accuracy at each step. We can see that as the
+diffusion process proceeds, the image quality improves and the watermark bit accuracy increases accordingly.
+24
+Learning to Watermark in the Latent Space of Generative Models
+Original
+In-model
+Figure 16. We show several generation examples for the same seed for the DCAE diffusion model before and after distillation of the latent
+watermarking model. The first row shows original images generated by the pretrained DCAE diffusion model, and the second row shows
+images generated by the distilled diffusion model.
+Reference 5 last steps with DISTSEAL Diff: Col 2 - Col 1 Diff: Post-hoc
+Figure 17. Visualizing the watermark for the distilled DCAE diffusion model. The first column shows images generated by the pretrained
+DCAE diffusion model, and the second column shows images where the last 5 steps are generated by the distilled model. In the third
+column, we show the difference images between the first two columns and compare with applying the post-hoc latent watermarking model
+to the latents of the first column.
+25
+Learning to Watermark in the Latent Space of Generative Models
+Original Post-hoc Pixel In-model Pixel Post-hoc Latent In-model Latent
+Wood Rabbit (330)
+(Acc = 1.00)
+ (Acc = 0.86)
+ (Acc = 1.00)
+ (Acc = 1.00)
+House Finch (12)
+(Acc = 1.00)
+ (Acc = 0.92)
+ (Acc = 0.98)
+ (Acc = 0.98)
+Beacon (437)
+(Acc = 1.00)
+ (Acc = 0.92)
+ (Acc = 0.98)
+ (Acc = 0.98)
+Cauliflower (938)
+(Acc = 1.00)
+ (Acc = 0.89)
+ (Acc = 1.00)
+ (Acc = 1.00)
+Figure 18. Comparing RAR-XL post-hoc watermarkers and their distilled latent decoders on generated images. The first column shows
+the original images generated by the pretrained RAR-XL model, the second and fourth columns show watermarked images from post-hoc
+watermarkers applied at the pixel level and latent level respectively, and the third and fifth columns show watermarked images from the
+respective distilled latent decoders. The bottom two rows show the respective difference images between the original and watermarked
+images for each method.
+26

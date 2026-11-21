@@ -1,0 +1,21 @@
+# Python / venvs
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Heavy artifacts re-downloaded by scripts/setup.sh
+repos/videoseal/ckpts/
+repos/data/cifar10_hf/
+repos/data/*.pt
+*.pth
+
+# Cluster outputs
+output/
+wandb/
+
+# OS / secrets
+.DS_Store
+.env
+*.key
+id_ed25519*
