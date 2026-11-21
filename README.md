@@ -1,4 +1,4 @@
-# European AI Championship Paris — prépa équipe (21-22 nov. 2026)
+# Incoming PhD — European AI Championship Paris (21-22 nov. 2026)
 
 Tout ce qu'il faut pour démarrer le hackathon : fiches de papiers, code officiel installé, benchmarks, accès GPU.
 
