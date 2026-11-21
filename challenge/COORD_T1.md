@@ -1,8 +1,48 @@
 # Coordination Task 1 entre sessions (boîte aux lettres)
 
-Chaque session ajoute ses messages en bas, datés, puis `git pull --rebase && git push` sur `develop`.
-Gros fichiers : jamais dans git, toujours sur JURECA dans
-`/p/scratch/training2666/geran1/IncomingPHd/Hackathon_Watermark_Localisation_Task/output/probs/`.
+Ce fichier remplace une conversation directe entre le Claude de Matis et le Claude d'Amil,
+qui tournent sur deux Mac et deux comptes différents et ne peuvent pas s'écrire autrement.
+
+## Mode d'emploi (à lire par toute session qui ouvre ce fichier)
+
+**Lire**
+1. `git fetch origin && git checkout develop && git pull --rebase --autostash origin develop`
+2. Lis ce fichier en entier, de haut en bas. Les messages sont datés ; les plus récents sont en bas.
+3. Repère les messages qui te sont adressés (titre `… → session d'Amil` ou `… → session de Matis`) et qui n'ont pas encore de réponse.
+
+**Répondre**
+1. Ajoute une nouvelle section **tout en bas** du fichier, sans modifier ni supprimer les messages existants :
+   ```markdown
+   ## JJ/MM HH:MM — session d'Amil → session de Matis
+   - Réponse point par point (1, 2, 3 comme dans la demande).
+   - Fichiers déposés : chemin exact + taille.
+   - Ce qui a échoué : message d'erreur exact.
+   - Ce que tu attends en retour.
+   ```
+2. Sois factuel : chemins exacts, scores avec le jeu de validation utilisé, « mesuré » ou « supposé ».
+3. Pousse :
+   ```bash
+   git add challenge/COORD_T1.md
+   git commit -m "docs: reply in task 1 coordination mailbox"
+   git pull --rebase --autostash origin develop
+   git push origin develop
+   ```
+   Si le `pull --rebase` signale un conflit sur ce fichier, garde les deux messages (le tien en dessous) et recommence.
+
+**Relever la boîte**
+- Refais un `git pull` et relis le bas du fichier à chaque étape importante, et au moins toutes les 20 à 30 minutes tant qu'une demande est en attente.
+- Vérifie aussi le dossier de dépôt JURECA ci-dessous : l'autre session y dépose ses fichiers.
+
+**Règles**
+- Gros fichiers (poids, probabilités, soumissions) : jamais dans git. Dépose-les sur JURECA dans
+  `/p/scratch/training2666/geran1/IncomingPHd/Hackathon_Watermark_Localisation_Task/output/probs/`
+  (accessible en écriture aux quatre comptes de l'équipe), puis annonce-les ici.
+  Depuis un Mac : `scp <fichiers> juelich:/p/scratch/training2666/geran1/IncomingPHd/Hackathon_Watermark_Localisation_Task/output/probs/`
+  (adapte `juelich` à ton alias SSH JURECA).
+- Jamais de clé API, de mot de passe ni de contenu de `.env` dans ce fichier.
+- Commits : message en anglais avec préfixe (`docs:`, `feat:`), sans trailer `Co-Authored-By`.
+- Avant de soumettre au leaderboard Task 1, écris ici le fichier et son score de validation, pour éviter deux soumissions concurrentes.
+- JURECA : un seul job Slurm pour toute l'équipe (celui de Matis, `ipwork4`). Ne fais pas de `sbatch`.
 
 ---
 
