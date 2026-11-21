@@ -39,7 +39,7 @@ Ce fichier fait foi en cas de conflit avec le plan. Il complète `challenge/STAT
 - Un premier U-Net (entraîné sur des données qui ne collaient pas exactement à celles des organisateurs) plafonnait à 0,455 held-out, sans gain par rapport à la décision de mode.
 - Le plan a raison : **refaire les données avec le kit officiel** (`wmloc/watermarks.py` : trustmark==0.8.0 sans ECC, PixelSeal par défaut, StegaStamp 400 px + résidu redimensionné), zones partielles en 512×512, pas de JPEG, pas de flip ni de rotation.
 ### T3 — fp16
-- Le serveur évalue en **demi-précision**, ce que nous n'avions pas vérifié.
+- Le serveur évalue en **demi-précision** : ✅ VÉRIFIÉ 21:30, aucun effet (0 % de changement de classe en autocast fp16, Δlogit max 0,024, scores proxy identiques ; détail unlearning/output/fp16check.txt sur JURECA).
 - Vérification en cours : tâche `05_t3_fp16check` dans la file JURECA ; comparaison fp16/fp32 de `sub_m1_g2`, `sub_r2_g2`, `sub_r2_g1` sur la loss forget, la KL vs gold et l'accord retain.
 ### T3 — seuil 70 %
 - Pousser l'oubli (α bas) aide au public, mais rapproche du seuil éliminatoire, que nous ne pouvons pas mesurer.
