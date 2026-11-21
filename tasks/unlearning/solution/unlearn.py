@@ -44,7 +44,7 @@ R = torch.from_numpy(np.load(CACHE / "retain_train_u8.npy")); RV = torch.from_nu
 H = scoring.make_hypotheses(CACHE)
 if a.target.startswith("soft:"):
     tau = float(a.target.split(":")[1]); q = F.softmax(L0 / (2 * tau), 1); ce_t = F.cross_entropy(L0 / tau, y, reduction="none")[:, None]
-elif a.target in ("mix", "mixcls"):   # hedges (see feat_unlearn.py)
+elif a.target == "mix":   # hedges (see feat_unlearn.py)
     A = H["medium"] if a.target == "mix" else H["cls"]
     q = 0.5 * (A["p2"] + H["strong"]["p2"]); ce_t = torch.cat([A["ce"], H["strong"]["ce"]], 1)
 else:

@@ -44,4 +44,9 @@ def make_hypotheses(cache):
     # class never seen -> its logit is far below: CE ~ large. Use log-ratio from renormalised mass (approx +10 nats)
     ce[m] = ce[m] + 10.0
     H["cls"] = dict(p2=p2, ce=ce)
+    # public LB (21/11): mixcls 0.262 > strong 0.238 >> medium 0.080 -> evaluate the combined hypotheses too
+    H["mixcls"] = dict(p2=0.5 * (H["cls"]["p2"] + H["strong"]["p2"]), ce=torch.cat([H["cls"]["ce"], H["strong"]["ce"]], 1))
+    p2s = H["strong"]["p2"].clone(); ces = H["strong"]["ce"].clone()
+    p2s[m, y[m]] = 0; p2s[m] = p2s[m] / p2s[m].sum(1, keepdim=True); ces[m] = ces[m] + 10.0
+    H["clsstrong"] = dict(p2=p2s, ce=ces)   # strong proxy + full removal of the 9 capped classes
     return H

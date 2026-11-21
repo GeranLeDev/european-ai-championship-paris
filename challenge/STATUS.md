@@ -1,8 +1,8 @@
 # ÉTAT DE REPRISE (sam. 21/11 ~19:30) — à lire en premier
 ## Leaderboard (public)
-- Task1 watermark: 0.2553 (all-zeros). PRÊT À SOUMETTRE (attend OK user): tasks/Hackathon_Watermark_Localisation_Task/solution/submission_baseline.pt (held-out 0.466, format vérifié).
+- Task1 watermark: 0.4584 public (submission_baseline.pt, soumis 19:20). Suite: recherche rectangles (queue t1) -> submission_rect.pt.
 - Task2 model equality: 0.0 (singletons). Pipeline: tasks/model_equality/solution (rapport challenge/task2_*). Étape suivante: calibration gratuite sur ref-01..09 (agent relancé, non confirmé), puis collecte ep (DÉPENSE TOUT LE BUDGET, irréversible) => demander OK user.
-- Task3 unlearning: 0.2384 (sub_r2_g1, cible strong) = 1er. sub_r2_g0 (medium)=0.0798. sub_r2_g2 (mixcls) 'score': 0.2616.
+- Task3 unlearning: BEST 0.2616 (sub_r2_g2 mixcls), sub_r2_g1 strong 0.2384, sub_r2_g0 medium 0.0798. 1er de la tâche.
 ## Clé API: .env (HACKATHON_API_KEY), jamais commitée. Soumettre: python scripts/submit.py <task_id> <file> (31-unlearning, 33-model-equality, 34-watermark-localisation-image). Cooldown ~10 min (T3), 30 min (T2).
 ## JURECA: ssh juelich (ControlMaster 12h; si fermé, user relance ssh juelich + MFA). Dossier: /p/scratch/training2666/geran1/IncomingPHd/
 - 3 workers persistants ipwork1-3 (16h50, PENDING, démarrage estimé ~21:10) lisent queue/pending/*.sh (ordre lexical), logs queue/logs/, fin -> queue/done|failed. Script: queue/worker.sh.
