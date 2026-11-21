@@ -103,7 +103,9 @@ def run_jobs(sess, jobs, out_path, parallel, extra):
             try:
                 # connect timeout short (nothing is counted if we cannot connect), read timeout very long: a reply that
                 # the server has already counted must not be dropped by an impatient client.
+                t_send = time.time()
                 r = sess.post(f"{BASE_URL}/chat/completions", json=body, timeout=(20, 900))
+                latency = time.time() - t_send
             except Exception as exc:  # network
                 print(f"{ep} {pid} r{rep}: network error ({type(exc).__name__}), retry in 30 s", flush=True)
                 time.sleep(30)
@@ -122,7 +124,8 @@ def run_jobs(sess, jobs, out_path, parallel, extra):
                     return
                 rec = {"endpoint": ep, "id": pid, "repeat": rep, "response": ch["message"]["content"],
                        "finish_reason": ch.get("finish_reason"), "usage": b.get("usage"), "budget": b.get("budget"),
-                       "extra_keys": sorted(set(b) - {"choices", "usage", "budget"}), "t": time.time()}
+                       "extra_keys": sorted(set(b) - {"choices", "usage", "budget"}), "t": time.time(),
+                       "latency": round(latency, 3), "tries": tries}
                 if "logprobs" in ch and ch["logprobs"]:
                     rec["logprobs"] = ch["logprobs"]
                 with lock:

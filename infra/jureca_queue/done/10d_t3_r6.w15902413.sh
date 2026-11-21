@@ -1,0 +1,4 @@
+#!/bin/bash
+cd unlearning && source .venv/bin/activate
+bash solution/jureca_grid.sh "r6" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target strong --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.05" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target strong --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.2" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target strong --alpha 10 --lr 3e-5 --steps 2000 --w-stat 0.1" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target strong --alpha 10 --lr 1e-4 --steps 1000 --w-stat 0.1"
+cd solution && for r in ../output/runs/r6_g*/; do [ -f $r/best.pt ] && python make_submission.py $r/best.pt ../output/sub_$(basename $r).pt; done; cd .. && python solution/collect.py

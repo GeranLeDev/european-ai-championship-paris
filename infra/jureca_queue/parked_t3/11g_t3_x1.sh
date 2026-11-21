@@ -1,0 +1,5 @@
+#!/bin/bash
+# Task 3 sweep x1 (public LB: mixcls 0.2616 > strong 0.2384): class-removal weight / offset / xstrong
+cd unlearning && source .venv/bin/activate
+bash solution/jureca_grid.sh x1 "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 250 --n-eval 3500 --n-eval-r 1000 --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.1 --target cls:strong:6" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 250 --n-eval 3500 --n-eval-r 1000 --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.1 --target cls:strong:15" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 250 --n-eval 3500 --n-eval-r 1000 --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.1 --target mix:cls:strong:10+strong" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 250 --n-eval 3500 --n-eval-r 1000 --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.1 --target mix:cls:medium:10+cls:medium:10+strong"
+cd solution && for r in ../output/runs/x1_g*/; do [ -f $r/best.pt ] && python make_submission.py $r/best.pt ../output/sub_$(basename $r).pt; done; python -u dump_logits.py ../output/runs/*/best.pt; cd .. && python solution/collect.py

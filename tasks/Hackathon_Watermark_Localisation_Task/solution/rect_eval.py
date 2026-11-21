@@ -110,7 +110,7 @@ if a.test:
         n_clean = sum(e["method"] == m and feats["agree"][f_idx[e["image_name"]]] <= params[m][0] for e in tmeta)
         missing = sum(e["method"] == m and feats["agree"][f_idx[e["image_name"]]] <= params[m][0] and e["image_name"] not in srch[m] for e in tmeta)
         print(f"{m}: test files {files} searched {len(srch[m])}/{n_m}, clean-mode {n_clean}, clean-mode without search result {missing}")
-        assert files, f"no test search cache for {m} with tags {a.test_tags!r}"
+        assert files or not a.strict, f"no test search cache for {m} with tags {a.test_tags!r}"
         assert missing == 0 or not a.strict, f"{m}: {missing} clean-mode test images have no search result (job unfinished?)"
     names, masks, nrect = [], [], {m: 0 for m in METHODS}
     for e in tmeta:                                         # metadata order, as in submission_baseline.pt

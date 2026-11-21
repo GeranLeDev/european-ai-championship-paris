@@ -1,0 +1,5 @@
+#!/bin/bash
+# Task 3: mixcls low-alpha variants (seeds, w-stat, longer/slower)
+cd unlearning && source .venv/bin/activate
+bash solution/jureca_grid.sh mb "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target mixcls --select mixcls --lr 5e-5 --steps 1500 --w-stat 0.1 --alpha 3 --seed 1" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target mixcls --select mixcls --lr 5e-5 --steps 1500 --w-stat 0.1 --alpha 3 --seed 2" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target mixcls --select mixcls --lr 5e-5 --steps 1500 --w-stat 0.1 --alpha 4 --seed 1" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target mixcls --select mixcls --lr 3e-5 --steps 2000 --w-stat 0.1 --alpha 3"
+cd solution && for r in ../output/runs/mb_g*/; do [ -f $r/best.pt ] && python make_submission.py $r/best.pt ../output/sub_$(basename $r).pt; done; cd .. && python solution/collect.py

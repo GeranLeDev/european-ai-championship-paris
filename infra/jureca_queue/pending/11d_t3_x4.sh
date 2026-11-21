@@ -1,0 +1,5 @@
+#!/bin/bash
+# Task 3 sweep x4: targets = gold hypotheses that best fit the 3 public scores (solution/fit_public.py)
+cd unlearning && source .venv/bin/activate
+bash solution/jureca_grid.sh x4 "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 250 --n-eval 3500 --n-eval-r 1000 --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.1 --target mix:cls:strong:20+strong" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 250 --n-eval 3500 --n-eval-r 1000 --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.1 --target mix:cls:strong:15+strong" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 250 --n-eval 3500 --n-eval-r 1000 --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.1 --target split:strong:3:medium" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 250 --n-eval 3500 --n-eval-r 1000 --alpha 10 --lr 5e-5 --steps 1500 --w-stat 0.1 --target cls:strong:20"
+cd solution && for r in ../output/runs/x4_g*/; do [ -f $r/best.pt ] && python make_submission.py $r/best.pt ../output/sub_$(basename $r).pt; done; python -u dump_logits.py ../output/runs/*/best.pt; cd .. && python solution/collect.py

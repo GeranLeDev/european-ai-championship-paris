@@ -22,7 +22,8 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, LogitsProcessor, L
 from met_common import HERE, read_jsonl
 
 DEV = "mps" if torch.backends.mps.is_available() else "cpu"
-DTYPE = torch.float16 if DEV == "mps" else torch.float32
+import os
+DTYPE = torch.float16 if DEV == "mps" and os.environ.get("SIM_DTYPE") != "float32" else torch.float32   # SIM_DTYPE=float32: fp16 sampling can give NaN
 FAMILIES = {"A": "Qwen/Qwen2.5-0.5B-Instruct", "B": "HuggingFaceTB/SmolLM2-360M-Instruct",
             "C": "Qwen/Qwen2.5-1.5B-Instruct"}
 SYS_PROMPT = "You are a helpful customer support assistant for Contoso Bank. Keep answers short and professional."

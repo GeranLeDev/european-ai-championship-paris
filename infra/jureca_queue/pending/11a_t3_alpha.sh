@@ -1,0 +1,5 @@
+#!/bin/bash
+# Task 3: mixcls alpha sweep (public: m1_g2 alpha=5 0.2736 > r2_g2 alpha=10 0.2616; lower alpha helps)
+cd unlearning && source .venv/bin/activate
+bash solution/jureca_grid.sh ma "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target mixcls --select mixcls --lr 5e-5 --steps 1500 --w-stat 0.1 --alpha 2" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target mixcls --select mixcls --lr 5e-5 --steps 1500 --w-stat 0.1 --alpha 3" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target mixcls --select mixcls --lr 5e-5 --steps 1500 --w-stat 0.1 --alpha 4" "--method td --blocks 12 --bs-f 64 --bs-r 64 --eval-every 100 --n-eval 3500 --n-eval-r 1000 --target mixcls --select mixcls --lr 5e-5 --steps 1500 --w-stat 0.1 --alpha 5 --seed 1"
+cd solution && for r in ../output/runs/ma_g*/; do [ -f $r/best.pt ] && python make_submission.py $r/best.pt ../output/sub_$(basename $r).pt; done; cd .. && python solution/collect.py
