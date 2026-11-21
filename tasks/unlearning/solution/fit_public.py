@@ -4,7 +4,7 @@ For each hypothesis: predicted proxy score of the submitted runs, best scale s (
 Then predicts all dumped runs under the best-fitting hypotheses. Usage: python fit_public.py [--top 8]"""
 import argparse, glob, os, itertools, torch
 from common import CACHE; import scoring
-PUBLIC = {"r2_g0": 0.0798, "r2_g1": 0.2384, "r2_g2": 0.2616}   # add new public scores here
+PUBLIC = {"r2_g0": 0.0798, "r2_g1": 0.2384, "r2_g2": 0.2616, "m1_g2": 0.2736}   # add new public scores here
 ap = argparse.ArgumentParser(); ap.add_argument("--top", type=int, default=8); a = ap.parse_args()
 LD = CACHE / "logits"; O = torch.load(LD / "orig.pt"); ev = O["ev"]; y = torch.load(CACHE / "orig_forget_logits.pt").argmax(1)
 runs = {os.path.basename(f)[:-3]: torch.load(f) for f in sorted(glob.glob(str(LD / "*.pt"))) if not f.endswith("orig.pt")}

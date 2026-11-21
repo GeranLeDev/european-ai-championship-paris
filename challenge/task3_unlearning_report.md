@@ -270,6 +270,12 @@ Score public de `sub_r2_g2` (mixcls) : **0,2616**. Vérité terrain disponible :
 
 **État de la file à 19:59** : les workers `ipwork1` et `ipwork2` ont été annulés à 19:54:51 (pas par l'agent Task 3) ; `x1` a été interrompu au démarrage et remis en attente. Il reste un worker (`ipwork3`), occupé par `01_t1_rect_train`. File restante : `02_t1_rect_test`, `11c_t3_x3`, `11d_t3_x4`, `11g_t3_x1`, `12a_t3_dump2`, `30_t1_rect_fine_train`. `x2`, `r7`, `r5`, `r3` sont rangés dans `queue/parked_t3/`.
 
+**4e point public (20:15)** : `sub_m1_g2` = **0,2736** (nouveau meilleur ; valeur lue dans le commentaire de `queue/pending/11a_t3_alpha.sh`). `fit_public.py` l'avait prédit entre 0,266 et 0,281.
+- Réajustement sur 4 points : la meilleure hypothèse reste `split:medium:6:mix:medium+strong` (résidu relatif 0,003, échelle 0,58 ; prédit 0,0795 / 0,2395 / 0,261 / 0,274 pour 0,0798 / 0,2384 / 0,2616 / 0,2736). Lecture : les 9 classes plafonnées sont supprimées, les autres images se comportent comme un mélange medium + strong.
+- Viennent ensuite `mix:cls:xstrong:<off>+medium` (0,015), `mix:cls:strong:6+medium` (0,020), `split:medium:6:strong` (0,025). `medium`, `mix:medium+strong` et les `cls` sur base medium seule restent exclus (résidu > 0,15).
+- L'échelle 0,58 de la meilleure hypothèse plafonne le gain : même un proxy de 0,55–0,60 sous cette hypothèse ne donnerait que 0,32–0,35 en public (supposé).
+- File à 20:20 : un seul worker (règle des organisateurs : 1 job Slurm pour toute l'équipe). Ordre : tâche T1 en cours, puis `11a_t3_alpha` et `11b_t3_alpha2` (sweeps mixcls à α bas, ajoutés par le coordinateur), `11c_t3_x3`, `11d_t3_x4`. `x1` est rangé dans `queue/parked_t3/`.
+
 **Candidats rapatriés et validés en local** (chargement strict, float32, valeurs finies, 328 Mo ; NON soumis), dans `tasks/unlearning/candidates/` :
 1. `sub_m1_g2.pt` : mixcls, α=5. Le plus haut sous toutes les hypothèses ajustées. Risque : retain proxy plus bas (KL 0,055, accord 0,858) que `r2_g2` (0,039 / 0,892).
 2. `sub_m1_g0.pt` : mixcls, w-stat 0,05. Prédit 0,254–0,274, donc équivalent à `r2_g2` ; retain proxy meilleur (KL 0,033, accord 0,905).
