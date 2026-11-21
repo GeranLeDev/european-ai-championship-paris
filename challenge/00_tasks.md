@@ -18,6 +18,17 @@ Synthèse du vocal des organisateurs : `01_organizer_audio.md`.
 - Communication : Discord https://discord.gg/urUG53tnbJ
 - Classement par leaderboard. **Ne pas sur-optimiser le score public** : il ne couvre qu'une partie des données, et le classement final se fait sur un jeu de test caché.
 
+## Classement général (page « How scoring works » du leaderboard)
+- Pour chaque tâche, seule la **meilleure** soumission de l'équipe compte. Il y a un cooldown entre deux soumissions sur la même tâche ; pour la Task 2, c'est 30 min.
+- **Normalisation par tâche** : `n_t = (s_t − min_t)/(max_t − min_t)`, calculée sur les meilleurs scores de toutes les équipes. La meilleure équipe obtient 1, la moins bonne 0 ; si toutes les équipes ont le même score, chacune a 0,5.
+- **Score global = moyenne des n_t sur les 3 tâches.**
+- **Seules les équipes qui ont un score sur LES 3 tâches sont classées** : sans soumission valide sur une tâche, on n'est pas classé.
+- **Public = environ 30 %** des données d'évaluation, affiché pendant l'event. **Final = les 70 % restants**, jamais vus.
+- **Conséquences** :
+  1. **Soumettre tôt une baseline valide sur chacune des 3 tâches**, pour être classé.
+  2. Les tâches pèsent **autant** l'une que l'autre, et la normalisation est relative aux autres équipes. Passer de dernier à médian sur une tâche faible rapporte autant que gagner des points sur une tâche forte : **ne délaisser aucune tâche**.
+  3. Le public ne couvre que 30 % des données : choisir les hyperparamètres par validation locale, pas sur le score public.
+
 ---
 
 ## TASK 1 — Localiser le watermark dans une image
