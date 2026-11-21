@@ -281,7 +281,25 @@ def letters(i):
 def run(rows, kinds, a, report=False, kindmap=None):
     by = group(rows)
     eps = sorted(by)
-    fam, S, margin = families(by, kinds, eps, a)
+    # tokenizer groups (tokprobe.py): endpoints with different tokenizers can never be one family
+    sig = {}
+    if getattr(a, "tok", None):
+        for r in read_jsonl(a.tok):
+            if r.get("exact", True):
+                sig.setdefault(r["endpoint"], {})[r["unit"]] = r["accepted"]
+    parts = defaultdict(list)
+    for e in eps:
+        parts[tuple(sorted(sig.get(e, {}).items()))].append(e)
+    fam, margin, S, nfam = {}, {}, None, 0
+    for key in sorted(parts):
+        f_, S, m_ = families(by, kinds, parts[key], a)
+        for e, k in f_.items():
+            fam[e] = nfam + k
+        margin.update(m_)
+        nfam += max(f_.values()) + 1
+        if sig:
+            lines_tok = f"tokenizer group {dict(key)}: {len(parts[key])} endpoints"
+            print(lines_tok) if report else None
     res, lines, pass2 = [], [], []
     for fi, f in enumerate(sorted(set(fam.values()))):
         members = [e for e in eps if fam[e] == f]
@@ -335,6 +353,7 @@ def main():
     ap.add_argument("--curve", action="store_true", help="score vs answers per endpoint (needs --truth)")
     ap.add_argument("--draws", type=int, default=200)
     ap.add_argument("--t-family", type=float, default=0.45, help="fallback only (no self-given names)")
+    ap.add_argument("--tok", default=None, help="tokprobe.py output: families are built inside tokenizer groups")
     ap.add_argument("--min-core", type=int, default=3, help="smallest group sharing a self-given name = a family")
     ap.add_argument("--t-z", type=float, default=3.0, help="paired style z above which two endpoints are two models")
     ap.add_argument("--ident-ratio", type=float, default=0.25)
