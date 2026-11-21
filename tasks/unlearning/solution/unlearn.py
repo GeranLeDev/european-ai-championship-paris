@@ -16,6 +16,7 @@ from common import *; import augs, scoring
 ap = argparse.ArgumentParser()
 ap.add_argument("--method", default="td", choices=["td", "scrub", "ga"])
 ap.add_argument("--target", default="medium")
+ap.add_argument("--also", default="", help="comma list of extra hypotheses to report at each eval")
 ap.add_argument("--select", default=None, help="hypothesis used to pick best checkpoint (default: same as target)")
 ap.add_argument("--blocks", type=int, default=12, help="train last k blocks (+norm+head); 12 = everything")
 ap.add_argument("--steps", type=int, default=300)
@@ -48,11 +49,12 @@ elif a.target == "mix":   # hedges (see feat_unlearn.py)
     A = H["medium"] if a.target == "mix" else H["cls"]
     q = 0.5 * (A["p2"] + H["strong"]["p2"]); ce_t = torch.cat([A["ce"], H["strong"]["ce"]], 1)
 else:
-    if a.target not in H:   # extra proxy computed by gold_proxy.py --names <target>
-        H[a.target] = torch.load(CACHE / f"gold_{a.target}.pt")
+    scoring.resolve(a.target, H, CACHE)   # extra proxy file, or composite spec cls:<base>:<off> / mix:<A>+<B>
     q = H[a.target]["p2"]; ce_t = H[a.target]["ce"]
 ce_t_mean = ce_t.mean(1); g_mean, g_std = ce_t.mean().item(), ce_t.std().item()
 sel = a.select or (a.target if a.target in H else "strong")
+for extra in a.also.split(","):
+    if extra: scoring.resolve(extra, H, CACHE)
 
 # ---------------- models
 orig = load_orig(dev); orig.requires_grad_(False)

@@ -50,3 +50,37 @@ def make_hypotheses(cache):
     p2s[m, y[m]] = 0; p2s[m] = p2s[m] / p2s[m].sum(1, keepdim=True); ces[m] = ces[m] + 10.0
     H["clsstrong"] = dict(p2=p2s, ce=ces)   # strong proxy + full removal of the 9 capped classes
     return H
+
+
+def remove_classes(G, y, off=10.0):
+    """Gold proxy G with the capped classes fully removed (mass renormalised, CE + off nats)."""
+    p2 = G["p2"].clone(); ce = G["ce"].clone(); m = torch.isin(y, torch.tensor(FULL_CLASSES))
+    p2[m, y[m]] = 0; p2[m] = p2[m] / p2[m].sum(1, keepdim=True); ce[m] = ce[m] + off
+    return dict(p2=p2, ce=ce)
+
+
+def resolve(name, H, cache):
+    """Composite hypotheses, added to H on demand:
+    cls:<base>:<off>  base proxy + full removal of the 9 capped classes with a CE offset of <off> nats (cls:strong:10 == clsstrong)
+    split:<capbase>:<off>:<other>  capped-class images from cls:<capbase>:<off>, all other images from <other> (may be a mix: spec)
+    mix:<A>+<B>+...   average of p2, concatenation of CE columns (repeat a name to weight it; names may be cls:... specs)
+    <name>            cache/gold_<name>.pt written by gold_proxy.py --names <name>"""
+    if name in H:
+        return H[name]
+    if name.startswith("mix:"):
+        Gs = [resolve(p, H, cache) for p in name[4:].split("+")]
+        G = dict(p2=sum(g["p2"] for g in Gs) / len(Gs), ce=torch.cat([g["ce"] for g in Gs], 1))
+    elif name.startswith("split:"):   # split:<capbase>:<off>:<otherbase> -> capped-class rows from cls:<capbase>:<off>, other rows from <otherbase>
+        _, cb, off, ob = name.split(":", 3)
+        A = resolve(f"cls:{cb}:{off}", H, cache); B = resolve(ob, H, cache)
+        m = torch.isin(torch.load(cache / "orig_forget_logits.pt").argmax(1), torch.tensor(FULL_CLASSES))
+        K = max(A["ce"].shape[1], B["ce"].shape[1]); tile = lambda c: c.repeat(1, -(-K // c.shape[1]))[:, :K]
+        p2 = B["p2"].clone(); ce = tile(B["ce"]).clone(); p2[m] = A["p2"][m]; ce[m] = tile(A["ce"])[m]
+        G = dict(p2=p2, ce=ce)
+    elif name.startswith("cls:"):
+        _, base, off = name.split(":")
+        G = remove_classes(resolve(base, H, cache), torch.load(cache / "orig_forget_logits.pt").argmax(1), float(off))
+    else:
+        G = torch.load(cache / f"gold_{name}.pt")
+    H[name] = G
+    return G

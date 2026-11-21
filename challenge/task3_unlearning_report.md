@@ -1,7 +1,7 @@
 # TASK 3 — Unlearning ViT-B/16 : rapport (sam. 21 nov., soir)
 
 Code : `tasks/unlearning/solution/` (local) = `/p/scratch/training2666/geran1/IncomingPHd/unlearning/solution/` (JURECA).
-Rien n'a été soumis (pas d'appel à `submission.py`) et rien n'a été commité.
+Soumis à ce jour (public) : `sub_r2_g2` 0,2616 (meilleur), `sub_r2_g1` 0,2384, `sub_r2_g0` 0,0798. Résultats les plus récents : §6.4.
 
 ## 1. Ce qu'on sait du modèle et du forget set
 - `vit_base_patch16_224` timm, LayerScale (init 1e-4), 100 classes, 85,9 M de paramètres. Entrée : `(px/255 − 0,5)/0,5`.
@@ -181,6 +181,28 @@ Lecture des 3 scores publics :
     - g1 : w-stat 0,3, α=10, lr 5e-5, 1500 pas ;
     - g2 : w-stat 0,1, α=20, lr 5e-5, 1500 pas ;
     - g3 : w-stat 0,1, α=10, lr 1e-4, 1000 pas.
+- **Leaderboard public** : `sub_r2_g2` (mixcls) = **0,2616**, notre meilleur score. Ordre : mixcls > strong 0,2384 >> medium 0,0798. La composante « 9 classes entièrement oubliées » aide.
+  - `scoring.make_hypotheses` évalue désormais aussi les hypothèses `mixcls` et `clsstrong` (strong + suppression des 9 classes).
+- **Sweeps m1–m3** (tâches `10a`, `10b`, `10c`, terminées 19:30). Base : mixcls, α=10, lr 5e-5, 1500 pas, w-stat 0,1. Scores proxy :
+
+| run | variation | strong | cls | mixcls | clsstrong | KL retain |
+|---|---|---|---|---|---|---|
+| m1_g0 | w-stat 0,05 | 0,432 | 0,389 | 0,454 | 0,288 | 0,033 |
+| m1_g1 | w-stat 0,2 | 0,383 | 0,390 | 0,448 | 0,317 | 0,047 |
+| **m1_g2** | **α=5** | 0,419 | 0,436 | **0,490** | 0,327 | 0,055 |
+| m1_g3 | α=20 | 0,377 | 0,360 | 0,424 | 0,281 | 0,027 |
+| m2_g0 | lr 1e-4, 1000 pas | 0,396 | 0,392 | 0,453 | 0,299 | 0,049 |
+| m2_g1 | lr 3e-5, 2000 pas | 0,395 | 0,400 | 0,464 | 0,309 | 0,037 |
+| m2_g2 / g3 | seeds 1 / 2 (= config r2_g2) | 0,408 / 0,404 | 0,408 / 0,413 | 0,474 / 0,476 | 0,316 | 0,040 / 0,038 |
+| m3_g0 | cible clsstrong | 0,086 | 0,222 | 0,184 | 0,447 | 0,069 |
+| m3_g1 | clsstrong, α=20, w-stat 0,05 | 0,213 | 0,318 | 0,333 | 0,419 | 0,042 |
+| **m3_g2** | **cible cls** | 0,240 | **0,502** | 0,417 | 0,322 | 0,041 |
+| **m3_g3** | **cls, α=20, w-stat 0,05** | 0,273 | 0,463 | 0,418 | 0,284 | **0,024** |
+
+- **Top 3 transmis pour sondage** (`output/sub_*.pt`) :
+  1. `sub_m1_g2.pt` (α=5) ;
+  2. `sub_m3_g2.pt` (cible cls) ;
+  3. `sub_m3_g3.pt` (cls, retain prudent).
 - Pour récapituler et exporter :
   ```bash
   cd /p/scratch/training2666/geran1/IncomingPHd/unlearning && source .venv/bin/activate
@@ -188,6 +210,57 @@ Lecture des 3 scores publics :
   cd solution && python make_submission.py ../output/runs/<run>/best.pt ../output/sub_<run>.pt
   ```
   `collect.py` donne, par run, la config et le meilleur score proxy sous chaque hypothèse.
+
+### 6.4 Sweeps mixcls / cls (sam. 21 nov., 19:17–19:50) et calage du proxy sur le public
+Score public de `sub_r2_g2` (mixcls) : **0,2616**. Vérité terrain disponible : 3 points (r2_g0 0,0798 ; r2_g1 0,2384 ; r2_g2 0,2616).
+
+**Runs terminés** (full-model, bs 64+64 ; mesuré sur le proxy ; colonnes = hypothèse gold) :
+
+| run | cible | w-stat | α | lr / pas | strong | cls | mixcls | clsstrong | retain KL / accord |
+|---|---|---|---|---|---|---|---|---|---|
+| m1_g0 | mixcls | 0,05 | 10 | 5e-5 / 1500 | 0,432 | 0,389 | 0,454 | 0,288 | 0,033 / 0,905 |
+| m1_g1 | mixcls | 0,2 | 10 | 5e-5 / 1500 | 0,383 | 0,390 | 0,448 | 0,317 | 0,047 / 0,870 |
+| m1_g2 | mixcls | 0,1 | 5 | 5e-5 / 1500 | 0,419 | 0,436 | **0,490** | 0,327 | 0,055 / 0,858 |
+| m1_g3 | mixcls | 0,1 | 20 | 5e-5 / 1500 | 0,377 | 0,360 | 0,424 | 0,281 | 0,027 / 0,905 |
+| m2_g0 | mixcls | 0,1 | 10 | 1e-4 / 1000 | 0,396 | 0,392 | 0,453 | 0,299 | 0,049 / 0,860 |
+| m2_g1 | mixcls | 0,1 | 10 | 3e-5 / 2000 | 0,395 | 0,400 | 0,464 | 0,309 | 0,037 / 0,890 |
+| m2_g2 | mixcls (seed 1) | 0,1 | 10 | 5e-5 / 1500 | 0,408 | 0,408 | 0,474 | 0,316 | 0,040 / 0,889 |
+| m2_g3 | mixcls (seed 2) | 0,1 | 10 | 5e-5 / 1500 | 0,404 | 0,413 | 0,476 | 0,316 | 0,038 / 0,887 |
+| m3_g0 | clsstrong | 0,1 | 10 | 5e-5 / 1500 | 0,086 | 0,222 | 0,184 | **0,447** | 0,069 / 0,840 |
+| m3_g1 | clsstrong | 0,05 | 20 | 5e-5 / 1500 | 0,213 | 0,318 | 0,333 | 0,419 | 0,042 / 0,878 |
+| m3_g2 | cls | 0,1 | 10 | 5e-5 / 1500 | 0,240 | **0,502** | 0,417 | 0,322 | 0,041 / 0,873 |
+| m3_g3 | cls | 0,05 | 20 | 5e-5 / 1500 | 0,273 | 0,463 | 0,418 | 0,284 | 0,024 / 0,918 |
+| r6_g0 | strong | 0,05 | 10 | 5e-5 / 1500 | 0,410 | 0,232 | 0,335 | 0,221 | 0,034 / 0,900 |
+| r6_g1 | strong | 0,2 | 10 | 5e-5 / 1500 | **0,460** | 0,250 | 0,370 | 0,268 | 0,043 / 0,883 |
+| r6_g2 | strong | 0,1 | 10 | 3e-5 / 2000 | 0,450 | 0,254 | 0,367 | 0,252 | 0,036 / 0,899 |
+| r6_g3 | strong | 0,1 | 10 | 1e-4 / 1000 | 0,436 | 0,246 | 0,356 | 0,244 | 0,049 / 0,870 |
+
+(La colonne medium vaut 0 partout. Les seeds 1 et 2 de la config de `r2_g2` redonnent les mêmes scores proxy à ±0,005 : le bruit de seed est faible.)
+
+**Quelle colonne proxy prédit le public ?** Outils : `dump_logits.py` (logits d'éval de chaque checkpoint, sur JURECA) puis `fit_public.py` (hors ligne, CPU) : pour chaque hypothèse gold, on compare le proxy des 3 runs soumis aux 3 scores publics, à un facteur d'échelle `s` près (public ≈ s × proxy).
+- Aucune colonne d'origine ne colle seule : `strong` classe r2_g1 devant r2_g2 (faux), `cls` et `medium` sont loin (résidu relatif 0,19 et 1,06 ; `strong` 0,10).
+- Les meilleures hypothèses combinent **base strong + suppression partielle ou totale des 9 classes** (résidu 0,004 à 0,05) : `split:medium:6:mix:medium+strong`, `mix:cls:strong:{6,10,15,20}+medium`, `mix:cls:strong:{3..20}+strong`, `split:medium:6:strong`.
+  - Syntaxe (`scoring.resolve`) : `cls:<base>:<off>` = base + suppression des 9 classes avec un décalage de CE de `off` nats ; `mix:A+B` = moyenne ; `split:<base>:<off>:<autre>` = suppression seulement pour les images des 9 classes, `<autre>` pour le reste.
+- **Limite** : 3 points pour 2 à 3 paramètres. Le décalage de CE (6 ou 20 nats) n'est pas identifiable : il change seulement l'échelle `s` (0,6 à 1,2). L'ajustement dit quelles hypothèses sont exclues (medium, cls sur base medium seule), pas laquelle est vraie.
+- Sous les 10 meilleures hypothèses, prédiction de score public (s × proxy) :
+  - runs mixcls : plage étroite, 0,25–0,28. `m1_g2` est le plus haut sous chacune (0,266–0,281), contre 0,258–0,270 pour `r2_g2` (mesuré 0,2616). Gain attendu faible, de l'ordre de +0,01.
+  - runs clsstrong (`m3_g0`, `m3_g1`) : prédictions très dispersées (0,02–0,27) : ce sont des sondes informatives mais risquées.
+  - runs cls purs (`m3_g2`, `m3_g3`) : 0,18–0,25, sous le meilleur actuel.
+- Conclusion : les variations d'hyperparamètres autour de mixcls ne suffiront pas. Le gain possible vient d'une cible mieux placée dans la famille « strong + 9 classes supprimées », d'où les sweeps ci-dessous.
+
+**Sweeps lancés à 19:50** (file `queue/pending`, α=10, lr 5e-5, 1500 pas, w-stat 0,1 ; exports `output/sub_<run>.pt`) :
+- `rx` (`11b_t3_xstrong`) : cible xstrong (CE gold 5,62 ± 4,94), 4 configs, voir §6.3.
+- `x1` : `cls:strong:6`, `cls:strong:15`, `mix:cls:strong:10+strong`, `mix:cls:medium:10+cls:medium:10+strong`.
+- `x2` : `cls:xstrong:10`, `mix:cls:xstrong:10+strong`, `mix:cls:strong:10+xstrong`, `mix:cls:medium:10+xstrong`.
+- `x3` : `split:medium:6:mix:medium+strong`, `mix:cls:strong:6+medium`, `split:medium:6:strong`, `mix:cls:strong:15+medium`.
+- `x4` : `mix:cls:strong:20+strong`, `mix:cls:strong:15+strong`, `split:strong:3:medium`, `cls:strong:20`.
+- Puis `r7`, `r5`, `r3` (strong, priorité basse).
+- Pour classer : `rsync` de `output/logits/` vers `solution/cache/logits/`, puis `python fit_public.py`. Ajouter chaque nouveau score public dans `PUBLIC` (en tête de `fit_public.py`) : chaque point supplémentaire réduit la famille d'hypothèses.
+
+**Candidats rapatriés et validés en local** (chargement strict, float32, valeurs finies, 328 Mo ; NON soumis), dans `tasks/unlearning/candidates/` :
+1. `sub_m1_g2.pt` : mixcls, α=5. Le plus haut sous toutes les hypothèses ajustées. Risque : retain proxy plus bas (KL 0,055, accord 0,858) que `r2_g2` (0,039 / 0,892).
+2. `sub_m1_g0.pt` : mixcls, w-stat 0,05. Prédit 0,254–0,274, donc équivalent à `r2_g2` ; retain proxy meilleur (KL 0,033, accord 0,905).
+3. `sub_m3_g3.pt` : cls pur, α=20, meilleur retain (KL 0,024, accord 0,918). Prédit 0,19–0,25 : sonde pour mesurer l'effet de la suppression seule, pas un candidat au record.
 
 ## 7. Risques et suite
 - **L'hypothèse gold est inconnue.** C'est le risque principal, d'où la stratégie du §5.
