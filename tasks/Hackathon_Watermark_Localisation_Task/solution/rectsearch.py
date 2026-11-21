@@ -9,11 +9,29 @@ import numpy as np, torch, torch.nn.functional as F
 from torchvision.ops import roi_align
 
 
+def extract_stega_decoder(src, dst):
+    """Cut the StegaStamp ONNX graph down to image -> decoder logits (atomic write, safe with concurrent shards)."""
+    import onnx, os
+    from wmloc.watermarks import StegaStamp
+    m = onnx.load(str(src))
+    ex = onnx.utils.Extractor(m)
+    sub = ex.extract_model(["image"], [StegaStamp.LOGITS])
+    tmp = f"{dst}.{os.getpid()}.tmp"; onnx.save(sub, tmp); os.replace(tmp, dst)
+
+
 class Scorer:
     def __init__(self, wm, method, bs=256):
         self.wm, self.method, self.bs = wm, method, bs
         self.res = {"pixelseal": 256, "trustmark": wm.resolution if method == "trustmark" else 0, "stegastamp": 400}[method]
         self.dev = wm.device if method != "stegastamp" else ("cuda" if torch.cuda.is_available() else "cpu")
+        self.dec = None
+        if method == "stegastamp":                          # decoder-only graph: the full graph also runs the encoder
+            import onnxruntime as ort
+            from pathlib import Path
+            src = Path(wm.sess._model_path); dst = src.with_name("stega_stamp_dec.onnx")
+            if not dst.exists(): extract_stega_decoder(src, dst)
+            self.dec = ort.InferenceSession(str(dst), wm.sess.get_session_options(), providers=wm.sess.get_providers())
+            self.dec_in = self.dec.get_inputs()[0].name
 
     @torch.no_grad()
     def net(self, crops):                                  # crops: B x 3 x R x R in [0,1] on self.dev
@@ -21,8 +39,8 @@ class Scorer:
             return self.wm.det(crops)[:, 1:].float()
         if self.method == "trustmark":
             return self.wm.net(crops * 2 - 1).float()
-        x = crops.clamp(0, 1).permute(0, 2, 3, 1).cpu().numpy()
-        return torch.from_numpy(self.wm._run(x, [self.wm.LOGITS])[0]).float().to(self.dev)
+        x = crops.clamp(0, 1).permute(0, 2, 3, 1).float().cpu().numpy()
+        return torch.from_numpy(self.dec.run([self.wm.LOGITS], {self.dec_in: x})[0]).float().to(self.dev)
 
     @torch.no_grad()
     def score(self, x, s, boxes):

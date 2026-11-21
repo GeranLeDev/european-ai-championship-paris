@@ -26,10 +26,10 @@ from met_common import HERE, read_jsonl
 
 SERVER_URL = "http://34.147.229.55"
 TASK_ID = "33-model-equality"
-BASE_URL = f"{SERVER_URL}/{TASK_ID}/v1"
+BASE_URL = os.environ.get("MET_BASE_URL") or f"{SERVER_URL}/{TASK_ID}/v1"   # MET_BASE_URL: local mock server (tests)
 MAX_PARALLEL = 4
 MAX_TOKENS = 256
-STOP_FILE = HERE / "data" / "STOP"          # `touch data/STOP` = stop cleanly (no paid answer is lost)
+STOP_FILE = Path(os.environ.get("MET_STOP_FILE") or HERE / "data" / "STOP")          # `touch data/STOP` = stop cleanly (no paid answer is lost)
 
 
 def api_key(args):

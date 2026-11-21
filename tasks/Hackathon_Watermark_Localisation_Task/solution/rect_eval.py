@@ -5,7 +5,8 @@ held-out fold (official per-image mIoU). With --test, writes the submission (sam
 submission_baseline.pt: {"image_names": list[str], "masks": bool tensor [N, 128, 128]}).
 
 Search caches are selected by exact tag: search_{split}_{method}{tag}[_shardK].npz. Several tags can be merged
-(per image, the box with the highest score wins), e.g. --train-tags ",_fine" --test-tags "_t,_fine_t".
+(per image, the box with the highest score wins). Defaults: train "" (first full-grid run) + "_r" (resumed reduced
+run, solution/job_rect2.sh), test "_t" + "_t_r". Images without a search result fall back to the baseline.
 Usage: python solution/rect_eval.py [--test out.pt] [--data data] [--train-tags ""] [--test-tags _t]"""
 import argparse, json, re, sys
 from pathlib import Path
@@ -17,8 +18,9 @@ from rectsearch import box_to_mask128
 from wmloc.utils import miou_image
 
 ap = argparse.ArgumentParser(); ap.add_argument("--test", default=""); ap.add_argument("--data", default=str(ROOT / "data"))
-ap.add_argument("--train-tags", default="", help="comma list of cache tags for the train split ('' = coarse grid)")
-ap.add_argument("--test-tags", default="_t", help="comma list of cache tags for the test split")
+ap.add_argument("--strict", action="store_true", help="fail if a clean-mode test image has no search result")
+ap.add_argument("--train-tags", default=",_r", help="comma list of cache tags for the train split ('' = coarse grid)")
+ap.add_argument("--test-tags", default="_t,_t_r", help="comma list of cache tags for the test split")
 a = ap.parse_args()
 C = ROOT / "solution" / "cache"
 params = json.load(open(C / "baseline_params.json"))
@@ -109,7 +111,7 @@ if a.test:
         missing = sum(e["method"] == m and feats["agree"][f_idx[e["image_name"]]] <= params[m][0] and e["image_name"] not in srch[m] for e in tmeta)
         print(f"{m}: test files {files} searched {len(srch[m])}/{n_m}, clean-mode {n_clean}, clean-mode without search result {missing}")
         assert files, f"no test search cache for {m} with tags {a.test_tags!r}"
-        assert missing == 0, f"{m}: {missing} clean-mode test images have no search result (job unfinished?)"
+        assert missing == 0 or not a.strict, f"{m}: {missing} clean-mode test images have no search result (job unfinished?)"
     names, masks, nrect = [], [], {m: 0 for m in METHODS}
     for e in tmeta:                                         # metadata order, as in submission_baseline.pt
         n, m = e["image_name"], e["method"]
