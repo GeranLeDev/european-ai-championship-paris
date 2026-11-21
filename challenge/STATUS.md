@@ -1,4 +1,5 @@
 # ÉTAT DE REPRISE (sam. 21/11 ~19:30) — à lire en premier
+**Lire aussi : challenge/PLAN_CORRECTIONS.md (corrections du plan partagé) et challenge/HANDOFF_COMPUTE.md (reprise sur Modal/autre machine).**
 ## Leaderboard (public)
 - Task1 watermark: 0.4584 public (submission_baseline.pt, soumis 19:20). Suite: recherche rectangles (queue t1) -> submission_rect.pt.
 - Task2 model equality: 0.0 (singletons). Pipeline: tasks/model_equality/solution (rapport challenge/task2_*). Étape suivante: calibration gratuite sur ref-01..09 (agent relancé, non confirmé), puis collecte ep (DÉPENSE TOUT LE BUDGET, irréversible) => demander OK user.
