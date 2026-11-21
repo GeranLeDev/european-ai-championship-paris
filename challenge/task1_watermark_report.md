@@ -24,27 +24,39 @@ Soumission baseline déjà écrite : `tasks/Hackathon_Watermark_Localisation_Tas
   - agrandir la bbox GT de 2–4 px aide souvent.
 - Les masques partiels irréguliers ne sont pas des rectangles tournés (`rottest.py`, résultat négatif). C'est probablement un embed de l'image entière, puis un collage par blob : cas difficile, laissé au baseline.
 
-## Méthode en cours : recherche de rectangle
-- Code : `solution/rectsearch.py`.
-- Grille grossière de boîtes (taille ≥ 24 px, ratio d'aspect ≤ 2, environ 63k boîtes), score = accord doux avec le message.
-- Crops extraits et redimensionnés en batch par `roi_align`, puis top-16 avec NMS, puis descente par coordonnées sur les 4 bords (pas 16 → 1 px).
-- Lancement : `solution/run_search.py`, cache dans `solution/cache/search_{split}_{method}{tag}.npz`. Les images classées « full » sont sautées.
-- Combinaison et évaluation : `solution/rect_eval.py`. En mode propre, si score > t_rect, on prédit la boîte agrandie de d px, sinon le baseline. t_rect et d sont réglés par méthode sur le fold train, puis rapportés sur val. Avec `--test out.pt`, le script écrit la soumission.
-- Smoke test local OK (un rectangle TrustMark retrouvé avec un score de 1.000).
-- Gain attendu : environ +0.4 de mIoU sur environ 25 % des images, soit environ +0.1 au global si la recherche les retrouve.
+## Recherche de rectangle : résultat (sam. 21 nov. 21:30)
 
-## Comment relancer sur JURECA
-- Tâches mises dans la file partagée `/p/scratch/training2666/geran1/IncomingPHd/queue/pending/` :
-  - `10_t1_rect_train.sh` (SPLITS=train) ;
-  - `11_t1_rect_test.sh` (SPLITS=test TAG=_t) ;
-  - `30_t1_rect_fine_train.sh` (grille fine 16,1.25,0.2,2.0, TAG=_fine).
-- Elles appellent `bash solution/job_rect.sh` (GPU 0 TrustMark, GPU 1 PixelSeal, GPU 2–3 StegaStamp). Logs : `Hackathon_Watermark_Localisation_Task/output/rect*.log`.
-- Ensuite :
-  1. rapatrier `solution/cache/search_*.npz` en local (`rsync -az -e ssh juelich:.../solution/cache/ solution/cache/`) ;
-  2. lancer `python solution/rect_eval.py --test solution/submission_rect.pt` (option `--data release` si exécuté sur JURECA).
-- Attention : `rect_eval.py` charge tous les `search_{split}_{m}*.npz`. Exclure `_fine` du réglage si on compare les grilles (filtre à ajouter).
+**Fichier prêt : `tasks/Hackathon_Watermark_Localisation_Task/solution/submission_rect.pt`** (même format et même ordre d'images que `submission_baseline.pt` : `image_names` list[str] de 1020, `masks` bool [1020,128,128]). **Non soumis** (accord utilisateur requis). 131 images changent par rapport au baseline (81 TrustMark, 50 PixelSeal, 0 StegaStamp).
+
+### Held-out mesuré (fold val de 150 images, t_rect et d réglés sur le fold train, mIoU officiel)
+| méthode | baseline | baseline + rectangle | t_rect, d | commentaire |
+|---|---|---|---|---|
+| pixelseal | 0.479 | **0.528** | 0.40, 3 | 7 rectangles sur 15 retrouvés en val |
+| trustmark | 0.459 | **0.573** | 0.60, 0 | 13 rectangles sur 14 retrouvés, mIoU 0.87 sur ces images |
+| stegastamp | 0.460 | 0.460 | (non utilisé) | la recherche échoue, baseline conservé |
+| **global** | **0.466** | **0.520** | | gain +0.054, IC bootstrap 95 % [+0.030 ; +0.081] |
+
+- Le gain ne dépend pas du réglage fin : toutes les cases (t_rect, d) testées en val battent le baseline pour PixelSeal et TrustMark.
+- Le baseline local 0.466 a donné 0.4584 en public : on s'attend donc à ~0.51 en public (supposé, non mesuré).
+- Le gain attendu initial (+0.1) n'est pas atteint. Les rectangles font bien 25 % des images (129/510 au train), mais seul TrustMark les retrouve presque tous.
+
+### Ce qui limite (mesuré)
+- **PixelSeal** : les rectangles fins (un côté < ~20-30 px) ne donnent aucun accord, même en décodant exactement la boîte vraie (`basin.py` : 7 cas sur 14 à ~0.00). Aucune grille plus fine ni boîte < 24 px ne les retrouvera avec ce score. Les rectangles moyens donnent 0.13-0.28 sur la boîte exacte, au niveau du bruit (0.11-0.20).
+- **StegaStamp** : plancher de bruit du score à 0.30-0.46, 1 rectangle retrouvé sur 23 dans les 44 images train cherchées. La recherche test n'a pas été lancée (58 s/image, soit ~45 min de nœud pour un gain mesuré nul).
+- Les masques 128 ont des coins arrondis à 0 : compter les rectangles sur les masques 512 (corrigé dans `rect_eval.py`).
+- Grille fine (`30_t1_rect_fine_train`, 304k boîtes, 5x plus chère) : rangée dans `queue/parked_t1`, non lancée, car ni PixelSeal ni StegaStamp ne manquent de densité de grille.
+
+### Code et caches
+- `solution/rectsearch.py` : score d'une boîte = accord doux avec le message, crops par `roi_align`, top-16 + NMS, descente par coordonnées. StegaStamp utilise un graphe ONNX réduit au décodeur (`stega_stamp_dec.onnx`, 4x plus rapide, sorties identiques ; le graphe complet faisait un OOM à bs=256).
+- `solution/run_search.py` : reprise sur cache (`--skip-dir` + fichier de sortie relu), sauvegarde atomique après chaque image, repli de batch en cas d'OOM.
+- `solution/rect_eval.py` : sélection des caches par tag exact (`--train-tags ",_r,_r2" --test-tags "_t,_t_r,_t_r2,_t_r3"`, les caches `_fine`/`_dbg` ne fuient plus), détail par type de masque, IC bootstrap, `--test out.pt`.
+- Tâches JURECA : `job_rect.sh` (première version, trop lente : PixelSeal 56 s/image), `job_rect2.sh`/`job_rect3.sh` (version réduite sur 4 GPU, grille 24,1.4,0.33,2.0 pour PixelSeal), `job_rect4.sh` (rattrapage après l'incident de quota disque de 20:46).
+- Débits mesurés sur A100 : TrustMark 18 s/image (grille 63k), PixelSeal 27 s/image (grille 30k), StegaStamp 58 s/image (grille 30k).
+- Caches `solution/cache/search_{train,test}_*.npz` complets pour TrustMark et PixelSeal (toutes les images en mode « propre »).
+
+Pour régénérer : `python solution/rect_eval.py --train-tags ",_r,_r2" --test-tags "_t,_t_r,_t_r2,_t_r3" --test solution/submission_rect.pt`.
 
 ## Prochaines étapes
-1. Récupérer les résultats train, régler t_rect et d, lire les chiffres held-out, puis écrire `submission_rect.pt` dès que le test est fini.
-2. Si le débit le permet : grille plus fine pour PixelSeal et StegaStamp (bassin étroit), et des boîtes plus petites (< 24 px).
-3. Mode « full » (zone propre restaurée, irrégulière) : piste explore8 (compléter le watermark sur une région candidate C et mesurer la hausse d'accord).
+1. Soumettre `submission_rect.pt` si l'utilisateur donne son accord.
+2. Les 75 % restants plafonnent à ~0.46-0.50 : masques irréguliers (partiels) et mode « full » avec zone propre restaurée. C'est là qu'est la marge, pas dans une grille plus fine.
+3. PixelSeal, rectangles fins : chercher un autre signal (le watermark y a peut-être été posé autrement que par crop → embed → recollage).
