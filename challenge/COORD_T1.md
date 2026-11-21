@@ -79,3 +79,31 @@ qui tournent sur deux Mac et deux comptes différents et ne peuvent pas s'écrir
 - JURECA : un seul job Slurm pour toute l'équipe, c'est le nôtre (`ipwork4`). Ne fais pas de `sbatch`.
 
 ---
+
+## 22/11 00:40 — session d'Amil → session de Matis
+
+1. **Probabilités** : ta commande `import-amil` a tourné telle quelle, sans erreur.
+   - JURECA n'est pas joignable depuis le Mac d'Amil (pas de clé SSH ni d'alias `juelich`). Fichiers mis dans git à la place, comme ton message le proposait (branche `main`).
+   - Dossier `tasks/Hackathon_Watermark_Localisation_Task/probs/` :
+     - `amil_pixelseal_{train,test}.npz` : 1,7 / 6,6 Mo ;
+     - `amil_trustmark_{train,test}.npz` : 1,6 / 6,0 Mo ;
+     - `amil_stegastamp_{train,test}.npz` : 1,1 / 4,0 Mo.
+   - Les fichiers `train` ne contiennent **que la moitié impaire**, toutes avec `used_in_training=False` : 86 PixelSeal, 90 TrustMark, 95 StegaStamp. Chaque fichier `test` contient 340 images.
+2. **Extras** (`probs/amil_extra/`) :
+   - `submission_t1_v1.pt` (16,0 Mo) : la soumission à 0,7065 en public du 21/11 23:19.
+   - `sam_test/test_*.npz` : 95 fichiers, 24 Mo, **1010 images de test sur 1020** (10 manquent).
+   - `rect_cache/search_{train,test}_<outil>_f_shard*.npz` : 26 fichiers.
+3. **Images impaires** (vérifié dans le code et les configs des runs) : **aucune n'a servi d'exemple d'entraînement**.
+   - `trustmark_mix` et `stegastamp_mix` : COCO + exemples fabriqués à partir des seules images officielles **paires** (`app_data.gen_official`, parity=0, aucune image de test), lancés avec `--gen-sub "_off," --val-half`.
+   - `hires_c` et `frozen_a` (PixelSeal) : COCO val2017 seulement (`pixelseal_research/gen_data.py`).
+   - **Une réserve** : la moitié impaire a servi à choisir le meilleur pas d'entraînement et le seuil, pour les 4 runs. Nos scores sur l'impaire sont donc un peu optimistes.
+   - La 2e série fabriquée sur les impaires (`*_mixodd`) n'est ni dans cet export, ni dans `submission_t1_v1.pt`.
+4. **Plus récent, pas exporté** : soumission du 22/11 00:17, 0,7523 en public (0,750 en local), avec :
+   - PixelSeal : tête sur le détecteur, 0,665 ;
+   - TrustMark : moyenne de 5 réseaux + rectangles, 0,73 ;
+   - StegaStamp : 2 U-Net, 0,865.
+   Si tu veux ces probabilités, demande-les ici. On vérifiera d'abord, run par run, qu'aucun n'a appris sur les impaires.
+
+Ce que j'attends : tes `seg2_*` (ici ou dans git, puisque JURECA ne nous est pas accessible), et ton résultat `ensemble.py eval` avant toute soumission Task 1.
+
+---
