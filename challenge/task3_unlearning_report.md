@@ -605,3 +605,38 @@ Scores publics mesurés (soumis par la session principale) :
 | `sub_pol_C_a20_s1` | 5,63 ± 4,39 | 10,47 (0,00) / 3,20 (0,39) | 0,924 / 0,065 | **0,3209** |
 
 Lecture : la réponse au niveau de CE est presque plate entre 3,1 et 5,6 de moyenne. Passer l'accuracy des classes partielles de 0,91 à 0,39 ne coûte rien et ne rapporte presque rien.
+
+### 8.10 Voie B : cibles par image apprises ou dérivées (dim. 22 nov., 08:15–09:40)
+Code : `solution/unlearn_b.py` (= `unlearn.py` + `--target-file`, `--holdout`, `--cap-boost`, `--part-boost`, `--anchor`, `--freeze-head`, `--freeze-last`), `solution/collat.py` (accord avec `orig` par groupe de classes), `solution/make_targets_b.py` (fichiers de cibles). Runs : `/p/project1/training2666/geran1/t3runs/b_runs` et `b_bench`.
+
+**Résultat public (mesuré)** : `sub_b_csx_soup.pt` = **0,2818** (base `soup_C` 0,3166 ; meilleur 0,3209).
+- Recette : départ `soup_C` + 2500 pas, cible « csx » = moyenne d'`orig` sous augmentations fortes et très fortes, vraie classe retirée sur les 9 classes ; w-stat 0,3 visant 2,9 ± 4,9 ; α 20 ; soupe de 2 graines.
+- Profil : CE 3,24 ± 5,02 ; 9 classes 8,93 / acc 0,06 ; partielles 0,38 / acc 0,92 ; accord images générées 0,916 (KL 0,070).
+- Le banc à vrai gold' donnait cette cible gagnante (0,183 contre 0,158 pour mixcls). **Le banc n'est donc pas fiable pour la forme de la cible.**
+- Lecture : retirer toute la masse de la vraie classe sur les 9 classes est pénalisé (cohérent avec « 9 colonnes éteintes » 0,068 et « classe sœur fixe » 0,185).
+
+**Cible apprise sur le banc (idée fermée, mesuré hors ligne sur les 860 images forget' du banc)**
+- Les signaux d'orig' prédisent mal le gold' par image sur les classes partielles : Spearman avec p(vraie) de gold' = 0,21 (augmentation forte), 0,20 (très forte), 0,18 (moyenne), −0,03 (marge sur image propre). La classe explique 31 % de la variance.
+- Plafond du terme KL selon la forme de la cible (1 − KL(gold'‖cible)/KL(gold'‖orig')) : mixcls 0,49 ; cls:strong 0,49 ; csx 0,55 ; mixcls adouci (puissance 1/1,5) 0,56. Cible bimodale « images les plus dures » sur les partielles : 0,35–0,39 contre 0,39 pour mixcls.
+
+**Oubli par classe ou par instance (mesuré, run depuis `orig`, 20 % des images à oublier tenues hors de l'entraînement)**
+- Images des 9 classes jamais utilisées comme images à oublier : acc 0,57, CE 2,2 (entraînées : acc 0,20, CE 7,0). Classes partielles tenues à part : acc 0,96.
+- L'oubli des 9 classes déborde donc sur des images non entraînées des mêmes classes ; le coût sur le contrôle caché n'est pas mesurable ici.
+- Correctifs testés (acc des images tenues à part des 9 classes / accord images générées) : sur-échantillonnage du retain prédit dans les 9 classes 0,56 / 0,876 ; mosaïques d'ancrage 25 % 0,64 / 0,876 ; ancrage 50 % sur les 9 classes 0,71 / 0,867 ; tête gelée 0,585 / 0,880 ; tête + 4 derniers blocs gelés 0,51 / 0,884. Aucun ne garde l'accord ≥ 0,90.
+
+**Banc à vrai gold' (2000 pas, sens seulement)**
+
+| variante | score | oubli (ms, ps) | retain réel (ratio acc, KL) |
+|---|---|---|---|
+| recette mixcls (`unlearn_b.py`) | 0,158 | 0,228 (0,44, 0,52) | 0,695 (0,954, 0,373) |
+| sur-échantillonnage retain | 0,150 | 0,228 | 0,657 |
+| ancrage 25 % / 50 % | 0,149 / 0,149 | 0,212 / 0,207 | 0,706 / 0,721 |
+| tête gelée / + 4 blocs | 0,161 / 0,132 | 0,227 / 0,201 | 0,707 / 0,657 |
+| cible adoucie 1/1,5 | 0,162 | 0,271 | 0,599 |
+| cible csx | 0,183 | 0,290 (0,48, 0,60) | 0,631 |
+| oubli partiel par image (36 % / 57 % des partielles) | 0,192 / 0,202 | 0,324 / 0,357 | 0,591 / 0,567 |
+| mixcls + CE par population (voie A) | 0,190 | 0,312 | 0,610 |
+
+- Dans le banc, la cible par image d'oubli partiel ne fait pas mieux que mixcls avec une CE visée par population.
+
+**Runs réels non soumis (départ `soup_C`, 2500 pas)** : cibles adoucie, pondérée par la part de classe retirée : profil de la famille (CE 3,1–3,2 ± 5,1 ; accord 0,90–0,92). Oubli partiel par image, soupe de 5 graines (`b_runs/soup_pw5.pt`) : CE 3,98 ± 4,96 ; 9 classes acc 0,02 ; partielles CE 1,26 / acc 0,77 ; accord 0,902.
