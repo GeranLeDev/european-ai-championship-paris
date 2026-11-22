@@ -41,6 +41,8 @@ ap.add_argument("--faug", default="light", choices=["light", "wide", "combo", "w
 ap.add_argument("--reinit", default="", help="er: comma list of blocks to re-initialise (head is always re-initialised)")
 ap.add_argument("--reinit-mlp", action="store_true", help="er: re-initialise only the MLP sub-blocks (norm2, mlp, ls2) of --reinit blocks")
 ap.add_argument("--pop-stat", action="store_true", help="td: CE mean/std matched separately for capped-class images and the others")
+ap.add_argument("--pop-target", default="", help="td: explicit CE targets 'mean_cap,std_cap,mean_oth,std_oth' (implies --pop-stat) instead of the target's own statistics")
+ap.add_argument("--stat-target", default="", help="td: explicit global CE target 'mean,std' for the --w-stat term")
 ap.add_argument("--save-last", action="store_true", help="keep the last evaluated checkpoint instead of the best under --select")
 ap.add_argument("--dump", action="store_true", help="dump eval logits of the best checkpoint to ../output/logits/<run>.pt")
 a = ap.parse_args()
@@ -65,6 +67,8 @@ else:
     q = H[a.target]["p2"]; ce_t = H[a.target]["ce"]
 ce_t_mean = ce_t.mean(1); g_mean, g_std = ce_t.mean().item(), ce_t.std().item()
 capm = torch.isin(y, torch.tensor(scoring.FULL_CLASSES)); pop = [(ce_t[capm].mean().item(), ce_t[capm].std().item()), (ce_t[~capm].mean().item(), ce_t[~capm].std().item())]
+if a.pop_target: v = [float(t) for t in a.pop_target.split(",")]; pop = [(v[0], v[1]), (v[2], v[3])]; a.pop_stat = True
+if a.stat_target: g_mean, g_std = [float(t) for t in a.stat_target.split(",")]
 sel = a.select or (a.target if a.target in H else "strong")
 for extra in a.also.split(","):
     if extra: scoring.resolve(extra, H, CACHE)
