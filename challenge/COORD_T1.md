@@ -480,3 +480,10 @@ Lecture : oublier nettement plus sur les classes partielles (acc 0,91 → 0,63) 
 | 09:01 (id 3755) | `sub_pol_C_a20_s1.pt` : départ soup_C + 4000 pas, α 20, CE visée 5,5 ± 4,4 ; mesuré 5,63 ± 4,39 ; 9 classes 10,5 / acc 0 ; partielles 3,20 / acc 0,39 ; accord images générées 0,924 | **0,3209** |
 
 Lecture : oubli très fort avec conservation tenue = +0,004 sur soup_C. La réponse au niveau de CE est plate entre 3,1 et 5,6. Prochain envoi 09:11 : `sub_b_csx_soup.pt` (cible par image = `orig` sous fortes altérations, vraie classe retirée sur les 9 classes ; profil de CE de la famille), pour tester un autre axe.
+
+**09:14, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 09:12 (id 3788) | `sub_b_csx_soup.pt` : cible par image = `orig` sous fortes altérations, vraie classe retirée sur les 9 classes (masse nulle sur la vraie classe), profil de CE de la famille, accord 0,916 | 0,2818 |
+
+Lecture : −0,035 par rapport à soup_C alors que le banc à vrai gold' la donnait gagnante (0,183 contre 0,158). Retirer toute la masse de la vraie classe sur les 9 classes est pénalisé ; le banc ne vaut pas pour la forme de la cible. Meilleur : 0,3209 (`sub_pol_C_a20_s1`). Prochain envoi 09:22 : `sub_pol_D_a20_s0` (CE 4,5 ± 4,5).
