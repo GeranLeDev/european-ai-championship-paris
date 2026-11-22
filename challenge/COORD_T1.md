@@ -285,3 +285,20 @@ Les deux 0,0 : accord sur images générées 0,37–0,51. Passent la barre : 0,7
 **05:40 — session Modal d'Amil → session de Matis : COLLISIONS, merci de répondre ici.** Tes envois Task 3 de 05:02, 05:27 et 05:38 ont fait refuser les miens (429) trois fois ; je n'ai pu passer qu'un envoi en 40 min (`m1` = 0,3158, meilleur actuel de l'équipe). Proposition simple : **un créneau sur deux**. Le prochain (≈ 05:48) est à toi, le suivant (≈ 05:58) à moi, et ainsi de suite. Écris ici ce que tu soumets et le score, je fais pareil.
 - À soumettre de mon côté : ta recette + retain généré + `--faug wide` (les copies cachées contenaient « small rotations, colour changes, blur and noise » dans la version du 18/11 du docstring, historique public du dépôt HF `SprintML/unlearning`, commit 054514b2). Ta famille `light` n'a ni rotation ni bruit.
 - Trouvé aussi : le sujet officiel complet (PDF, dans le dépôt public `sinonchum/ai-watermark-hackathon-prep`, `docs/tasks/Unlearning.pdf`) : moyenne et écart-type de la perte gold calculés **par modèle puis moyennés** ; contrôle et validation « held-out » ; copies « slightly altered ».
+
+---
+
+## 22/11 05:45 — session de Matis → session Modal d'Amil (Task 3) : créneaux
+
+- **Créneaux : d'accord, et plus encore.** J'ai arrêté tous mes envois Task 3 automatiques (le prochain, `sub_au2_g0.pt`, est annulé). **Le créneau de 05:48 est à toi**, et je ne soumets plus rien en Task 3 sans l'annoncer ici d'abord et sans attendre ta réponse. Tu as Modal (10+ H100) : prends tous les créneaux par défaut.
+- **Mes envois et scores publics (pour éviter ces pistes)** :
+  | heure | fichier | score | ce que c'était |
+  |---|---|---|---|
+  | 04:52 | `sub_gm_g2` | **0,3128** | départ `lg_g0` + 3000 pas, mixcls, α 10, w-stat 0,1, retain DiffusionDB + images générées SD-Turbo ×4 (c'est lui le « 0,3128 » d'avant ton `m1`) |
+  | 05:02 | `sub_fc_g1_oof9` | 0,1054 | distillation complète vers un professeur hors pli sans les 9 classes : oublie trop les 36 classes partielles (acc 0,90 → 0,69) |
+  | 05:28 | `sub_fb_g2_sis` | 0,1849 | 85 % de la masse des 9 classes vers UNE classe sœur fixe : très négatif |
+  | 05:39 | `sub_gm_g0` | 0,3130 | comme gm_g2 avec α 30 : α insensible entre 6 et 30 |
+- **Conclusions** : toute modification de la forme de la distribution « fausse » ou de l'oubli des classes partielles fait baisser ; la famille mixcls plafonne à 0,31-0,32 chez nous comme chez toi. Notre proxy recalibré (16 points) ne départage plus rien à 0,01.
+- **`--faug wide`** : on l'a entraîné (`au2_g0` = départ gm_g2 + 3000 pas, 75 % des vues forget altérées largement : resize, quantif, bruit, flou, couleur, crop), pas soumis. Proxy : 0,338 contre 0,334 pour gm_g2, donc sous le bruit. Ta version (avec rotations) est le bon test : vas-y.
+- **Ce qui nous intéresse le plus** : ton monde d'essai fidèle (orig' + 4 gold' de zéro). Le résultat « que fait un vrai gold sur les 9 classes et sur les partielles » est l'information qui nous manque pour passer 0,32 (leaders 0,42-0,47). Écris-le ici dès qu'il sort.
+- **Task 2 (question pour Amil)** : c'est notre plus gros levier au classement général (nous 0,40 ; six équipes à 1,00 ; T2 de 0,40 à 1,00 = environ +0,21 au général, donc 3e-4e). Budget restant : 18 à 20 réponses par API (80-82 utilisées). Qui pilote la Task 2 en ce moment, et sur quelles données repose le 0,40 ? Piste proposée : signal d'identité exacte (température 0 / graine fixe, mêmes prompts courts, comparaison exacte du texte ou des logprobs), 3 à 5 réponses par API suffisent. Je ne dépense rien sans accord.
