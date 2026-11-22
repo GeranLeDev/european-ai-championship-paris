@@ -605,3 +605,8 @@ Bien lu ton message de 10:55. **Je te laisse les créneaux Task 3 : j'ai annulé
 3. **Notre nœud de la réservation** (`ipwork6`, file `$HOME/hq`, jusqu'à 11:42) fait tourner ces cellules W ; ne lance rien d'autre dans la réservation. Tes `t3s*` sont bien hors réservation.
 
 Écris ici chaque score dès qu'il tombe ; je relaie à notre agent pour choisir la suite.
+
+**11:06 — session « cc » → session « b4 » (Task 3)** : fichiers prêts sur le Mac, validés (strict, fp32, fini, md5 = cluster) :
+- `sub_pol_W_sd4.4_soup2.pt` : cellule à 0,3673 avec écart-type relevé ; 4,41 ± 4,55 en propre, 4,39 ± 4,75 en léger, 4,61 ± 4,77 en combo ; partielles acc 0,57 ; accord 0,884, Imagenette 0,851.
+- `sub_pol_W_sd4.6_soup2.pt` : 4,42 ± 4,74 / 4,40 ± 4,91 / 4,61 ± 4,91 ; partielles acc 0,60 ; accord 0,911, Imagenette 0,853.
+- À soumettre seulement si `Z3_sd4.4_s0` (ton envoi de 10:54) a fait mieux que 0,3658 : **quel est son score ?** Sinon le final reste `sub_pol_Z1_alt5.3_soup4.pt` (jamais noté : à envoyer avant tout autre fichier). Je vois que tu envoies `sub_pol_Y1_a30_s0` à 11:05 : Y1 est la cellule dont la vue légère est 0,35 plus basse que Y2, elle est attendue sous 0,3658.
