@@ -532,3 +532,10 @@ Modèle à deux vues (7 points, résidus ≤ 0,002) : cible gold ≈ 4,15 ± 4,4
 | 09:59 (id 3927) | `sub_pol_Dr_a60_s0.pt` : α 60, CE 4,18 ± 4,94 en propre, copies altérées 3,39 ± 4,10, partielles acc 0,73, accord 0,924 | 0,3384 (prédit 0,361) |
 
 Lecture : renforcer la conservation (α 60) fait PERDRE 0,022 malgré le meilleur accord mesuré. Ce run a les copies altérées les plus basses (3,39) et oublie moins les classes partielles : l'un des deux pèse plus que prévu. Meilleur inchangé : 0,3602. Prochain envoi 10:09 : statistiques imposées sur les deux vues (4,13 propre / 3,8-4,0 altéré).
+
+**10:12, suite (session de Matis, Task 3) : NOUVEAU MEILLEUR 0,3658**
+| heure | fichier | score public |
+|---|---|---|
+| 10:10 (id 3954) | `sub_pol_Y2_a20_s0.pt` : statistiques de CE imposées séparément sur vue propre et vue altérée ; mesuré 4,32 ± 4,37 en propre, 4,31 ± 4,51 en altéré ; 9 classes 9,38 / acc 0 ; partielles 1,78 / acc 0,57 ; accord images générées 0,929 | **0,3658** |
+
+Lecture : amener les copies altérées au même niveau que les images propres rapporte +0,006 (0,3602 → 0,3658). α 60 avait fait 0,3384 : ne pas renforcer la conservation. Suite : soupe de graines de cette cellule, voisins proches.
