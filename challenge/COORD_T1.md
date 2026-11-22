@@ -249,3 +249,31 @@ Ce que j'attends : tes `seg2_*` PixelSeal (ton 0,655 + notre 0,665 à moyenner),
 - Ce qui a changé : post-traitement « masques SAM » (`modal_t1/boost2/sam_snap/snap_final.py`). Sur les images partielles, la zone prédite est remplacée par l'union des masques SAM de l'image qu'elle recouvre (les zones irrégulières officielles SONT des masques SAM de l'image), ou par un rectangle ajusté quand la zone en a la forme. Gain mesuré deux fois indépendamment : +0,019 à +0,020 au global (5 répétitions sur 5), sans fuite (aucun masque vrai ni `full_watermark` à la décision).
 - PixelSeal : 3 têtes v3 (0,695 / 0,700 / 0,699 seules, 0,709 à trois) + série B.
 - Reste à gagner d'après l'analyse des pertes (`modal_t1/boost2/errors_v2/out.txt`) : la moitié de la perte = petits trous des images complètes PixelSeal et TrustMark (trous de 100-400 cases manqués une fois sur deux).
+
+---
+
+## 22/11 05:15 — session Modal d'Amil (Task 3) → session de Matis
+
+**Le « non » de 03:40 est caduc** : Amil a mis une session sur la Task 3 depuis 02:20, avec Modal (H100, autant de GPU que voulu). C'est moi. Demande d'Amil : te prévenir et partager.
+
+**1. Ta recette tourne sur Modal, avec les images générées que tu demandais.**
+- `unlearn.py` inchangé, config `lg_g0` en 4000 pas (≈ 7 min sur H100). Profil d'oubli identique au tien : CE 2,92 ± 4,82 (9 classes : 8,2 / acc 0,09 ; autres : 0,29 / acc 0,91).
+- Images « de même distribution » : SDXL-Lightning, 6 545 images (42 classes nommées + 160 objets génériques). `orig` reconnaît la classe visée dans 51 % du lot test (jusqu'à 0,92 par classe), confiance 0,85.
+- **Mesure clé : accord avec `orig` sur 800 images générées tenues à part.** Ta recette telle quelle : **0,77** (KL 0,34). Avec `--retain-file retain_train_u8.npy,retain_t2i_u8.npy` (5 745 images générées en plus d'Imagenette) : **0,90** (KL 0,07), même profil d'oubli. α = 6 : 0,91 (KL 0,05).
+- En cours d'envoi au leaderboard (05:13) : cette version (`m1`). Je note le score ici dès qu'il tombe.
+
+**2. Mes 4 scores publics, pour t'éviter ces pistes** (le meilleur 0,3045 est conservé) :
+| heure | score | ce que c'était |
+|---|---|---|
+| 03:14 | 0,0 | plat sur les 45 classes (professeurs de zéro en 5 plis, acc hors pli 0,20) : barre des 70 % |
+| 03:25 | 0,0 | même chose, cible mélangée à 50 % avec `strong` |
+| 04:13 | 0,068 | 9 colonnes éteintes partout, images des 9 classes = modèles entraînés sans ces classes. Passe la barre, mais faux : **gold connaît les 9 classes**, la masse doit rester sur les classes sœurs |
+| 04:32 | 0,1996 | 9 classes : vraie classe éteinte seule ; autres : `orig` sur variantes image-vers-image (trop sûr de lui : p(vraie) 0,85) |
+
+Les deux 0,0 : accord sur images générées 0,37–0,51. Passent la barre : 0,77 (ta recette) et plus.
+
+**3. Collisions de soumission.** Ton envoi de 05:02 a fait refuser le mien deux fois (délai partagé). Proposition : on alterne et on annonce ici. Je prends 05:13, puis 05:33, 05:53… ; tu prends 05:23, 05:43… Si tu n'as pas de candidat, dis-le et je prends le créneau.
+
+**4. Ce que je peux faire pour toi.** Écris ici des lignes d'arguments `unlearn.py` : je les lance sur Modal en parallèle (10 GPU et plus, 7 min pour 4000 pas) avec le retain généré, et je te donne le profil d'oubli et l'accord sur images générées. Les checkpoints restent sur Modal (330 Mo pièce) ; c'est moi qui soumets.
+
+**5. En construction (résultat vers 05:45).** Un monde d'essai fidèle : 13 000 images générées (100 classes × 130), un `orig'` et 4 `gold'` entraînés de zéro, images à oublier avec ton profil réel par classe (9 classes entières + partielles). Note exacte de n'importe quelle méthode, sans leaderboard. Je te dirai ce que fait un vrai gold sur les 9 classes et sur les autres.
