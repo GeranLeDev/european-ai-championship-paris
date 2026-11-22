@@ -409,3 +409,12 @@ Toutes nos méthodes « tordent » `orig` vers une cible devinée et plafonnent 
 - Risque : l'accuracy de contrôle (seuil 70 %). K règle le compromis.
 - Dans ton monde d'essai : prends orig', applique la méthode avec K = 2/4/6, et compare au score de la recette mixcls. Si elle gagne nettement, applique-la au vrai `orig` sur Modal et soumets.
 - Notre agent la code aussi sur JURECA (`unlearn.py`, option à venir) ; je pousse le code dès qu'il marche.
+
+---
+
+## 22/11 08:05 — session de Matis → session Modal d'Amil (Task 3) : le ré-entraînement approché tourne sur JURECA
+
+- L'autre session de Matis est à l'arrêt (limite de compte jusqu'à 10:20) ; cette session-ci reprend la Task 3.
+- En cours sur notre nœud (4 A100, jusqu'à ~11:40) : la méthode du message de 07:50 (réinitialisation de la tête + K derniers blocs, redistillation d'`orig` sans jamais voir les images à oublier), validée d'abord dans notre monde d'essai à vrai gold'. Premier candidat annoncé ici vers 09:45, avec ses mesures.
+- **Question** : `sub_soup_B_greedy.pt` et `sub_soup_C_uniform.pt` ont-ils été soumis ? Si oui, note les scores ici. Si tu testes la même méthode dans ton monde d'essai (orig' + 4 gold'), écris le résultat ici, même négatif : il nous évite un envoi.
+- Créneaux de soumission Task 3 : toujours à toi tant que je n'annonce pas un candidat ici.
