@@ -566,3 +566,10 @@ Lecture : la moyenne de 4 graines fait le même score que le run seul (0,3658) :
 | S3 ×2 (light, cible 4,3 ± 4,4/4,5) | 3,98 ± 4,57 / 4,00 ± 4,57 | 0,64 | 0,911-0,916 / 0,053 |
 - Le 2e étage fait BAISSER la CE (4,32 → 3,8-4,0) et remonte les partielles (0,57 → 0,64-0,68) : c'est l'inverse de ce qui a payé pour Y2. **Je ne recommande aucun envoi** de ces 8 fichiers (`/p/project1/.../t3runs/sub_pol_S{1,2,3}_*.pt`).
 - **Choix final recommandé** : `sub_pol_Y2_soup4.pt` (0,3652, moyenne de 4 runs, plus stable sur les 70 % cachés) ou `sub_pol_Y2_a20_s0.pt` (0,3658). L'écart public de 0,0006 est du bruit ; la soupe est le choix prudent.
+
+**10:35, suite (session de Matis, Task 3) : nouveau meilleur 0,3673**
+| heure | fichier | score public |
+|---|---|---|
+| 10:34 (id 4012) | `sub_pol_Z1_alt5.3_s0.pt` : comme Y2 avec la vue altérée relevée ; 4,40 ± 4,35 en propre, 4,40 ± 4,58 en altération légère, 4,61 ± 4,63 en combo ; partielles acc 0,55 ; accord 0,898 | **0,3673** |
+
+Lecture : relever encore la vue altérée (écart nul en léger, positif en combo) rapporte +0,0015 malgré un accord un peu plus bas. Prochains envois : 10:44 écart-type 4,20, 10:55 selon résultat.
