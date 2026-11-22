@@ -463,3 +463,36 @@ Contexte : leaderboard à 02:21 = 0,41 / 0,41 / 0,39 / 0,38 / 0,35 / 0,35 / 0,34
 - **Tâche `08_t3_er`** (créneau 03:12, 3000 pas) : g0 erase+repair MLP des blocs 9–11 ; g1 erase+repair blocs 10–11 entiers ; g2 recette `lg_g0` + altérations larges ; g3 distillation vers la cible hors pli DINOv2 sans w-stat.
 - **Tâche `09_t3_oof`** (~40 min, worker suivant) : professeurs hors pli dans la vraie architecture puis distillation modèle complet 6000 pas sans w-stat (variante standard et variante « 9 classes »), plus les deux meilleures sondes de 08 prolongées.
 - Le k-fold sur le GPU du login (RTX 8000 partagée, bfloat16 émulé) n'a pas rendu un pli en 13 min : arrêté.
+
+### 8.9 Résultats des tâches 08 et 09, banc à vrai gold (03:10–04:35)
+**Tâche `08_t3_er`** (mesuré, proxy) :
+- erase + repair (blocs 6–11 ou 8–11 réinitialisés + tête, réparation sur Imagenette + DiffusionDB + CutMix) : accord retain proxy 0,48 / 0,52, KL 0,75 / 0,59. Passerait très probablement sous la porte des 70 %. Piste fermée.
+- Mesure locale associée (`tail_er.py`) : réinitialiser le MLP du bloc 11 + la tête puis réparer sur Imagenette seul redonne acc 0,993 sur le forget set. La mémorisation est dans les features profondes, pas dans la tête.
+- `fb_g2` cible « sœurs » (85 % de la masse des images des 9 classes sur les sœurs non plafonnées, reste = mixcls, départ `lg_g0`, checkpoint du pas 2500) : CE 3,47 ± 4,84, retain proxy 0,859 / 0,052. Candidat `candidates/sub_fb_g2_sis.pt`.
+- `fb_g3` distillation vers la cible hors pli DINOv2 sans w-stat : retour au profil « medium » (acc forget 0,91, CE 0,27). Non recommandé.
+
+**Tâche `09_t3_oof`** (mesuré) :
+- Professeur hors pli standard `oofA` (4 plis, blocs 8–11 + tête réinitialisés, 600 pas) : acc hors pli 0,37 (sous-entraîné) ; garde-fou déclenché, `fc_g0` retombé sur la cible DINOv2 (profil « medium », non candidat).
+- Professeur sans aucune image des 9 classes `oof9` : acc 0,48 sur les 36 autres classes, 0,000 sur les 9. Distillation modèle complet 6000 pas sans w-stat → `fc_g1` : CE 2,78 ± 3,00 (9 classes 6,53 / acc 0,002 ; autres 0,91 / acc 0,69), retain proxy 0,858 / 0,065. Sans y être forcé, le modèle envoie les images des 9 classes vers leurs sœurs (6,7,8→5 ; 29,30,31,33→32 ; 38→36,35,37 ; 0→2,3). Candidat `candidates/sub_fc_g1_oof9.pt`.
+
+**Banc à vrai gold (`bench.py`)** : monde = les 3 500 images (pseudo-labels) ; contrôle 531 (15 % stratifié), forget' 860 (classes 0, 7, 30 entières + 20 % des autres), retain' 2109. orig' et 2 gold' = ViT-B appris de zéro, 3000 pas.
+- orig' mémorise (forget' acc 1,000) mais ne fait que 0,205 sur le contrôle ; gold' 0,18 / 0,17. **Régime bien plus faible que la vraie tâche : lire le sens des effets, pas les valeurs.**
+- gold' sur forget' : CE 8,42 ± 5,01, bimodal (quantiles 10/50/90 % : 0,86 / 9,5 / 14,2). Classes entièrement retirées : acc 0,000, masse 0,004, CE 12,6, prédictions vers les sœurs. Autres classes : acc 0,21, CE 5,8.
+
+| méthode appliquée à orig' | score | forget (ms, ps) | retain réel in-distribution (ratio acc, KL) | retain proxy Imagenette (accord, KL) |
+|---|---|---|---|---|
+| gold' lui-même | 0,33 / 0,32 | 0,90 (0,99, 0,91) | 0,37 / 0,35 (0,88, 1,39) | — |
+| recette lg (mixcls, 2000 pas) | 0,168 | 0,242 (0,45, 0,54) | 0,695 (0,972, 0,399) | 0,850 (0,872, 0,026) |
+| lg + retain CutMix/DiffusionDB | 0,160 | 0,217 (0,43, 0,51) | 0,740 (0,954, 0,290) | 0,853 (0,875, 0,025) |
+| lg court (400 pas) | 0,162 | 0,235 (0,44, 0,54) | 0,689 (0,991, 0,437) | 0,821 (0,854, 0,041) |
+| erase + repair | 0,057 | 0,086 (0,15, 0,59) | 0,661 (1,000, 0,513) | 0,361 (0,474, 0,315) |
+| oracle (distillation vers gold' réel, sans w-stat) | 0,251 | 0,420 (0,48, 0,88) | 0,597 (0,890, 0,490) | 0,764 (0,802, 0,050) |
+
+Lectures :
+1. **Dégât collatéral invisible confirmé** : la KL réelle sur le contrôle in-distribution est ~15 fois celle que voit le proxy Imagenette (0,40 contre 0,026). Le retain de substitution CutMix + DiffusionDB la réduit à 0,29.
+2. **Même avec la cible parfaite, sans terme de statistiques, ms plafonne à 0,48** (CE 4,2 ± 2,8 au lieu de 8,4 ± 5,0) : la moyenne d'ensemble est plus douce qu'un gold individuel. Il faut un terme moyenne/écart-type au niveau d'un modèle.
+3. Classes entièrement retirées → sœurs.
+4. Le nombre de pas compte peu sur le banc ; erase + repair est mauvais.
+- Runs « professeur » du banc absents (professeurs trop faibles sur 645 images). Le premier passage de l'évaluation a planté (autocast imbriqué), corrigé.
+
+**Tâche `11_t3_sis`** (en file, 2800 pas depuis `lg_g0`, statistiques par population `--pop-stat`) : lignes des 9 classes = répartition du professeur `oof9`, reste = mixcls ; g0 CE visée 9,7 sur les 9 classes ; g1 12,7 ; g2 = g0 + retain CutMix/DiffusionDB ; g3 = g2 avec α = 10. Écritures de checkpoint rendues non fatales.
