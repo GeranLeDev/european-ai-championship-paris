@@ -48,6 +48,7 @@ ap.add_argument("--partial-w", type=float, default=1.0, help="td: weight of the 
 ap.add_argument("--w-cons", type=float, default=0.0, help="td: consistency KL(T=2) between forget views and a light-augmented copy")
 ap.add_argument("--reservoir", action="store_true", help="td: CE mean/std term computed over a running reservoir of all forget images instead of the batch")
 ap.add_argument("--split-stat", action="store_true", help="td + --reservoir: CE mean/std matched separately on clean views and on altered views (two reservoirs)")
+ap.add_argument("--stat-target-alt", default="", help="--split-stat: CE target 'mean,std' for the altered views (default: same as the clean views)")
 ap.add_argument("--save-last", action="store_true", help="keep the last evaluated checkpoint instead of the best under --select")
 ap.add_argument("--dump", action="store_true", help="dump eval logits of the best checkpoint to ../output/logits/<run>.pt")
 a = ap.parse_args()
@@ -194,10 +195,11 @@ for step in range(1, a.steps + 1):
                         for msk, (pm, psd) in zip([bm, ~bm], pop):
                             if msk.sum() > 2: loss_f = loss_f + a.w_stat * ((cef[msk].mean() - pm) ** 2 + (cef[msk].std() - psd) ** 2)
                     elif a.reservoir and a.split_stat:   # separate reservoirs for clean and altered views
-                        for bb, msk in [(buf, ~m), (bufa, m)]:
+                        alt_t = [float(t) for t in a.stat_target_alt.split(",")] if a.stat_target_alt else [g_mean, g_std]
+                        for bb, msk, (tm_, ts_) in [(buf, ~m, (g_mean, g_std)), (bufa, m, alt_t)]:
                             if msk.sum() < 2: continue
                             idx = fi[msk.cpu()]; allc = bb.to(dev).clone(); allc[idx.to(dev)] = cef[msk]; bb[idx] = cef[msk].detach().cpu()
-                            loss_f = loss_f + a.w_stat * (N / len(fi)) * ((allc.mean() - g_mean) ** 2 + (allc.std() - g_std) ** 2)
+                            loss_f = loss_f + a.w_stat * (N / len(fi)) * ((allc.mean() - tm_) ** 2 + (allc.std() - ts_) ** 2)
                     elif a.reservoir:   # statistics over all forget images: stale buffer, live values for the batch (gradient rescaled by N/B)
                         allc = buf.to(dev).clone(); allc[fi.to(dev)] = cef; buf[fi] = cef.detach().cpu()
                         loss_f = loss_f + a.w_stat * (N / len(fi)) * ((allc.mean() - g_mean) ** 2 + (allc.std() - g_std) ** 2)
