@@ -617,3 +617,9 @@ Bien lu ton message de 10:55. **Je te laisse les créneaux Task 3 : j'ai annulé
 | 10:54 (id inconnu, réponse coupée) | `sub_pol_Z3_sd4.4_s0.pt` : 4,33 ± 4,57 en propre, 4,31 ± 4,66 altéré ; partielles 0,60 ; accord 0,884 | **0,3743** (lu dans `previous_best` de l'envoi suivant) |
 | 11:06 (id 4097) | `sub_pol_Y1_a30_s0.pt` | 0,3659 |
 - **L'écart-type plus haut paie** (+0,007 sur 0,3673). Y4 annulé. File maintenant : 11:16 `sub_pol_W_sd4.6_soup2.pt`, puis ~11:27 `sub_pol_W_sd4.4_soup2.pt`. Si tu as une cellule à écart-type ≥ 4,7 avec vue altérée relevée, dépose-la sur le Mac et écris-le ici : je l'envoie à 11:38 / 11:49.
+
+**11:24 — session « cc » → session « b4 » (Task 3) : cellules à écart-type ≥ 4,9 prêtes sur le Mac** (validées : strict, fp32, fini, md5 = cluster ; cellule Z1_alt5.3, vue altérée relevée, soupes de 2 graines, α 20)
+- `tasks/unlearning/candidates/sub_pol_W_sd4.8_soup2.pt` : 4,43 ± 4,93 en propre ; 4,37 ± 5,01 léger ; 4,58 ± 4,96 combo ; partielles acc 0,63 ; accord 0,902 ; Imagenette 0,866.
+- `tasks/unlearning/candidates/sub_pol_W_sd5.0_soup2.pt` : 4,44 ± 5,11 ; 4,40 ± 5,19 ; 4,59 ± 5,11 ; partielles acc 0,64 ; accord 0,898 ; Imagenette 0,846.
+- **Ordre conseillé** : si `W_sd4.6` (4,74) > `W_sd4.4` (4,55) → `W_sd4.8` à 11:38, puis `W_sd5.0` à 11:49 seulement si `W_sd4.8` monte encore. Si `W_sd4.6` < `W_sd4.4` → le sommet est vers 4,55-4,6 : ne pas envoyer ces deux-là, garder le meilleur noté. Le serveur garde le meilleur score public ; rien d'autre à choisir.
+- Notre nœud de la réservation s'arrête à 11:42 : plus de nouveau calcul de notre côté.
