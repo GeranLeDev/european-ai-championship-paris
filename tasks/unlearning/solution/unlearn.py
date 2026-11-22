@@ -47,6 +47,7 @@ ap.add_argument("--nb-k", type=int, default=0, help="td: capped-class rows of th
 ap.add_argument("--partial-w", type=float, default=1.0, help="td: weight of the forget KL on partial-class images (capped-class images keep 1)")
 ap.add_argument("--w-cons", type=float, default=0.0, help="td: consistency KL(T=2) between forget views and a light-augmented copy")
 ap.add_argument("--reservoir", action="store_true", help="td: CE mean/std term computed over a running reservoir of all forget images instead of the batch")
+ap.add_argument("--split-stat", action="store_true", help="td + --reservoir: CE mean/std matched separately on clean views and on altered views (two reservoirs)")
 ap.add_argument("--save-last", action="store_true", help="keep the last evaluated checkpoint instead of the best under --select")
 ap.add_argument("--dump", action="store_true", help="dump eval logits of the best checkpoint to ../output/logits/<run>.pt")
 a = ap.parse_args()
@@ -93,6 +94,7 @@ if a.nb_k > 0:   # soft top-k neighbour target for the capped classes
     Wn = F.normalize(orig.head.weight.detach().float().cpu(), dim=1); sim = Wn @ Wn.T; sim.fill_diagonal_(-1e9); tv, ti = sim.topk(a.nb_k, 1)
     nbd = torch.zeros(100, 100).scatter_(1, ti, F.softmax(tv / 0.1, 1)); q = q.clone(); q[capm] = 0.5 * nbd[y[capm]] + 0.5 * H["strong"]["p2"][capm]
 buf = F.cross_entropy(logits_of(sub, X, dev), y, reduction="none") if a.reservoir else None
+bufa = F.cross_entropy(logits_of(sub, X, dev, aug=getattr(augs, a.faug)), y, reduction="none") if a.split_stat else None
 sub.requires_grad_(False)
 train_mods = [sub.blocks[i] for i in range(12 - a.blocks, 12)] + [sub.norm, sub.head]
 if a.blocks >= 12:
@@ -191,6 +193,11 @@ for step in range(1, a.steps + 1):
                         bm = capm[fi].to(dev)
                         for msk, (pm, psd) in zip([bm, ~bm], pop):
                             if msk.sum() > 2: loss_f = loss_f + a.w_stat * ((cef[msk].mean() - pm) ** 2 + (cef[msk].std() - psd) ** 2)
+                    elif a.reservoir and a.split_stat:   # separate reservoirs for clean and altered views
+                        for bb, msk in [(buf, ~m), (bufa, m)]:
+                            if msk.sum() < 2: continue
+                            idx = fi[msk.cpu()]; allc = bb.to(dev).clone(); allc[idx.to(dev)] = cef[msk]; bb[idx] = cef[msk].detach().cpu()
+                            loss_f = loss_f + a.w_stat * (N / len(fi)) * ((allc.mean() - g_mean) ** 2 + (allc.std() - g_std) ** 2)
                     elif a.reservoir:   # statistics over all forget images: stale buffer, live values for the batch (gradient rescaled by N/B)
                         allc = buf.to(dev).clone(); allc[fi.to(dev)] = cef; buf[fi] = cef.detach().cpu()
                         loss_f = loss_f + a.w_stat * (N / len(fi)) * ((allc.mean() - g_mean) ** 2 + (allc.std() - g_std) ** 2)
