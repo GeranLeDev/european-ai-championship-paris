@@ -250,6 +250,7 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3); ap.add_argument("--use-what", type=int, default=0); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=4); ap.add_argument("--eval-every", type=int, default=500); ap.add_argument("--n-synval", type=int, default=20)
     ap.add_argument("--arch", default="pix", choices=("pix", "feat", "unet")); ap.add_argument("--bb-lr", type=float, default=0.1, help="lr multiplier of the extractor")
+    ap.add_argument("--export-every", type=int, default=0, help="also export probabilities every N steps (the job may be cut)")
     ap.add_argument("--probs-dir", default=""); ap.add_argument("--pipeline", default="seg2")
     ap.add_argument("--amp", type=int, default=1); ap.add_argument("--pix", type=int, default=0, help="1 = add the full-resolution image branch (--arch feat)")
     ap.add_argument("--init", default="", help="checkpoint to initialise from (tensors with matching names and shapes)")
@@ -310,6 +311,27 @@ def main():
         atomic_save(dict(model=model.state_dict(), opt=opt.state_dict(), step=step, spent=spent + time.time() - t0, hist=hist, args=vars(a)), last)
         (out / "hist.json.tmp").write_text(json.dumps(hist)); os.replace(out / "hist.json.tmp", out / "hist.json")
 
+    te = [] if a.no_test else [r for g in gs for r in real_items(g, a.data, "test")]
+
+    def export():
+        """Probabilities of all official train images and of the test images (same files rewritten, atomic, re-read)."""
+        res = dict(names=np.array([r["name"] for r in real]), probs=predict(model, real, dev, a.use_what).astype(np.float16),
+                   val=np.array([r["val"] for r in real]), kind=np.array([r["kind"] for r in real]), method=np.array([r["method"] for r in real]))
+        if te:
+            res.update(test_names=np.array([r["name"] for r in te]), test_probs=predict(model, te, dev, a.use_what).astype(np.float16),
+                       test_agree=np.array([r["agree"] for r in te], np.float32), test_method=np.array([r["method"] for r in te]))
+        atomic_save(res, out / "pred.npz", kind="npz")
+        if a.probs_dir:
+            pd = Path(a.probs_dir); pd.mkdir(parents=True, exist_ok=True)
+            for m in methods:
+                sel = res["method"] == m
+                atomic_save(dict(names=res["names"][sel], probs=res["probs"][sel], used_in_training=~res["val"][sel]), pd / f"{a.pipeline}_{m}_train.npz", kind="npz")
+                if te:
+                    sel = res["test_method"] == m
+                    atomic_save(dict(names=res["test_names"][sel], probs=res["test_probs"][sel]), pd / f"{a.pipeline}_{m}_test.npz", kind="npz")
+                assert len(np.load(pd / f"{a.pipeline}_{m}_train.npz")["names"]) == int((res["method"] == m).sum())
+        print(f"exported probabilities at step {step}", flush=True)
+
     while True:
         el = spent + time.time() - t0
         if el >= budget or step >= a.max_steps: break
@@ -328,23 +350,10 @@ def main():
         if step % 50 == 0:
             print(f"step {step} loss {tl / nl:.4f} lr {lr:.2e} {el / 60:.1f} min  queue {pre.q.qsize() if pre else 0} {('gen err ' + pre.err) if pre and pre.err else ''}", flush=True); tl = 0.0; nl = 0
         if step % a.eval_every == 0: evaluate()
+        if a.export_every and step % a.export_every == 0: export()
     evaluate()
     if pre: pre.stop = True
-    res = dict(names=np.array([r["name"] for r in real]), probs=predict(model, real, dev, a.use_what).astype(np.float16),
-               val=np.array([r["val"] for r in real]), kind=np.array([r["kind"] for r in real]), method=np.array([r["method"] for r in real]))
-    if not a.no_test:
-        te = [r for g in gs for r in real_items(g, a.data, "test")]
-        res.update(test_names=np.array([r["name"] for r in te]), test_probs=predict(model, te, dev, a.use_what).astype(np.float16),
-                   test_agree=np.array([r["agree"] for r in te], np.float32), test_method=np.array([r["method"] for r in te]))
-    atomic_save(res, out / "pred.npz", kind="npz")
-    if a.probs_dir:                                          # exchange format for the ensembling bench
-        pd = Path(a.probs_dir); pd.mkdir(parents=True, exist_ok=True)
-        for m in methods:
-            sel = res["method"] == m
-            atomic_save(dict(names=res["names"][sel], probs=res["probs"][sel], used_in_training=~res["val"][sel]), pd / f"{a.pipeline}_{m}_train.npz", kind="npz")
-            if not a.no_test:
-                sel = res["test_method"] == m
-                atomic_save(dict(names=res["test_names"][sel], probs=res["test_probs"][sel]), pd / f"{a.pipeline}_{m}_test.npz", kind="npz")
+    export()
     print("wrote", out / "pred.npz", "total", f"{(time.time() - t_start) / 60:.1f} min", flush=True)
 
 

@@ -145,3 +145,34 @@ Ce que j'attends : tes `seg2_*` PixelSeal (ton 0,655 + notre 0,665 à moyenner),
 - Changement de protocole, comme annoncé : ce fichier utilise **deux séries** de réseaux. Série A = sources officielles paires, notée sur les impaires ; série B = sources impaires, notée sur les paires. Chaque image de validation n'est prédite que par la série qui ne l'a pas vue ; le test moyenne les deux. Donc **mes probabilités « train » ne sont plus limitées à la moitié impaire** : ne les mélange à tes réseaux que série par série.
 - Meilleurs réseaux seuls (série A, moitié impaire) : TrustMark U-Net EfficientNet-B6 + image x2 = 0,760 ; StegaStamp B4 + x2 = 0,926 ; PixelSeal tête sur le détecteur = 0,665-0,668 (deux graines).
 - Cadre : le décodeur TrustMark relit le mieux les images officielles complètes dans un cadre environ 5 à 10 % plus grand que l'image (marge médiane par zoom : 0,95 → 1,0 ; 1,05 → 1,0 ; 1,15 → 0,98 ; 1,25 → 0,48), alors que sur nos propres marquages le pic est vers 0,90-0,95 (1,15 → 0,64). Cohérent avec ton « cadre décalé ». Je refabrique donc les exemples avec un cadre agrandi de 0 à 20 % (`modal_t1/app_data_v2.py --jitter 0.75 --strength`, recette `gen_lib_v2.py`).
+
+---
+
+## 22/11 02:30 — session de Matis (JURECA, pipeline seg2) → sessions d'Amil
+
+**Nos probabilités sont dans git** : `tasks/Hackathon_Watermark_Localisation_Task/probs/` (format d'échange, `used_in_training` exact).
+- `seg2_pixelseal_{train,test}.npz`, `seg2_trustmark_{train,test}.npz` : tête de segmentation sur l'extracteur officiel affiné (PixelSeal : ConvNeXt du détecteur, float32 ; TrustMark : ResNet-50 du décodeur), 2 échelles (256 et 512), accord par position avec le message connu en canal, générateur en ligne (`solution/wmgen.py`, `solution/train_seg2.py --arch feat`). 70-75 min sur A100.
+- `seg2b_pixelseal_*` : 2e graine PixelSeal (extracteur moins affiné).
+- `jureca_unet_stegastamp_*` : ta recette U-Net ResNet-50 avec notre générateur, 38 min seulement.
+- **Attention** : `seg2_*` et `seg2b_*` ont été entraînés avec notre ancien pli (120 images réelles vues par outil, dont des impaires). `used_in_training=False` pour 50 images par outil seulement ; la validation propre commune (impaires ∩ non vues) tombe à 23 images (PixelSeal) et 27 (TrustMark). `jureca_unet_stegastamp` respecte ta convention (aucune impaire vue, 95 images propres).
+
+**Chiffres seuls (mIoU officiel)**
+| Outil | notre pli de 150 (50 par outil) | validation propre commune |
+|---|---|---|
+| PixelSeal seg2 | 0,695 (rect 0,67 / irrég. 0,77 / complet 0,68) | 0,698 (n=23) ; ta série A exportée : 0,589 |
+| PixelSeal seg2b | 0,675 | non lancé |
+| TrustMark seg2 | 0,711 (rect 0,77 / irrég. 0,63 / complet 0,71) | 0,743 avec rectangles (n=27) ; ta série A : 0,672 |
+| StegaStamp jureca_unet | — | 0,822 (n=95) ; ta série A : 0,848 |
+
+**Banc `solution/ensemble.py eval --pipelines amil,seg2,jureca_unet --pp thr,K`** (10 × 5 plis, tes fichiers `amil_*` = série A du 21/11, pas tes réseaux récents) :
+- PixelSeal : moyenne en logit 0,707 contre 0,698 pour seg2 seul (gain +0,009, IC [+0,002 ; +0,018], n=23).
+- TrustMark : seg2 seul retenu, 0,743 ; la moyenne n'apporte rien (+0,000, n=27).
+- StegaStamp : moyenne en logit 0,857 contre 0,848 pour toi seul (gain +0,009, IC [−0,001 ; +0,021], n=95).
+- Global 0,769 en validation croisée, mais sur 23 et 27 images pour deux outils : IC à ±0,07, à ne pas lire au centième.
+- Fichier écrit, **non soumis** : `solution/submission_ens_amilA_seg2.pt` (Mac de Matis, ignoré par git). Il n'utilise pas tes réseaux récents (0,784 local), donc il n'est pas candidat tel quel.
+
+**Ce que je propose**
+- PixelSeal est le seul outil où nous sommes devant ton meilleur chiffre (≈ 0,70 contre 0,668), et la méthode est différente : c'est là que la moyenne a le plus de chances de payer. Pour le vérifier proprement il faut tes probabilités PixelSeal récentes, série A seule (impaires non vues), dans `probs/` sous un autre nom de pipeline (ex. `amil4a_pixelseal_*`).
+- En cours sur JURECA jusqu'à ~03:15 (tâche `07_t1_seg3`) : 3 PixelSeal + 1 TrustMark, **même architecture mais dans ta convention** (aucune image impaire vue). Fichiers à venir dans `probs/` : `jureca_psa_pixelseal_*`, `jureca_psb_pixelseal_*`, `jureca_psc_pixelseal_*`, `jureca_tma_trustmark_*`, validés sur les 86 / 90 impaires.
+- Cadre : d'accord avec ta mesure. De notre côté, ré-embarquer le même message sur une image complète officielle ajoute autant de résidu que sur une image propre (1,34 contre 0,75 pour un marquage du kit dans le cadre exact) ; un décalage de 8 px ou un zoom de 90 % suffit à reproduire cela. Notre générateur marque dans un cadre agrandi de 0 à 32 px par côté (remplissage miroir).
+- Aucune soumission de notre côté : le meilleur fichier est le tien.
