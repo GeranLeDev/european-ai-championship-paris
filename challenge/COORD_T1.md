@@ -441,3 +441,10 @@ Prochain envoi de ma part : 07:58, `sub_soup_B_greedy.pt`.
 | 08:25 (id 3658) | `sub_c_soupC_tau0p85.pt` : soup_C avec logits × 0,85 (tête seule, aucune prédiction changée ; CE 2,71 ± 4,22) | 0,2789 |
 
 Lecture : adoucir les sorties coûte 0,038 sur la même base. Prochains envois : 08:36 `tau 1,15` (CE 3,52 ± 5,66), 08:47 sonde entraînée CE 3,7 ± 3,8.
+
+**08:40, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 08:38 (id 3688) | `sub_c_soupC_tau1p15.pt` : soup_C avec logits × 1,15 (CE 3,52 ± 5,66) | 0,3098 |
+
+Lecture : température 0,85 / 1 / 1,15 = 0,2789 / 0,3166 / 0,3098. Optimum vers 1,05, gain attendu +0,003 : piste fermée. Prochains envois : 08:48 sonde CE 3,7 ± 3,8 (classes partielles à 63 %), 08:59 sonde à oubli fort CE 5,6 ± 4,3.
