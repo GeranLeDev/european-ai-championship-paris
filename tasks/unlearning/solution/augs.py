@@ -55,3 +55,22 @@ def medium(x):
 
 def xstrong(x):   # stronger than 'strong' (public LB: strong >> medium, so probe further in that direction)
     return noise(blur(color(flip(rrc(x, (0.08, 0.35))), 0.5), 0.6), 0.08)
+
+
+def rescale(x, lo=0.4, hi=0.9):   # down-up resize (resolution loss, JPEG-like softening)
+    s = torch.empty(1).uniform_(lo, hi).item(); h = max(32, int(x.shape[-1] * s))
+    return F.interpolate(F.interpolate(x, size=(h, h), mode="bilinear", align_corners=False, antialias=True), size=x.shape[-2:], mode="bicubic", align_corners=False).clamp(-1, 1)
+
+
+def quant(x, q=24):   # coarse 8x8 block + colour quantisation (crude JPEG stand-in)
+    y = ((x + 1) * 127.5 / q).round() * q / 127.5 - 1
+    return (0.5 * y + 0.5 * F.interpolate(F.avg_pool2d(x, 2), scale_factor=2, mode="nearest")).clamp(-1, 1)
+
+
+def wide(x):   # broad family of 'altered copies': each sample gets one of several alteration types
+    out = x.clone(); k = torch.randint(0, 7, (x.shape[0],), device=x.device)
+    fns = [light, medium, rescale, lambda z: noise(z, 0.08), lambda z: blur(z, 1.0), quant, lambda z: color(flip(z), 0.4)]
+    for i, fn in enumerate(fns):
+        m = k == i
+        if m.any(): out[m] = fn(x[m])
+    return out

@@ -14,7 +14,7 @@ import numpy as np, torch, torch.nn.functional as F
 from common import *; import augs, scoring
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--method", default="td", choices=["td", "scrub", "ga"])
+ap.add_argument("--method", default="td", choices=["td", "scrub", "ga", "er"])
 ap.add_argument("--target", default="medium")
 ap.add_argument("--also", default="", help="comma list of extra hypotheses to report at each eval")
 ap.add_argument("--select", default=None, help="hypothesis used to pick best checkpoint (default: same as target)")
@@ -35,6 +35,11 @@ ap.add_argument("--device"); ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--out", default="runs/tmp")
 ap.add_argument("--init", default=None, help="warm start: state dict to load into sub (orig stays the reference)")
 ap.add_argument("--retain", default="imagenette", choices=["imagenette", "cutmix", "both"], help="retain proxy: Imagenette (OOD) and/or CutMix composites of forget images (in-distribution), target = orig")
+ap.add_argument("--retain-file", default="retain_train_u8.npy", help="retain proxy images in cache/ (e.g. retain_ddb_u8.npy = DiffusionDB)")
+ap.add_argument("--faug", default="light", choices=["light", "wide"], help="alteration family applied to forget views")
+ap.add_argument("--reinit", default="", help="er: comma list of blocks to re-initialise (head is always re-initialised)")
+ap.add_argument("--reinit-mlp", action="store_true", help="er: re-initialise only the MLP sub-blocks (norm2, mlp, ls2) of --reinit blocks")
+ap.add_argument("--save-last", action="store_true", help="keep the last evaluated checkpoint instead of the best under --select")
 ap.add_argument("--dump", action="store_true", help="dump eval logits of the best checkpoint to ../output/logits/<run>.pt")
 a = ap.parse_args()
 dev = pick_device(a.device); set_device(dev); torch.manual_seed(a.seed); np.random.seed(a.seed)
@@ -44,8 +49,10 @@ autocast = lambda: torch.autocast(device_type=dev if dev != "mps" else "mps", dt
 
 # ---------------- data
 X = load_forget(); L0 = torch.load(CACHE / "orig_forget_logits.pt"); y = L0.argmax(1); N = len(X)
-R = torch.from_numpy(np.load(CACHE / "retain_train_u8.npy")); RV = torch.from_numpy(np.load(CACHE / "retain_val_u8.npy"))
+R = torch.cat([torch.from_numpy(np.load(CACHE / f)) for f in a.retain_file.split(",")]); RV = torch.from_numpy(np.load(CACHE / "retain_val_u8.npy"))
 H = scoring.make_hypotheses(CACHE)
+if a.method == "er":   # erase + repair: forget outputs are not imposed, they emerge; target only used for reporting
+    a.target = a.select or "mixcls"
 if a.target.startswith("soft:"):
     tau = float(a.target.split(":")[1]); q = F.softmax(L0 / (2 * tau), 1); ce_t = F.cross_entropy(L0 / tau, y, reduction="none")[:, None]
 elif a.target == "mix":   # hedges (see feat_unlearn.py)
@@ -64,6 +71,13 @@ orig = load_orig(dev); orig.requires_grad_(False)
 sub = copy.deepcopy(orig)
 if a.init:
     sub.load_state_dict(torch.load(a.init, map_location="cpu", weights_only=True), strict=True)
+if a.method == "er":
+    fresh = tt.build_model().to(dev)
+    for i in [int(b) for b in a.reinit.split(",") if b]:
+        if a.reinit_mlp:
+            for nm in ["norm2", "mlp", "ls2"]: getattr(sub.blocks[i], nm).load_state_dict(getattr(fresh.blocks[i], nm).state_dict())
+        else: sub.blocks[i].load_state_dict(fresh.blocks[i].state_dict())
+    sub.head.load_state_dict(fresh.head.state_dict()); del fresh
 sub.requires_grad_(False)
 train_mods = [sub.blocks[i] for i in range(12 - a.blocks, 12)] + [sub.norm, sub.head]
 if a.blocks >= 12:
@@ -123,7 +137,7 @@ for step in range(1, a.steps + 1):
     xf = to_input(X[fi], dev)
     if a.p_aug > 0:
         m = torch.rand(len(fi), device=dev) < a.p_aug
-        if m.any(): xf[m] = augs.light(xf[m])
+        if m.any(): xf[m] = getattr(augs, a.faug)(xf[m])
     xr = augs.medium(to_input(R[ri], dev))
     if a.retain != "imagenette":   # in-distribution retain: CutMix of two medium-augmented forget images
         nc = a.bs_r if a.retain == "cutmix" else a.bs_r // 2
@@ -144,6 +158,8 @@ for step in range(1, a.steps + 1):
                 loss = -F.kl_div(F.log_softmax(Lf / T, 1), F.softmax(tf / T, 1), reduction="batchmean") * T * T
             else:
                 Lr = sub(xr).float(); loss = a.alpha * kl2(Lr, F.softmax(tr / 2, 1))
+        elif a.method == "er":
+            loss = kl2(sub(xr).float(), F.softmax(tr / 2, 1))
         else:
             Lall = sub(torch.cat([xf, xr])).float(); Lf, Lr = Lall[: len(fi)], Lall[len(fi):]
             loss_r = kl2(Lr, F.softmax(tr / 2, 1))
@@ -167,7 +183,7 @@ for step in range(1, a.steps + 1):
         if a.method == "scrub" and res["medium"]["clean"]["ce_mean"] >= H[sel]["ce"].mean().item():
             stopped_max = True
         f = res[sel]["score"]["final"]
-        if f > best[0]:
+        if f > best[0] or a.save_last:
             best = (f, step); torch.save({k: v.detach().cpu().float() for k, v in sub.state_dict().items()}, out / "best.tmp"); (out / "best.tmp").replace(out / "best.pt")
             if a.dump:
                 ld = ROOT / "output" / "logits"; torch.save(dict(Le=logits_t(sub, Xe), La=logits_t(sub, Xa), Lr=logits_of(sub, RVe, dev)), ld / f".{out.name}.tmp"); (ld / f".{out.name}.tmp").replace(ld / f"{out.name}.pt")
