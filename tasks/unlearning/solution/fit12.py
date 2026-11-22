@@ -6,7 +6,7 @@ Usage: python fit12.py [--save fit12.pt]   (needs cache/logits/*.pt)"""
 import argparse, glob, os, itertools, math, torch, torch.nn.functional as F
 from common import CACHE; import scoring
 PUBLIC = {"r2_g0": 0.0798, "r2_g1": 0.2384, "r2_g2": 0.2616, "m1_g2": 0.2736, "ma_g1": 0.2806, "ma_g0": 0.2893, "m3_g2": 0.2046,
-          "m3_g3": 0.2080, "st_g3": 0.3043, "st_g1": 0.3025, "lg_g0": 0.3045, "lg_g1": 0.3019}
+          "m3_g3": 0.2080, "st_g3": 0.3043, "st_g1": 0.3025, "lg_g0": 0.3045, "lg_g1": 0.3019, "lg0_bias4": 0.2348}
 LD = CACHE / "logits"; O = torch.load(LD / "orig.pt"); ev = O["ev"]; y = torch.load(CACHE / "orig_forget_logits.pt").argmax(1)[ev]
 B = {b: torch.load(CACHE / f"gold_{b}.pt") for b in os.environ.get("FIT_BASES", "medium,strong,xstrong").split(",")}
 B = {b: dict(p2=G["p2"][ev], ce=G["ce"][ev]) for b, G in B.items()}
@@ -51,7 +51,7 @@ def predict(r, top):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument('--save', default='fit12.pt'); a = ap.parse_args()
-    runs = {os.path.basename(f)[:-3]: torch.load(f) for f in sorted(glob.glob(str(LD / '*.pt'))) if not f.endswith('orig.pt') and not os.path.basename(f).startswith('e_')}
+    runs = {os.path.basename(f)[:-3]: torch.load(f) for f in sorted(glob.glob(str(LD / '*.pt'))) if not f.endswith('orig.pt') and not os.path.basename(f).startswith(('e_', 't_'))}
     W = [w for w in itertools.product([0, .25, .5, .75, 1], repeat=len(B)) if abs(sum(w) - 1) < 1e-6]
     DC = [0, 1, 2, 3, 4, 6, 8, 12, 20]; DO = [0, 0.5, 1, 2] if len(B) == 3 else [0, 1, 2]; CM = ["pool", "img"] if len(B) == 3 else ["pool"]
     RET = [(aa, c) for aa in [0, 1, 2] for c in [0, 0.5, 1, 2, 4, 8]]
