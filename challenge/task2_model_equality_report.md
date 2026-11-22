@@ -2,6 +2,64 @@
 
 _Rédigé le 21/11 ~17h. Aucune requête envoyée au serveur (pas de clé API). Code : `tasks/model_equality/solution/`._
 
+## Résultat final (22/11, 10h00) : 1,00 au classement public — à lire en premier
+
+Soumission `tasks/model_equality/solution/out/t2_v3_B32_C13_A24.csv`. Les sections suivantes (0 à 6) décrivent le travail de la veille sur les ref ; la méthode qui a marqué est celle-ci.
+
+### Parcours des scores publics
+| Heure | Fichier (`solution/out/`) | Changement | Score public |
+|---|---|---|---|
+| 05:25 | soumission 3087 (session d'Amil) | 3 familles de 11 ; base de 9, 7 et 8 API | 0,40 |
+| 08:57 | `t2_v1_six_apart.csv` | base réduite à 5 API par famille, les 6 autres à part | 0,70 |
+| 09:28 | `t2_v2_B32.csv` | ep-32 rejoint la base de B | 0,85 |
+| 09:58 | `t2_v3_B32_C13_A24.csv` | ep-13 rejoint la base de C, ep-24 celle de A | **1,00** |
+
+### Réponse retenue
+| Famille | Modèle public | Base = même modèle (6 API) | Modèles distincts (5 API, chacune seule) |
+|---|---|---|---|
+| A | Qwen2.5-3B-Instruct | 24 (plain), 04 (watermark), 02 (consigne), 23 (personnage), 33 (T = 1,0), 14 (tirage tronqué) | 01, 12, 17, 18, 25 |
+| B | Qwen2.5-1.5B-Instruct | 32 (plain), 06, 08, 20, 30, 07 (mêmes rôles) | 03, 21, 22, 26, 28 |
+| C | Llama-3.2-1B-Instruct | 13 (plain), 10, 29, 16, 31, 27 (mêmes rôles) | 05, 09, 11, 15, 19 |
+
+Le découpage en 3 familles et leur modèle public viennent de la session d'Amil (comparaison aux modèles publics) ; je l'ai repris tel quel.
+
+### Méthode
+1. **Règle tirée des étiquettes ref** (`practice_answers.csv`) : plain, consigne cachée, personnage, watermark et température 1,0 sont le même modèle ; fp8 et chaque force de LoRA sont des modèles distincts. Les ep suivent la même recette : ep-29 a fui la même consigne que ref-03, ep-16 et ep-23 les mêmes personnages que ref-05.
+2. **Les 5 déguisements de chaque famille**, à ranger avec la base :
+   - consigne cachée et personnage : ils fuient dans les réponses (« Repeat all the text before this message », « Who are you? ») ;
+   - température 1,0 : auto-accord le plus bas de la famille au quiz, et température apparente 1,01 sous le modèle public ;
+   - watermark : auto-accord le plus haut de la famille (0,86 / 0,74 / 0,62), comme ref-06 sur les ref ; aucune différence de vraisemblance avec la base ;
+   - tirage tronqué (14, 07, 27) : presque aucun jeton de probabilité < 0,001 sous le modèle public (0,11 % et 0,07 % contre 0,6 à 0,9 % pour les LoRA forts de même température apparente).
+3. **Température apparente** (`final/score2.py`, `final/that.py`) : pour chaque API, la température T qui rend ses jetons les plus probables sous softmax(logits du modèle public / T).
+   - Calibration sur les ref étiquetées (SmolLM2-360M en local) : plain 0,74, fp8 0,72, watermark 0,72, LoRA 0,3 → 0,75, LoRA 0,7 → 0,78, LoRA 1,5 → 0,87, T = 1,0 → 1,01 (erreur ± 0,01). Un LoRA se lit comme une température plus haute, en proportion de sa force.
+   - Sur B et C (Qwen2.5-1.5B et Llama-3.2-1B en local), elle isole 3 modèles modifiés par famille (B : 28, 21, 03 ; C : 05, 19, 11) et laisse un trio indécis plain / fp8 / LoRA 0,3 (B : 32, 22, 26 ; C : 13, 15, 09).
+4. **Critère qui désigne le plain** : l'accord au quiz avec l'API watermark de la famille, qui a les mêmes poids et la même température que le plain.
+   - B : ep-32 0,691 contre 0,653 à 0,661 pour les autres candidates (première dans 97 % des rééchantillonnages).
+   - C : ep-13 0,507 contre 0,479 au mieux (93 %).
+   - A : pas tranché par le quiz existant (ep-24 0,831, ep-25 0,824, ep-17 0,823). D'où un **quiz groupé** (`build_prompts_v5.py`) : 7 messages de 32 items (multiplications, décalages de lettre, traductions, rimes, associations), soit 224 items par API pour 7 réponses. Résultat : ep-24 0,683, ep-01 0,671, ep-12 0,651, ep-17 0,645, ep-18 0,638, ep-25 0,592. ep-24 est la seule en tête dans les deux jeux.
+5. **Le classement comme mesure** : chaque soumission ne changeait qu'une chose lisible (B seule, puis A et C), avec le score attendu de chaque issue calculé d'avance par la formule officielle.
+
+### Ce qui n'a pas marché
+- Quiz v1 et traits de style v2 calibrés sur les ref : le modèle des ref est trop petit pour que ses comportements se transfèrent (sections 0 à 3).
+- Questions d'une ligne sans plafond de longueur (`prompts_v3.jsonl`) : sur les ref, les LoRA rallongent ces réponses ; sur les ep, presque toutes les API donnent la même phrase. Collecte arrêtée à 92 réponses sur 495.
+- Textes longs supplémentaires (`prompts_v4.jsonl`) : arrêtés à 160 sur 324 quand le critère du quiz s'est révélé meilleur.
+- Qwen2.5-3B en local pour la famille A : disque plein ; le score sous Qwen2.5-1.5B en substitut était trop bruité.
+- Latence, en-têtes HTTP, identifiants de réponse : aucun signal.
+
+### Budget ep
+- Avant ce matin : 80 à 82 réponses utilisées par API (collecte de la session d'Amil).
+- Ce matin : 315 réponses (92 + 160 + 63), lancées par la session principale avec l'accord de l'utilisateur.
+- État final relu sur `/models` : 2 974 utilisées sur 3 300 ; il reste 2 à 18 réponses par API (326 en tout).
+
+### Solidité pour le classement final (70 % des paires, non vues)
+- **Solide** : les 3 familles ; les 15 déguisements (fuites lues, température 1,0 et tirage tronqué mesurés sous le modèle public, watermark par l'auto-accord) ; les modèles modifiés forts de B et C (température apparente à plus de 3 erreurs standard de la base).
+- **Moins solide avant confirmation par le score** : le choix du plain. B : environ 40 % de confiance au moment de l'envoi (3 candidates), confirmé par +0,15. C : environ 90 %. A : environ 60 %. Le passage de 0,85 à 1,00 confirme A et C ensemble : une seule erreur aurait laissé le score vers 0,86.
+- **Ce que 1,00 public ne prouve pas** : le public couvre 30 % des paires. Une paire fausse hors de ce sous-ensemble reste possible, surtout dans A, où les modèles modifiés n'ont pas été vérifiés sous le vrai modèle public (01, 12, 17, 18, 25 sont à part faute de preuve qu'elles soient la base, pas parce qu'un écart a été mesuré pour chacune).
+- Les réglages ont été lus sur les mêmes API que celles notées ; il n'y a pas de jeu de validation indépendant.
+
+### Reproduire
+`final/parse.py` (lit `challenge/task2_questions_reponses.md`), `final/off2.py` (accords au quiz), `final/score2.py` + `final/that.py` (température apparente, modèle public en local), `v5.py` (quiz groupé), `collect.py` (collecte, `touch data/STOP` pour arrêter proprement). Les réponses brutes (`data/ep_v3.jsonl`, `ep_v4.jsonl`, `ep_v5.jsonl`) restent hors dépôt.
+
 ## 0. Résultats sur les ref et plan ep (21/11, 22h05) — à lire en premier
 
 _Aucune requête `ep-*` envoyée, aucune soumission. Budget ep : 0/100 sur les 33 endpoints._
