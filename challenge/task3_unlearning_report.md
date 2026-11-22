@@ -411,3 +411,18 @@ Pas de gain attendu ; λ > 1 dégrade le retain proxy. λ = 1,3 n'a d'intérêt 
 | fa_g3 | mixcls + retain moitié Imagenette, moitié CutMix d'images forget | — |
 
 - **Incident 00:45** : la connexion SSH (ControlMaster) vers JURECA a expiré ; relance manuelle + MFA nécessaire. La tâche était déjà en file.
+
+### 8.5 Sonde décisive sans entraînement : décalage du biais de la tête sur les 9 classes plafonnées (`bias_probe.py`, `bias_shift.py`)
+- Constat (mesuré) : parmi les 12 runs soumis, le public monte de façon monotone avec la suppression des 9 classes (acc sur leurs images 0,33 → 0,06 quand le public passe de 0,26 à 0,30). Mais tous les runs s'arrêtent à CE moyenne ≈ 3 ± 5, valeur imposée par notre propre terme `w-stat`. La zone « suppression plus forte » (CE des 9 classes ≫ 9) n'a jamais été explorée : l'ajustement du §8.1 ne peut pas la juger.
+- Sonde : `head.bias[c] −= δ` pour les 9 classes. Effet exact sur les logits (colonne décalée), donc prédictible sans calcul GPU. Prédiction publique de `lg_g0 + δ` (supposée) :
+
+| famille d'hypothèses (RMS d'ajustement) | δ=0 | 2 | 4 | 6 | 8 | 12 |
+|---|---|---|---|---|---|---|
+| suppression faible, top-30 du §8.1 (0,004–0,006) | 0,315 | 0,286 | 0,221 | 0,151 | 0,088 | 0,009 |
+| suppression totale, décalage propre 12–20 nats (0,017) | 0,311 | 0,336 | 0,364 | 0,393 | 0,42 | 0,38–0,47 |
+| suppression totale des 9 colonnes (0,020) | 0,304 | 0,344 | 0,387 | 0,436 | 0,48 | 0,48–0,59 |
+
+- Les prédictions « suppression totale » n'incluent pas le coût retain in-distribution : si le contrôle contient ces 9 classes (~9 % des images), leur accuracy et leur KL se dégradent avec δ (ordre de grandeur : facteur 0,75–0,9 à δ=8). Le proxy Imagenette ne le voit pas.
+- Candidats (validés : chargement strict, float32, finis ; seul `head.bias` diffère ; logits réels conformes à 0,18 près) : `candidates/sub_lg0_bias4.pt` (référence 0,3045) et `candidates/sub_m1g2_bias4.pt` (référence 0,2736). Lecture : au-dessus de la référence → suppression totale, poursuivre avec δ = 8 ; nettement en dessous → hypothèse close.
+- Calibration affine exacte de `lg_g0` (température τ, biais des 9 classes, biais des 36 classes partielles) sous les 30 meilleures hypothèses : `lg_g0` est à un optimum local (meilleur : τ = 1,1, +0,006). Aucun gain gratuit dans le monde « suppression faible ».
+- Outils locaux ajoutés : `cache_mid_ckpt.py` (états CLS du dernier bloc pour n'importe quel checkpoint) et `tail_ft.py` (ré-entraînement CPU de la queue d'un run existant vers une nouvelle cible, exact vis-à-vis du modèle complet). Entraînement complet sur MPS mesuré : ~3 s/pas (bs 32+32), donc inutilisable.
