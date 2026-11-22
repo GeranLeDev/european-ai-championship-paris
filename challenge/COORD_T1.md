@@ -351,3 +351,39 @@ Matis te confie la suite de la Task 3. Tout est poussé sur `main` et `develop`.
 **Honnêtement** : aucun de nos candidats n'est prédit nettement au-dessus de 0,32 ; `fa1_g1` est le seul pari dont le gain serait invisible pour notre proxy. Le saut vers 0,40+ viendra plutôt de ton monde d'essai à vrai gold (orig' + 4 gold') : écris ici ce qu'il dit du comportement de gold sur les 9 classes et sur les partielles.
 
 Merci de répondre ici avec chaque soumission et son score.
+
+---
+
+## 22/11 07:31 — session Modal d'Amil → session de Matis (Task 3) : passation exécutée
+
+**Soumission de `sub_fa1_g1.pt`** (release `t3-candidates-0722`, validé : chargement strict, fp32, fini).
+| heure | fichier | recette | score public |
+|---|---|---|---|
+| 07:25 (accepté 07:30, id 3463) | `t3_from_matis/sub_fa1_g1.pt` | départ `gm_g2` + 3000 pas, mixcls, α 10, w-stat 0,1, `--faug combo --p-aug 0.75` | **0,3088** |
+
+- 0,3088 < 0,3158 : **la section 2 (variantes combo / wide2 sur Modal) n'est pas lancée**, conformément à ton point 3. Les altérations ne sont pas le levier (mêmes conclusions que mes `m2` 0,3097 et `p1` 0,3165).
+- Profil mesuré sur les 3 500 images : `fa1_g1` CE 3,23 ± 5,25 (9 classes 8,9 / acc 0,07 ; autres 0,32 / acc 0,91) ; `gm_g2` 3,06 ± 4,90 ; `soup_A_uniform` 3,07 ± 4,86.
+
+**Meilleur score de l'équipe : 0,3176** = `soup3` (moyenne des poids de 3 graines de `m1`, accepté 06:07), pas `m1`. Tous nos envois depuis 05:21 :
+| fichier | ce qui change par rapport à `m1` | score |
+|---|---|---|
+| `m1` | ta recette lg_g0 4000 pas + retain généré (5 745 images SDXL-Lightning) | 0,3158 |
+| `m2` | + une altération au hasard parmi 7 (`--faug wide`) | 0,3097 |
+| `soup3` | moyenne uniforme des poids de 3 graines de `m1` | **0,3176** |
+| `p3` | masse fausse des 9 classes inclinée vers les classes sœurs (part dans la famille 0,48 → 0,78) | 0,3095 |
+| `p1` | 6 altérations enchaînées (recadrage, flip, rotation ±10°, couleur, flou, bruit) | 0,3165 |
+| `m5` | queue de CE mise sur les 1 169 images les plus dures de TOUTES les classes (acc 0,62 sur les 9 classes, 0,63 ailleurs) | 0,3134 |
+| `soup3_b15` | `soup3` + 1,5 sur le biais de tête des 9 classes (CE 2,76 → 2,55) | 0,3109 |
+
+**Lecture (mesurée)** : 8 variantes très différentes (forme de la masse fausse, images qui portent les erreurs, altérations, biais) tombent toutes entre 0,309 et 0,318. Elles partagent le même profil de CE global (≈ 2,9 ± 4,9, imposé par le terme w-stat) et la même conservation. Le plafond vient donc d'un facteur commun à toute la famille (niveau de CE et/ou retain), pas de la forme de la cible. Deux runs qui testaient le niveau de CE (cible 2,2 ± 3,8 et 4,5 ± 5,6) ont été coupés avant la fin.
+
+**Monde d'essai à vrai gold (w1)** : 100 classes × 130 images générées, `orig'` de zéro (validation 0,689), 2 gold' entraînés sans les images à oublier (profil par classe identique au réel, donc les 9 classes retirées EN ENTIER par construction).
+- Gold sur les 9 classes : acc 0, CE 15,0, masse à T=2 sur les 9 colonnes 0,004.
+- Gold sur les classes partielles : acc 0,55, p(vraie) à T=2 0,45, CE 2,6 ± 3,6, bimodal par image (49-51 % des images à CE < 0,5, le reste jusqu'à 12).
+- Gold identique sur images propres et copies altérées (CE 6,78 ± 6,79 contre 6,78 ± 6,90).
+- **Limite** : ce monde contredit le classement sur les 9 classes (biais -4 = 0,2348, `f1` à colonnes éteintes = 0,068), et tes recettes n'y suivent pas l'ordre public (wcls 0,286, wstrong 0,067, wmed 0,004). Je ne le crois donc que sur les classes partielles et l'invariance aux altérations.
+- **Tout Modal est arrêté depuis 07:19 à la demande d'Amil** ; rien ne tourne, rien n'est relancé.
+
+**Choix final proposé** : `soup3` (0,3176, meilleur public). `sub_soup_A_uniform.pt` n'a jamais été soumis : je peux l'envoyer dans un créneau pour avoir son score, si Amil est d'accord.
+
+**Task 2 (ta question de 05:45)** : elle est pilotée par une autre session Claude sur le Mac d'Amil (décision d'Amil vers 01:55), pas par celle-ci. Le 0,40 = soumission 3087 vers 05:25 (`task2/localref/verify2/submission_verify2_flat_to_base.csv`, hors dépôt). Il repose sur 80 réponses par API sur 100 : un quiz de 25 messages posés 2 fois (1 666 réponses) et 30 questions libres posées 1 fois (990 réponses). Toutes les questions et réponses sont dans `challenge/task2_questions_reponses.md`. Résultat : 3 familles de 11 API, reliées par comparaison aux modèles publics Qwen2.5-3B-Instruct, Qwen2.5-1.5B-Instruct et Llama-3.2-1B-Instruct ; dans chaque famille, chaque API est rangée soit avec le modèle de base (déguisement seul), soit à part (modèle modifié). Budget restant : 20 réponses par API.
