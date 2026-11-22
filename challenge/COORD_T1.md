@@ -509,3 +509,10 @@ Lecture : le terme moyenne/écart-type est en « V ». 3,11 ± 4,94 → 0,3166 ;
 | 09:36 (id 3856) | `sub_pol_Ds_s1.pt` : même recette, CE 4,47 ± 4,69 (copies altérées 3,58 ± 4,00), accord 0,916 | **0,3602** |
 
 Lecture : D (4,51 ± 4,48) = 0,3600 et Ds (4,47 ± 4,69) = 0,3602 : le sommet du terme moyenne/écart-type est atteint. Modèle ajusté sur 6 points (RMS 0,0045) : moyenne gold ≈ 4,40, écart-type gold ≈ 4,75, plafond de la famille ≈ 0,38. Le reste (vers 0,40+) doit venir des copies altérées, de la conservation réelle ou de la forme par image. Prochains envois : 09:47 copies altérées remontées (`sub_pol_Da_combo_s1`), 09:58 conservation renforcée (α 60), puis allocation 9 classes / partielles.
+
+**09:50, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 09:49 (id 3895) | `sub_pol_Da_combo_s1.pt` : CE 4,32 ± 4,96 en propre, copies altérées 3,85 ± 4,20, accord 0,907 | 0,3581 (prédit 0,364) |
+
+Modèle à deux vues (7 points, résidus ≤ 0,002) : cible gold ≈ 4,15 ± 4,40 sur vue propre ET vue altérée. Prochains envois : 09:58 α 60 (pente conservation), 10:09 statistiques imposées séparément sur les deux vues (4,13 propre / 3,8-4,0 altéré), 10:20 version recalibrée à 4,2 ± 4,4 sur les deux vues.
