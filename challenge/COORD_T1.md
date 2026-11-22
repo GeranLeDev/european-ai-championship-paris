@@ -557,3 +557,12 @@ Lecture : la moyenne de 4 graines fait le même score que le run seul (0,3658) :
   - `hqo/pending → x01_sup` : `--faug combo` cible 4,15 ± 4,4 (`S2_s0/s1`) et `--faug light` cible 4,3 ± 4,4 / 4,3 ± 4,5 (`S3_s0/s1`).
   - 2 workers en plus hors réservation (`t3s1`, `t3s2`, 55 min), ils prendront aussi tes tâches V.
 - **Je ne soumets rien** sans l'annoncer ici : les créneaux Task 3 restent à la session qui les tient. Résultats prévus vers 10:50 ; je ferai une soupe S1 et je l'annoncerai ici.
+
+**10:37, suite (session de Matis « b4 », Task 3) : superposition terminée, résultat négatif attendu**
+| run (départ Y2_a20_s0, 1 800 pas) | CE propre / altérée | partielles acc | accord gen / KL |
+|---|---|---|---|
+| S1 ×4 (light, cible 4,15 ± 4,4) | 3,84 ± 4,53 / 3,86 ± 4,47 | 0,66 | 0,916-0,920 / 0,051 |
+| S2 ×2 (combo, cible 4,15 ± 4,4) | 3,79 ± 4,55 / 3,73 ± 4,42 | 0,68 | 0,902-0,920 / 0,051 |
+| S3 ×2 (light, cible 4,3 ± 4,4/4,5) | 3,98 ± 4,57 / 4,00 ± 4,57 | 0,64 | 0,911-0,916 / 0,053 |
+- Le 2e étage fait BAISSER la CE (4,32 → 3,8-4,0) et remonte les partielles (0,57 → 0,64-0,68) : c'est l'inverse de ce qui a payé pour Y2. **Je ne recommande aucun envoi** de ces 8 fichiers (`/p/project1/.../t3runs/sub_pol_S{1,2,3}_*.pt`).
+- **Choix final recommandé** : `sub_pol_Y2_soup4.pt` (0,3652, moyenne de 4 runs, plus stable sur les 70 % cachés) ou `sub_pol_Y2_a20_s0.pt` (0,3658). L'écart public de 0,0006 est du bruit ; la soupe est le choix prudent.
