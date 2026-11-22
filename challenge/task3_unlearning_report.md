@@ -553,3 +553,25 @@ Lectures :
 - Runs « professeur » du banc absents (professeurs trop faibles sur 645 images). Le premier passage de l'évaluation a planté (autocast imbriqué), corrigé.
 
 **Tâche `11_t3_sis`** (en file, 2800 pas depuis `lg_g0`, statistiques par population `--pop-stat`) : lignes des 9 classes = répartition du professeur `oof9`, reste = mixcls ; g0 CE visée 9,7 sur les 9 classes ; g1 12,7 ; g2 = g0 + retain CutMix/DiffusionDB ; g3 = g2 avec α = 10. Écritures de checkpoint rendues non fatales.
+
+### 8.10 Voie C : modifications sans entraînement de `soup_C` (dim. 22 nov., 08:15–08:50) — mesuré
+Code : `tasks/unlearning/solution_c/` (`c_feats.py` met en cache les features avant la tête, donc tout réglage de tête est exact et instantané ; `c_head.py` température / biais ; `c_lam.py` interpolation de poids ; `c_verify.py` validation serveur + forward complet ; `c_public.py` table des modèles soumis). Tout en local (MPS) : les workers `hqc` n'ont jamais démarré (PENDING, BadConstraints).
+
+Base `soup_C` (0,3166). Accord / KL à T=2 avec `orig` sur 225 images générées tenues à part ; « p part. » = p(vraie classe) à T=2 sur les images des classes partielles.
+
+| candidat | CE oubli | 9 classes CE / acc | partielles CE / acc | p part. | accord / KL | public |
+|---|---|---|---|---|---|---|
+| `soup_C` | 3,11 ± 4,94 | 8,63 / 0,06 | 0,33 / 0,91 | 0,62 | 0,920 / 0,057 | 0,3166 |
+| température 0,85 (tête × 0,85) | 2,71 ± 4,22 | 7,45 / 0,06 | 0,34 / 0,91 | 0,50 | 0,920 / 0,105 | **0,2789** |
+| température 1,15 | 3,52 ± 5,66 | 9,84 / 0,06 | 0,35 / 0,91 | 0,70 | 0,920 / 0,061 | **0,3098** |
+| λ = 0,85 (θ = orig + λ(soup − orig)) | 2,33 ± 4,14 | 6,64 / 0,14 | 0,17 / 0,95 | 0,76 | 0,929 / 0,040 | non soumis |
+| λ = 1,10 | 3,48 ± 5,21 | 9,46 / 0,04 | 0,49 / 0,87 | 0,51 | 0,902 / 0,071 | pas de fichier |
+| λ = 1,15 | 3,64 ± 5,27 | 9,74 / 0,03 | 0,58 / 0,84 | 0,46 | 0,898 / 0,079 | en attente |
+| λ = 1,25 | 3,89 ± 5,29 | 10,05 / 0,01 | 0,80 / 0,77 | 0,37 | 0,889 / 0,096 | pas de fichier |
+
+- **Température : close.** Elle ne change aucune prédiction (accuracy de contrôle identique). Parabole sur les 3 points : optimum vers 1,05, gain ≤ 0,003. À 0,85 la KL retain explique environ −0,014 des −0,038 ; à 1,15 elle ne coûte qu'environ −0,001, donc les −0,007 viennent du terme d'oubli.
+- **Biais des 9 classes : clos** par deux points publics antérieurs (−4 : −0,070 ; +1,5 : −0,007) : optimum à +0,2, gain nul.
+- Température par lignes (9 classes seules, ou 36 classes partielles seules) : change les prédictions, accord 0,82–0,88 pour un facteur 1,15–1,3. Écarté.
+- **λ est le seul bouton sans entraînement qui agit sur les images partielles** (acc 0,91 → 0,84 à λ = 1,15) ; coût retain mesuré : accord −2,2 points, KL +0,022.
+- Table des 14 modèles soumis avec logits locaux (`c_public.py`) : `m3_g2` / `m3_g3` (0,205 / 0,208) ont le même niveau de CE que la famille `lg` (0,30) mais sont nets sur les images partielles (p part. 0,80–0,82 contre 0,60). La douceur à T=2 sur les images partielles est donc fortement notée ; `tailfitB` (0,44, public 0,283) et la température 0,85 (0,50, 0,279) montrent qu'on ne gagne pas en adoucissant davantage par la tête.
+- Supposé (non mesuré) : l'asymétrie des deux points de température (durcir coûte 4 fois moins qu'adoucir, hors retain) est compatible avec une CE gold par modèle plus haute que la nôtre, pas avec un écart-type gold de 4,0.
