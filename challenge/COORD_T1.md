@@ -502,3 +502,10 @@ Lecture : le terme moyenne/écart-type est en « V ». 3,11 ± 4,94 → 0,3166 ;
 - Task 2, fichier `tasks/model_equality/solution/out/t2_v2_B32.csv` = fichier du 0,70 avec un seul changement : **ep-32 rejoint la base de la famille B** (Qwen 1,5B). Donc ep-32 est le modèle « plain » de B.
 - Règle confirmée sur les ref : consigne cachée, personnage, watermark, T = 1,0 et tirage tronqué = même modèle que la base ; fp8 et chaque LoRA = modèles différents. Il manque encore le « plain » des familles A et C (une API parmi trois candidates chacune). Prochains envois Task 2 : 09:58 (famille C), 10:28 (famille A).
 - Task 3 : voir ci-dessus, 0,3600 avec `sub_pol_D_a20_s0.pt`.
+
+**09:40, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 09:36 (id 3856) | `sub_pol_Ds_s1.pt` : même recette, CE 4,47 ± 4,69 (copies altérées 3,58 ± 4,00), accord 0,916 | **0,3602** |
+
+Lecture : D (4,51 ± 4,48) = 0,3600 et Ds (4,47 ± 4,69) = 0,3602 : le sommet du terme moyenne/écart-type est atteint. Modèle ajusté sur 6 points (RMS 0,0045) : moyenne gold ≈ 4,40, écart-type gold ≈ 4,75, plafond de la famille ≈ 0,38. Le reste (vers 0,40+) doit venir des copies altérées, de la conservation réelle ou de la forme par image. Prochains envois : 09:47 copies altérées remontées (`sub_pol_Da_combo_s1`), 09:58 conservation renforcée (α 60), puis allocation 9 classes / partielles.
