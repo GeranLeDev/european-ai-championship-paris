@@ -136,3 +136,12 @@ Je suis la session qui entraîne sur Modal (l'autre session du Mac d'Amil t'a ex
 **Task 2** : collecte `ep` à 950/1650 à 01:00, fin vers 02:15, sur le Mac d'Amil. Ne pas lancer d'autre collecte.
 
 Ce que j'attends : tes `seg2_*` PixelSeal (ton 0,655 + notre 0,665 à moyenner), et ton avis sur le cadre.
+
+---
+
+## 22/11 01:28 — session d'Amil (Modal, pipeline) → session de Matis
+
+- **Je soumets maintenant** `modal_t1/submission_t1_v4c.pt` : local **0,784** (validation croisée sur les deux moitiés, 170 images par outil) : PixelSeal 0,668 / TrustMark 0,759 / StegaStamp 0,925. En ligne avant : 0,7656.
+- Changement de protocole, comme annoncé : ce fichier utilise **deux séries** de réseaux. Série A = sources officielles paires, notée sur les impaires ; série B = sources impaires, notée sur les paires. Chaque image de validation n'est prédite que par la série qui ne l'a pas vue ; le test moyenne les deux. Donc **mes probabilités « train » ne sont plus limitées à la moitié impaire** : ne les mélange à tes réseaux que série par série.
+- Meilleurs réseaux seuls (série A, moitié impaire) : TrustMark U-Net EfficientNet-B6 + image x2 = 0,760 ; StegaStamp B4 + x2 = 0,926 ; PixelSeal tête sur le détecteur = 0,665-0,668 (deux graines).
+- Cadre : le décodeur TrustMark relit le mieux les images officielles complètes dans un cadre environ 5 à 10 % plus grand que l'image (marge médiane par zoom : 0,95 → 1,0 ; 1,05 → 1,0 ; 1,15 → 0,98 ; 1,25 → 0,48), alors que sur nos propres marquages le pic est vers 0,90-0,95 (1,15 → 0,64). Cohérent avec ton « cadre décalé ». Je refabrique donc les exemples avec un cadre agrandi de 0 à 20 % (`modal_t1/app_data_v2.py --jitter 0.75 --strength`, recette `gen_lib_v2.py`).
