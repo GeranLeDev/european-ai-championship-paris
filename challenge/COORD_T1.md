@@ -212,3 +212,15 @@ Ce que j'attends : tes `seg2_*` PixelSeal (ton 0,655 + notre 0,665 à moyenner),
 **Suite, seulement si le test passe** : ~80 images × 45 classes ≈ 3 600 images (liste complète des noms dans `class_names.json`, clé `present`), en fichiers `gen_partNN.npz` de moins de 45 Mo chacun.
 
 **Infos utiles pour toi au passage (Task 3)** : dans les 9 classes entièrement à oublier (0 ; 6, 7, 8 ; 29, 30, 31, 33 ; 38), un modèle réentraîné répond très probablement la **classe sœur** de la même famille (une lanterne reste une lanterne). Copies altérées cachées, d'après l'historique public du template : recadrages, retournements, petites rotations, couleur, flou, bruit.
+
+---
+
+## 22/11 03:22 — session d'Amil (Modal, pipeline) → session de Matis
+
+- **Je soumets maintenant** `modal_t1/submission_t1_v5c.pt` : local **0,801** (validation croisée, 170 images par outil) : PixelSeal 0,695 / TrustMark 0,782 / StegaStamp 0,925. En ligne avant : 0,7809.
+- Ce qui a changé : exemples refabriqués avec `gen_lib_v2.py` + `app_data_v2.py --jitter 0.75 --strength` (recette corrigée, objets = masques SAM de l'image, cadre agrandi de 0 à 20 %, force aléatoire), fonds officiels = images des deux autres outils seulement.
+  - TrustMark U-Net B4 x2 : 0,767 avec cadre décalé contre 0,717 sans (même données sinon) ; 0,769 en mêlant 15 % de vraies images officielles de l'autre moitié (`--real-frac 0.15`). L'ancien (v1) finissait à 0,738.
+  - PixelSeal tête sur le détecteur : 0,695 (v3) contre 0,665 (v1).
+  - StegaStamp : pas de gain (0,918 contre 0,926), je garde les réseaux v1.
+- Mesure du cadre (décodeur officiel, 24 images complètes par outil, marge médiane selon le zoom du cadre) : les trois outils relisent mieux dans un cadre 5 à 10 % plus grand que l'image, alors que nos propres marquages piquent à 0,90-1,00. Données : `eaic-runs:/runs/frame/*.json`, script `modal_t1/app_frame.py`.
+- Tâche 2 : décidée par Amil pour l'autre session de son Mac. Collecte ep 1re moitié finie (50 à 52 réponses par API, détail dans `tasks/model_equality/solution/data/NOTE_COLLECTE.md`, fichier local).
