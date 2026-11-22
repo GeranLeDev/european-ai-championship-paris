@@ -575,3 +575,33 @@ Base `soup_C` (0,3166). Accord / KL à T=2 avec `orig` sur 225 images générée
 - **λ est le seul bouton sans entraînement qui agit sur les images partielles** (acc 0,91 → 0,84 à λ = 1,15) ; coût retain mesuré : accord −2,2 points, KL +0,022.
 - Table des 14 modèles soumis avec logits locaux (`c_public.py`) : `m3_g2` / `m3_g3` (0,205 / 0,208) ont le même niveau de CE que la famille `lg` (0,30) mais sont nets sur les images partielles (p part. 0,80–0,82 contre 0,60). La douceur à T=2 sur les images partielles est donc fortement notée ; `tailfitB` (0,44, public 0,283) et la température 0,85 (0,50, 0,279) montrent qu'on ne gagne pas en adoucissant davantage par la tête.
 - Supposé (non mesuré) : l'asymétrie des deux points de température (durcir coûte 4 fois moins qu'adoucir, hors retain) est compatible avec une CE gold par modèle plus haute que la nôtre, pas avec un écart-type gold de 4,0.
+
+## 9. Dimanche 22 nov., 07:45 → : ré-entraînement approché (échec au banc) puis sondes sur le niveau de CE
+
+### 9.1 Ré-entraînement approché (`retrain.py`) — mesuré, perd nettement
+Méthode : réinitialiser la tête + les K derniers blocs d'`orig` (LayerScale gardé), puis les ré-apprendre uniquement par distillation d'`orig` (KL à T=2 et T=1 + CE sur l'argmax) sur Imagenette + DiffusionDB + images générées, augmentations fortes + CutMix, 2000 pas. Aucune image du forget set, aucun terme d'oubli. Variante douce : shrink-and-perturb 50 % sur 6 blocs.
+
+| variante | banc (score exact, orig' + gold') | vrai `model.pt` : CE forget / acc | accord avec orig, images générées |
+|---|---|---|---|
+| recette mixcls `lg` (référence) | 0,168 | 3,1 ± 4,9 / 0,62 | 0,92 |
+| K = 1 | 0,008 | 0,02 ± 0,12 / 0,993 | 0,876 |
+| K = 2 | 0,024 | 0,32 ± 0,74 / 0,90 | 0,738 |
+| K = 4 | 0,052 | 1,89 ± 1,84 / 0,44 | 0,627 |
+| shrink-and-perturb, 6 blocs | 0,003 | 0,35 ± 0,72 / 0,87 | 0,756 |
+
+Lecture : la réparation ré-apprend la fonction d'`orig`, mémorisation comprise (les blocs bas la portent). Dès qu'on efface assez pour oublier, l'accord tombe sous 0,75 (risque de porte à 70 %). Sans vrai retain set, les recettes « erase then repair » ne s'appliquent pas. Piste fermée. Limite du banc : orig' ne fait que 0,205 sur son contrôle ; on lit le sens, pas les valeurs.
+
+### 9.2 Sondes sur le niveau de CE (`unlearn.py --stat-target`, `--pop-target`, `--reservoir`)
+Seul axe jamais testé en public : la moyenne et l'écart-type de la CE sur le forget set (toute la famille était à 3,1 ± 4,9, imposé par `w-stat`). Départ `soup_C` (0,3166), mixcls, retain DiffusionDB + images générées. `--reservoir` calcule moyenne/écart-type sur les 3 500 images (tampon) au lieu du batch : la cible est atteinte à ±0,25. Non validable au banc (le niveau de CE du banc n'est pas celui du vrai gold) : ce sont des sondes leaderboard. Environ 200 runs (5 grilles de 40 sur les nœuds hors réservation), tous valides, accord images générées 0,86–0,93. Outil : `profile_subs.py`.
+
+Scores publics mesurés (soumis par la session principale) :
+
+| fichier (`candidates/`) | CE forget (propre) | 9 classes / partielles (acc) | accord / KL images générées | public |
+|---|---|---|---|---|
+| `sub_soup_C_uniform` (base) | 3,11 ± 4,94 | 8,63 (0,06) / 0,33 (0,91) | 0,920 / 0,057 | 0,3166 |
+| `soup_C` × 0,85 (température, voie C) | 2,71 ± 4,22 | — | — | 0,2789 |
+| `soup_C` × 1,15 (voie C) | 3,52 ± 5,66 | — | — | 0,3098 |
+| `sub_ceg_g_m3.8_s3.5` | 3,73 ± 3,83 | 8,14 (0,01) / 1,52 (0,63) | 0,907 / 0,067 | 0,3159 |
+| `sub_pol_C_a20_s1` | 5,63 ± 4,39 | 10,47 (0,00) / 3,20 (0,39) | 0,924 / 0,065 | **0,3209** |
+
+Lecture : la réponse au niveau de CE est presque plate entre 3,1 et 5,6 de moyenne. Passer l'accuracy des classes partielles de 0,91 à 0,39 ne coûte rien et ne rapporte presque rien.
