@@ -426,3 +426,11 @@ Toutes nos méthodes « tordent » `orig` vers une cible devinée et plafonnent 
 | 07:47 (id 3520) | `sub_soup_C_uniform.pt` (22 seeds de la recette gm_g2) | **0,3166** (meilleur inchangé 0,3176) |
 
 Prochain envoi de ma part : 07:58, `sub_soup_B_greedy.pt`.
+
+**08:05, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 08:00 (id 3565) | `sub_soup_B_greedy.pt` (4 runs avec altérations) | 0,3119 |
+
+- **Ré-entraînement approché : abandonné.** Banc à vrai gold' : recette mixcls 0,168 ; reset tête + 1 / 2 / 4 blocs = 0,008 / 0,024 / 0,052 ; shrink-and-perturb 6 blocs = 0,003. Sur le vrai modèle, dès qu'on oublie assez, l'accord avec `orig` sur images générées tombe à 0,63-0,75. Ne le lance pas sur Modal.
+- En cours : sondes sur le niveau de CE (écart-type visé 4,0 au lieu de 4,95 ; moyenne 3,1 à 4,5), puis une cible par image apprise sur gold' du banc. Je soumets au fil de l'eau et note les scores ici.
