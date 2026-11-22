@@ -374,3 +374,40 @@ Score public de `sub_r2_g2` (mixcls) : **0,2616**. Vérité terrain disponible :
   - SCRUB+R borné (max-step clampé + rewind sur la statistique de CE) ;
   - ensembles / moyennes de poids de plusieurs runs TD (gold est une moyenne de modèles : un *weight averaging* adoucirait les sorties de façon naturelle) ;
   - LoRA.
+
+## 8. Reprise nuit du 21 au 22 nov. (00:20 →) : ajustement à 12 points, extrapolation de poids, nouvelles sondes
+Objectif fixé : 0,40 public. Point de départ : `lg_g0` 0,3045.
+
+### 8.1 Ajustement sur les 12 scores publics (`fit12.py`, `predict12.py`) — mesuré
+- Famille continue de 19 440 hypothèses : gold = mélange pondéré des proxies `medium`/`strong`/`xstrong` (pas de 0,25), décalage de logit `dcap` sur le pseudo-label des images des 9 classes plafonnées, `doth` sur les autres, statistiques de CE poolées ou par image, retain = accord^a / (1 + c·KL), échelle `s` libre (public ≈ s × proxy).
+- Qualité : RMS 0,004 sur les 12 points ; validation leave-one-out RMSE 0,007 (écart-type des scores publics : 0,066). L'ajustement prédit donc bien à l'intérieur de la famille TD.
+- Meilleures hypothèses : 0,5–0,75 `medium` + 0,25–0,5 `xstrong` (gold bimodal : majorité d'images faciles + queue très dure), CE gold ≈ 2,7–3,5 ± 4,5 ; **suppression des 9 classes faible** (`dcap` 1–3 nats ; `dcap` 12–20 = suppression totale : RMS 0,012–0,017). Même conclusion si on supprime les 9 colonnes pour toutes les images (`fit_rm9.py` : `dcap` 2 → RMS 0,005 ; 12–20 → 0,020).
+- Échelle `s` = 0,46–0,61 pour toutes les bonnes hypothèses. `lg_g0` sous la meilleure : ms 0,91, ps 0,76, retain proxy 0,82 → proxy 0,60 × 0,51 = 0,304. **Plafond estimé de la méthode actuelle : ~0,31–0,33** (supposé : `s` représente l'écart par image entre nos proxies et le vrai gold, que l'entraînement ne peut pas combler).
+- Limite : 8 des 12 points sont des runs mixcls. La répartition de la perte entre images des 9 classes et les autres est mal identifiée. `lg_g0` met presque toute la perte sur les 9 classes (CE 8,6, acc 0,06) et très peu ailleurs (CE 0,35, acc 0,90) ; les hypothèses ajustées disent l'inverse (CE ≈ 3,2–3,8 sur les 9 classes, 2,5–3,1 ailleurs).
+
+### 8.2 Arithmétique de poids sans entraînement (`extrap.py`, GPU du login) — mesuré (logits réels), prédiction supposée
+θ = orig + λ·(lg_g0 − orig). Prédiction publique moyenne [min, max] sur les 30 meilleures hypothèses :
+
+| λ | 0,5 | 0,75 | 1,0 | 1,15 | 1,3 | 1,5 |
+|---|---|---|---|---|---|---|
+| prédit | 0,063 | 0,223 | 0,310 (mesuré 0,3045) | 0,305 [0,275–0,339] | 0,291 [0,251–0,355] | 0,261 |
+| accord retain proxy | 0,924 | 0,891 | 0,861 | 0,844 | 0,832 | 0,803 |
+
+Pas de gain attendu ; λ > 1 dégrade le retain proxy. λ = 1,3 n'a d'intérêt que comme sonde d'information.
+
+### 8.3 Proxies gold « jamais vu » (leave-one-out) — mesuré
+- Sonde linéaire 5 plis sur les features d'`orig` à l'entrée du bloc 8 (`loo_proxy.py`) : acc 0,45, corrélation nulle avec les proxies d'augmentation. Couche trop précoce, inutilisable.
+- Sonde 5 plis sur des features **DINOv2 ViT-B/14** (modèle public indépendant ; `ext_feats.py`, `loo_ext.py`) : acc 0,89 (9 classes plafonnées 0,78 ; autres 0,94). Les classes plafonnées forment des groupes confusables : {6, 7, 8} et {29, 30, 31, 33} (acc 0,62–0,88, erreurs à l'intérieur du groupe) ; la classe 0 est à 1,00.
+- Ajoutée comme base à l'ajustement (`FIT_BASES=medium,strong,xstrong,dinov2b,dino_t3`) : RMS et échelle inchangés (0,004 / 0,5). Les 12 points ne discriminent pas la structure par image.
+
+### 8.4 Sondes lancées (tâche `06_t3_fit`, départ à chaud depuis `lg_g0`, 3000 pas, α=3, lr 5e-5, w-stat 0,1)
+`unlearn.py` : nouvelles options `--init` (départ à chaud), `--retain {imagenette,cutmix,both}` (retain in-distribution = CutMix de deux images forget, cible `orig`), `--dump` (logits du meilleur checkpoint, écriture atomique). `make_gold.py` matérialise une hypothèse ajustée en cible.
+
+| run | cible / variante | CE gold visée (9 classes / autres) |
+|---|---|---|
+| fa_g0 | `fitA` = 0,75 medium + 0,25 xstrong, dcap 3, doth 2 | 2,75 ± 4,49 (3,17 / 2,53) |
+| fa_g1 | `fitB` = 0,5 medium + 0,5 xstrong, dcap 1 | 3,32 ± 4,64 (3,76 / 3,09) |
+| fa_g2 | `fitC` = 0,5 medium + 0,25 strong + 0,25 xstrong, dcap 2 sur les 9 colonnes, doth 1 | 3,00 ± 4,49 (3,46 / 2,77) |
+| fa_g3 | mixcls + retain moitié Imagenette, moitié CutMix d'images forget | — |
+
+- **Incident 00:45** : la connexion SSH (ControlMaster) vers JURECA a expiré ; relance manuelle + MFA nécessaire. La tâche était déjà en file.

@@ -33,6 +33,9 @@ ap.add_argument("--n-eval", type=int, default=700); ap.add_argument("--n-eval-r"
 ap.add_argument("--amp", action="store_true")
 ap.add_argument("--device"); ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--out", default="runs/tmp")
+ap.add_argument("--init", default=None, help="warm start: state dict to load into sub (orig stays the reference)")
+ap.add_argument("--retain", default="imagenette", choices=["imagenette", "cutmix", "both"], help="retain proxy: Imagenette (OOD) and/or CutMix composites of forget images (in-distribution), target = orig")
+ap.add_argument("--dump", action="store_true", help="dump eval logits of the best checkpoint to ../output/logits/<run>.pt")
 a = ap.parse_args()
 dev = pick_device(a.device); set_device(dev); torch.manual_seed(a.seed); np.random.seed(a.seed)
 out = Path(a.out); out.mkdir(parents=True, exist_ok=True)
@@ -59,6 +62,8 @@ for extra in a.also.split(","):
 # ---------------- models
 orig = load_orig(dev); orig.requires_grad_(False)
 sub = copy.deepcopy(orig)
+if a.init:
+    sub.load_state_dict(torch.load(a.init, map_location="cpu", weights_only=True), strict=True)
 sub.requires_grad_(False)
 train_mods = [sub.blocks[i] for i in range(12 - a.blocks, 12)] + [sub.norm, sub.head]
 if a.blocks >= 12:
@@ -120,6 +125,14 @@ for step in range(1, a.steps + 1):
         m = torch.rand(len(fi), device=dev) < a.p_aug
         if m.any(): xf[m] = augs.light(xf[m])
     xr = augs.medium(to_input(R[ri], dev))
+    if a.retain != "imagenette":   # in-distribution retain: CutMix of two medium-augmented forget images
+        nc = a.bs_r if a.retain == "cutmix" else a.bs_r // 2
+        ia = torch.randint(0, N, (nc,)); ib = torch.randint(0, N, (nc,))
+        xa = augs.medium(to_input(X[ia], dev)); xb = augs.medium(to_input(X[ib], dev))
+        for j in range(nc):
+            fr = np.random.uniform(0.3, 0.7); hh = int(224 * np.sqrt(fr)); ww = int(224 * fr / np.sqrt(fr)); y0 = np.random.randint(0, 224 - hh + 1); x0 = np.random.randint(0, 224 - ww + 1)
+            xa[j, :, y0:y0 + hh, x0:x0 + ww] = xb[j, :, y0:y0 + hh, x0:x0 + ww]
+        xr = xa if a.retain == "cutmix" else torch.cat([xr[: a.bs_r - nc], xa])
     with torch.no_grad(), autocast():
         tr = orig(xr).float()
         tf = orig(xf).float() if a.method == "scrub" else None
@@ -155,6 +168,8 @@ for step in range(1, a.steps + 1):
             stopped_max = True
         f = res[sel]["score"]["final"]
         if f > best[0]:
-            best = (f, step); torch.save({k: v.detach().cpu().float() for k, v in sub.state_dict().items()}, out / "best.pt")
+            best = (f, step); torch.save({k: v.detach().cpu().float() for k, v in sub.state_dict().items()}, out / "best.tmp"); (out / "best.tmp").replace(out / "best.pt")
+            if a.dump:
+                ld = ROOT / "output" / "logits"; torch.save(dict(Le=logits_t(sub, Xe), La=logits_t(sub, Xa), Lr=logits_of(sub, RVe, dev)), ld / f".{out.name}.tmp"); (ld / f".{out.name}.tmp").replace(ld / f"{out.name}.pt")
 json.dump(dict(args=vars(a), hist=hist, best=best), open(out / "hist.json", "w"), indent=1)
 print(f"BEST {sel} final={best[0]:.4f} at step {best[1]}  -> {out/'best.pt'}")
