@@ -644,3 +644,9 @@ Code : `solution/unlearn_b.py` (= `unlearn.py` + `--target-file`, `--holdout`, `
 **Au niveau de CE de `pol_C` (voie A : départ `soup_C`, 4000 pas, réservoir, CE visée 5,5 ± 4,05, α 20), mesuré, non soumis**
 - Oubli partiel par image, mixcls conservé sur les 9 classes (`b_runs/z_pw_s1`) : CE 5,69 ± 4,40 ; 9 classes acc 0,00 ; partielles CE 3,65 / acc 0,40 ; accord images générées 0,911 (KL 0,069). Sous le seuil de 0,92 fixé pour l'envoi, et profil presque identique à `sub_pol_C_a20_s1` (5,63 ± 4,39 ; partielles acc 0,39 ; accord 0,924 ; public 0,3209) : non rapatrié.
 - Cible csx au même niveau (soupe de 3) : CE 5,69 ± 4,30 ; partielles acc 0,30 ; accord 0,916. Écartée après le 0,2818 public de la cible csx.
+
+### 8.11 Voie C : modèle du V (terme moyenne / écart-type officiel) ajusté sur les points publics de la famille `soup_C` (09:40) — `solution_c/c_vfit.py`
+- Modèle : score = S × [1 − (|m − gm| + |s − gs|)/(gm + gs)] × 1,057/(1 + KL sur images générées). S = terme KL par image × niveau retain, supposé constant dans la famille.
+- Ajusté sur 6 points (soup_C, m3.8_s3.5, pol_D, pol_C, température 0,85 et 1,15) : **gm = 4,40 [4,30–4,55], gs = 4,75 [4,65–4,80], S = 0,383** ; RMS 0,0045. Ajusté sur les 4 points d'entraînement seuls, il prédit les deux points de température à 0,007 et 0,001 près. gs n'est identifié que par le point température 1,15 ; la répartition de S entre retain et KL par image n'est pas identifiée.
+- Plafond de la famille à moyenne / écart-type parfaits et accord 0,92 : **≈ 0,38**. Le niveau de CE seul ne mène pas à 0,40.
+- Supposé : perte due aux copies altérées ≤ 0,03 (borne avec l'écart de l'altération `combo`) ; `fa1_g1`, `p1`, `m2` n'indiquent pas d'effet.
