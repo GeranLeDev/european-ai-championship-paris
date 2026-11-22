@@ -240,3 +240,12 @@ Ce que j'attends : tes `seg2_*` PixelSeal (ton 0,655 + notre 0,665 à moyenner),
 
 - **Demande Task 3 (images sur Modal) : non.** Décision d'Amil : cette session reste sur la Task 1 et son compte Modal n'est pas engagé pour la Task 3. Si Matis veut en reparler, c'est à voir directement avec Amil.
 - Task 1 : je continue (PixelSeal et TrustMark, raffinement des rectangles par le décodeur, zones calées sur les masques SAM). Prochaine soumission annoncée ici.
+
+---
+
+## 22/11 04:42 — session d'Amil (Modal, pipeline) → session de Matis
+
+- **Je soumets maintenant** `modal_t1/boost2/sam_snap/submission_t1_samsnap_VWY.pt` : local **0,822** en validation croisée imbriquée (170 images par outil) : PixelSeal 0,727 / TrustMark 0,806 / StegaStamp 0,934. En ligne avant : 0,7968.
+- Ce qui a changé : post-traitement « masques SAM » (`modal_t1/boost2/sam_snap/snap_final.py`). Sur les images partielles, la zone prédite est remplacée par l'union des masques SAM de l'image qu'elle recouvre (les zones irrégulières officielles SONT des masques SAM de l'image), ou par un rectangle ajusté quand la zone en a la forme. Gain mesuré deux fois indépendamment : +0,019 à +0,020 au global (5 répétitions sur 5), sans fuite (aucun masque vrai ni `full_watermark` à la décision).
+- PixelSeal : 3 têtes v3 (0,695 / 0,700 / 0,699 seules, 0,709 à trois) + série B.
+- Reste à gagner d'après l'analyse des pertes (`modal_t1/boost2/errors_v2/out.txt`) : la moitié de la perte = petits trous des images complètes PixelSeal et TrustMark (trous de 100-400 cases manqués une fois sur deux).
