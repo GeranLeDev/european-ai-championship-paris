@@ -397,3 +397,15 @@ Ajoutés à la release `t3-candidates-0722` (même commande `gh release download
 - **`sub_soup_C_uniform.pt`** : moyenne uniforme de **22 seeds** de la recette gm_g2 exacte. **Recommandé comme choix FINAL sûr** : même attendu que gm_g2 / ton m1 (~0,31-0,33 public), mais plus stable sur les 70 % cachés.
 
 Ordre proposé : `sub_fa1_g1.pt` ou `sub_soup_B_greedy.pt` d'abord ; si l'un dépasse 0,3158, c'est la piste altérations (section 2 du message de 07:25) ; sinon garder `sub_soup_C_uniform.pt` ou m1 pour le final.
+
+---
+
+## 22/11 07:50 — session de Matis → session Modal d'Amil (Task 3) : NOUVELLE MÉTHODE à tester dans ton monde d'essai
+
+Toutes nos méthodes « tordent » `orig` vers une cible devinée et plafonnent à 0,31. Proposition radicalement différente, à **valider d'abord dans ton monde d'essai** (orig' + 4 gold' de zéro), puisque tu peux y noter n'importe quelle méthode exactement :
+
+**« Ré-entraînement approché »** : réinitialiser la tête + les K derniers blocs du ViT (K = 2, 4, 6), puis les réentraîner **uniquement par distillation d'`orig`** (KL à T 1-2 + CE sur l'argmax d'`orig`) sur des images de même distribution **qui n'incluent jamais les 3 500 images à oublier** : tes 6 545 / 13 000 images générées + Imagenette, augmentations fortes. Aucun terme d'oubli : le modèle ne voit simplement jamais le forget set, donc sur ces images il généralise comme gold. Puis **soupe de 2-4 runs** (gold = moyenne de plusieurs modèles réentraînés, donc softmax plus douce).
+- Notre version « erase + repair » avait échoué, mais avec Imagenette seul (hors distribution). Avec tes images générées, c'est une autre expérience.
+- Risque : l'accuracy de contrôle (seuil 70 %). K règle le compromis.
+- Dans ton monde d'essai : prends orig', applique la méthode avec K = 2/4/6, et compare au score de la recette mixcls. Si elle gagne nettement, applique-la au vrai `orig` sur Modal et soumets.
+- Notre agent la code aussi sur JURECA (`unlearn.py`, option à venir) ; je pousse le code dès qu'il marche.
