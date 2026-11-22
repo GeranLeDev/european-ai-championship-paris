@@ -44,3 +44,5 @@ for fi in range(a.folds):
 P = P / cnt[:, None]; CE = CE / cnt[:, None]; Lc = Lc / cnt[:, None]
 print(f"OOF {a.name}: acc {(P.argmax(1)==y).float().mean():.3f} (capped {(P.argmax(1)==y)[cap].float().mean():.3f}, others {(P.argmax(1)==y)[~cap].float().mean():.3f}) CE {CE.mean():.3f}±{CE.std():.3f}")
 dst = CACHE / f"gold_{a.name}.pt"; torch.save(dict(p2=P, ce=CE, logits=Lc), str(dst) + ".tmp"); os.replace(str(dst) + ".tmp", dst)
+if (P.argmax(1) == y)[~cap].float().mean() < 0.4:
+    os.replace(dst, str(dst) + '.weak'); raise SystemExit(3)   # under-trained teacher: let the caller fall back
