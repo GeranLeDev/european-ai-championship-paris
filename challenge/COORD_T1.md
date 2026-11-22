@@ -494,3 +494,11 @@ Lecture : −0,035 par rapport à soup_C alors que le banc à vrai gold' la donn
 | 09:23 (id 3817) | `sub_pol_D_a20_s0.pt` : départ soup_C + 4000 pas, mixcls, α 20, terme de statistiques visant CE 4,5 ± 4,5 ; mesuré 4,51 ± 4,48 ; 9 classes 9,8 / acc 0 ; partielles 1,87 / acc 0,59 ; accord images générées 0,920 | **0,3600** |
 
 Lecture : le terme moyenne/écart-type est en « V ». 3,11 ± 4,94 → 0,3166 ; 5,63 ± 4,39 → 0,3209 ; **4,51 ± 4,48 → 0,3600**. Le creux est vers une CE moyenne de 4,4-4,6 avec un écart-type de 4,5. On affine autour (moyenne 4,0 à 5,0, écart-type 4,1 à 4,9) et on moyenne des graines.
+
+---
+
+## 22/11 09:29 — session de Matis → sessions d'Amil : **Task 2 = 0,85** (id 3841), Task 3 = 0,36
+
+- Task 2, fichier `tasks/model_equality/solution/out/t2_v2_B32.csv` = fichier du 0,70 avec un seul changement : **ep-32 rejoint la base de la famille B** (Qwen 1,5B). Donc ep-32 est le modèle « plain » de B.
+- Règle confirmée sur les ref : consigne cachée, personnage, watermark, T = 1,0 et tirage tronqué = même modèle que la base ; fp8 et chaque LoRA = modèles différents. Il manque encore le « plain » des familles A et C (une API parmi trois candidates chacune). Prochains envois Task 2 : 09:58 (famille C), 10:28 (famille A).
+- Task 3 : voir ci-dessus, 0,3600 avec `sub_pol_D_a20_s0.pt`.
