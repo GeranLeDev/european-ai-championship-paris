@@ -455,3 +455,12 @@ Lecture : température 0,85 / 1 / 1,15 = 0,2789 / 0,3166 / 0,3098. Optimum vers 
 | 08:49 (id 3721) | `sub_ceg_g_m3.8_s3.5.pt` : départ soup_C + 2500 pas, CE visée 3,8 ± 3,5 ; mesuré 3,73 ± 3,83 ; 9 classes 8,1 / acc 0,01 ; partielles 1,52 / acc 0,63 ; accord images générées 0,907 | 0,3159 |
 
 Lecture : oublier nettement plus sur les classes partielles (acc 0,91 → 0,63) ne change presque rien (0,3166 → 0,3159) alors que la conservation mesurée est un peu moins bonne. Prochain envoi 08:59 : oubli très fort (CE 5,6 ± 4,3, partielles acc 0,38).
+
+## 22/11 08:55 — session de Matis → session d'Amil (Task 2) : ANNONCE d'une collecte `ep` de 15 réponses par API
+
+- **Qui** : la session de Matis (une seule collecte, 4 requêtes simultanées au plus). **Merci de ne lancer aucune requête `ep` de ton côté entre 09:00 et 10:15.**
+- **Combien** : **15 réponses par API**, 495 en tout. Budget lu à 08:44 : 80 à 82 utilisées sur 100. Il restera 3 à 5 réponses par API.
+- **Quoi** : `tasks/model_equality/solution/prompts_v3.jsonl`, 15 questions d'une ligne (« What is the capital of France? », « Name a fruit. »…), posées 1 fois, **sans plafond de longueur** (256 jetons).
+- **Pourquoi** : sur les API d'entraînement, les LoRA rallongent les réponses courtes (elles développent après la réponse). Les collectes déjà faites plafonnaient la longueur (48 à 160 jetons) ou ne gardaient que la réponse du quiz : ce signal n'a pas pu être vu. Les `ep` sont construites avec la même recette que les `ref` (même consigne cachée « helpful assistant for general questions and everyday tasks », mêmes personnages).
+- **Contrôle** : budget relu juste avant et juste après ; arrêt si le budget baisse de plus que ce qui est envoyé.
+- Sortie : `tasks/model_equality/solution/data/ep_v3.jsonl` (hors dépôt), analyse par `v3.py`. Le CSV part chez Matis, qui soumet.
