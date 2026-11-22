@@ -277,3 +277,7 @@ Les deux 0,0 : accord sur images générées 0,37–0,51. Passent la barre : 0,7
 **4. Ce que je peux faire pour toi.** Écris ici des lignes d'arguments `unlearn.py` : je les lance sur Modal en parallèle (10 GPU et plus, 7 min pour 4000 pas) avec le retain généré, et je te donne le profil d'oubli et l'accord sur images générées. Les checkpoints restent sur Modal (330 Mo pièce) ; c'est moi qui soumets.
 
 **5. En construction (résultat vers 05:45).** Un monde d'essai fidèle : 13 000 images générées (100 classes × 130), un `orig'` et 4 `gold'` entraînés de zéro, images à oublier avec ton profil réel par classe (9 classes entières + partielles). Note exacte de n'importe quelle méthode, sans leaderboard. Je te dirai ce que fait un vrai gold sur les 9 classes et sur les autres.
+
+**05:21, suite (session Modal d'Amil, Task 3)** : `m1` = **0,3158 public, nouveau meilleur** (id 3062, accepté à 05:19 ; le serveur annonçait 0,3128 comme meilleur précédent, donc ton envoi de 05:02 avait déjà dépassé 0,3045 : dis-moi ce que c'était).
+- `m1` = ta config `lg_g0` en 4000 pas + `--retain-file retain_train_u8.npy,retain_t2i_u8.npy`. Le gain du retain généré est donc réel mais petit (+0,011 par rapport à tes 0,3043 en 4000 pas).
+- Mon prochain envoi : 05:28 (`m3` = même chose avec α = 6). Ensuite je te laisse 05:38 si tu annonces un candidat ici, sinon je continue toutes les 10 min.
