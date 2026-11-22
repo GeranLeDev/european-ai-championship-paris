@@ -39,6 +39,7 @@ ap.add_argument("--retain-file", default="retain_train_u8.npy", help="retain pro
 ap.add_argument("--faug", default="light", choices=["light", "wide"], help="alteration family applied to forget views")
 ap.add_argument("--reinit", default="", help="er: comma list of blocks to re-initialise (head is always re-initialised)")
 ap.add_argument("--reinit-mlp", action="store_true", help="er: re-initialise only the MLP sub-blocks (norm2, mlp, ls2) of --reinit blocks")
+ap.add_argument("--pop-stat", action="store_true", help="td: CE mean/std matched separately for capped-class images and the others")
 ap.add_argument("--save-last", action="store_true", help="keep the last evaluated checkpoint instead of the best under --select")
 ap.add_argument("--dump", action="store_true", help="dump eval logits of the best checkpoint to ../output/logits/<run>.pt")
 a = ap.parse_args()
@@ -62,6 +63,7 @@ else:
     scoring.resolve(a.target, H, CACHE)   # extra proxy file, or composite spec cls:<base>:<off> / mix:<A>+<B>
     q = H[a.target]["p2"]; ce_t = H[a.target]["ce"]
 ce_t_mean = ce_t.mean(1); g_mean, g_std = ce_t.mean().item(), ce_t.std().item()
+capm = torch.isin(y, torch.tensor(scoring.FULL_CLASSES)); pop = [(ce_t[capm].mean().item(), ce_t[capm].std().item()), (ce_t[~capm].mean().item(), ce_t[~capm].std().item())]
 sel = a.select or (a.target if a.target in H else "strong")
 for extra in a.also.split(","):
     if extra: scoring.resolve(extra, H, CACHE)
@@ -169,7 +171,12 @@ for step in range(1, a.steps + 1):
                     loss_f = loss_f + a.w_ce * ((F.cross_entropy(Lf, y[fi].to(dev), reduction="none") - ce_t_mean[fi].to(dev)) ** 2).mean()
                 if a.w_stat > 0:
                     cef = F.cross_entropy(Lf, y[fi].to(dev), reduction="none")
-                    loss_f = loss_f + a.w_stat * ((cef.mean() - g_mean) ** 2 + (cef.std() - g_std) ** 2)
+                    if a.pop_stat:
+                        bm = capm[fi].to(dev)
+                        for msk, (pm, psd) in zip([bm, ~bm], pop):
+                            if msk.sum() > 2: loss_f = loss_f + a.w_stat * ((cef[msk].mean() - pm) ** 2 + (cef[msk].std() - psd) ** 2)
+                    else:
+                        loss_f = loss_f + a.w_stat * ((cef.mean() - g_mean) ** 2 + (cef.std() - g_std) ** 2)
             else:  # ga
                 loss_f = -F.cross_entropy(Lf, y[fi].to(dev), reduction="none").clamp(max=a.ga_cap).mean()
             loss = loss_f + a.alpha * loss_r
