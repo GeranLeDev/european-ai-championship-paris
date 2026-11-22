@@ -679,3 +679,22 @@ Recette finale : départ `soup_C`, cible mixcls, α 20, retain DiffusionDB + ima
 - Candidats finals préparés et validés (strict, fp32, finis) : `sub_pol_Z1_alt5.3_soup4` (4 graines de la meilleure cellule : 4,39 ± 4,34 / 4,61 ± 4,62 / 4,38 ± 4,56 ; accord 0,907 / 0,858), `sub_pol_V2_alt5.5_s0` (vue altérée encore plus haute), `sub_pol_Z3_sd4.4_s0` (écart-type 4,57), cellules W (écart-type relevé sur la cellule Z1).
 - Bilan de la matinée : 0,3176 → 0,3673 (+0,05), entièrement par le niveau de CE (moyenne, écart-type) sur vues propres et altérées. Ce qui n'a rien donné : ré-entraînement approché (banc), α plus fort, allocation de l'oubli entre les 9 classes et les classes partielles au-delà de ce que fixe le niveau, cibles qui retirent la masse de la vraie classe (voie B, 0,2818).
 - Limites : chaque cellule est une sonde publique (30 % des données) ; les écarts < 0,003 entre cellules voisines sont du bruit possible sur les 70 % cachés, d'où la préférence pour une soupe de graines comme fichier final. Le banc à vrai gold n'a pas servi à régler le niveau (son gold' n'a pas le niveau de CE du vrai gold).
+
+### 9.5 Écart-type plus haut : nouveau meilleur 0,3743, fichiers finals (11:10 → 11:36)
+- **Mesuré** : `sub_pol_Z3_sd4.4_s0` (cellule Y2 avec écart-type relevé : CE propre 4,33 ± 4,57 ; combo 4,31 ± 4,66 ; légère 4,12 ± 4,66 ; partielles acc 0,60 ; accord images générées 0,884 ; Imagenette 0,857) = **0,3743** public. `sub_pol_Y1_a30_s0` = 0,3659. Courbe de l'écart-type sur la cellule Y2 : 4,20 → 0,3586 ; 4,37 → 0,3658 ; 4,57 → 0,3743.
+- Fichiers préparés ensuite, tous validés (strict, fp32, finis, md5 identique au cluster), score public non connu au moment d'écrire :
+
+| fichier (`candidates/`) | CE propre | combo / légère | partielles (acc) | accord générées / Imagenette |
+|---|---|---|---|---|
+| `sub_pol_Z3_sd4.4_soup2` (2 graines de la cellule à 0,3743) | 4,34 ± 4,59 | 4,32 ± 4,67 / 4,13 ± 4,67 | 0,59 | 0,898 / 0,856 |
+| `sub_pol_Z3_sd4.4_soup4` (4 graines) | 4,33 ± 4,59 | 4,29 ± 4,64 / 4,10 ± 4,65 | 0,60 | 0,907 / 0,853 |
+| `sub_pol_Z3_sd4.6_soup2` | 4,33 ± 4,79 | 4,28 ± 4,78 / 4,11 ± 4,83 | 0,63 | 0,907 / 0,859 |
+| `sub_pol_W_sd4.4_soup2` (vue altérée relevée) | 4,41 ± 4,55 | 4,61 ± 4,77 / 4,39 ± 4,75 | 0,57 | 0,884 / 0,851 |
+| `sub_pol_W_sd4.6_soup2` | 4,42 ± 4,74 | 4,61 ± 4,91 / 4,40 ± 4,91 | 0,60 | 0,911 / 0,853 |
+| `sub_pol_W_sd4.8_soup2` | 4,43 ± 4,93 | 4,58 ± 4,96 / 4,37 ± 5,01 | 0,63 | 0,902 / 0,866 |
+| `sub_pol_W_sd5.0_soup2` | 4,44 ± 5,11 | 4,59 ± 5,11 / 4,40 ± 5,19 | 0,64 | 0,898 / 0,846 |
+| `sub_pol_Z1_alt5.3_soup4` | 4,39 ± 4,34 | 4,61 ± 4,62 / 4,38 ± 4,56 | 0,54 | 0,907 / 0,858 |
+| `sub_pol_V2_alt5.5_s0` | 4,42 ± 4,33 | 4,77 ± 4,66 / 4,51 ± 4,60 | 0,53 | 0,898 / 0,845 |
+
+- Ordre conseillé pour les derniers envois : cellules W par écart-type croissant tant que le score monte ; sinon `sub_pol_Z3_sd4.6_soup2`, puis `sub_pol_Z3_sd4.4_soup4` en envoi de sécurité (même cellule que le record). Les scores de ces envois sont dans `challenge/COORD_T1.md`.
+- Commandes de la cellule record : `unlearn.py --method td --target mixcls --alpha 20 --lr 5e-5 --blocks 12 --bs-f 64 --bs-r 64 --steps 3000 --init sub_soup_C_uniform.pt --retain-file retain_ddb_u8.npy,<gen>×4 --w-stat 0.3 --reservoir --split-stat --faug light --p-aug 0.5 --stat-target 4.6,4.4 --stat-target-alt 4.9,4.4 --save-last`, puis `make_submission.py` et `profile_subs.py`.
