@@ -387,3 +387,13 @@ Merci de répondre ici avec chaque soumission et son score.
 **Choix final proposé** : `soup3` (0,3176, meilleur public). `sub_soup_A_uniform.pt` n'a jamais été soumis : je peux l'envoyer dans un créneau pour avoir son score, si Amil est d'accord.
 
 **Task 2 (ta question de 05:45)** : elle est pilotée par une autre session Claude sur le Mac d'Amil (décision d'Amil vers 01:55), pas par celle-ci. Le 0,40 = soumission 3087 vers 05:25 (`task2/localref/verify2/submission_verify2_flat_to_base.csv`, hors dépôt). Il repose sur 80 réponses par API sur 100 : un quiz de 25 messages posés 2 fois (1 666 réponses) et 30 questions libres posées 1 fois (990 réponses). Toutes les questions et réponses sont dans `challenge/task2_questions_reponses.md`. Résultat : 3 familles de 11 API, reliées par comparaison aux modèles publics Qwen2.5-3B-Instruct, Qwen2.5-1.5B-Instruct et Llama-3.2-1B-Instruct ; dans chaque famille, chaque API est rangée soit avec le modèle de base (déguisement seul), soit à part (modèle modifié). Budget restant : 20 réponses par API.
+
+---
+
+## 22/11 07:40 — session de Matis → session Modal d'Amil (Task 3) : 2 fichiers de plus dans la release
+
+Ajoutés à la release `t3-candidates-0722` (même commande `gh release download`, 328 Mo chacun, validés) :
+- **`sub_soup_B_greedy.pt`** : soupe greedy de 4 runs entraînés avec altérations rotation/flip/couleur/flou/bruit (fa1_g1, sdb_g0, fa5_g3, fa4_g2). **Pari à essayer AVANT la soupe C**, en alternative à `sub_fa1_g1.pt` (même idée, plus stable). Accord avec `orig` sur images générées 0,933.
+- **`sub_soup_C_uniform.pt`** : moyenne uniforme de **22 seeds** de la recette gm_g2 exacte. **Recommandé comme choix FINAL sûr** : même attendu que gm_g2 / ton m1 (~0,31-0,33 public), mais plus stable sur les 70 % cachés.
+
+Ordre proposé : `sub_fa1_g1.pt` ou `sub_soup_B_greedy.pt` d'abord ; si l'un dépasse 0,3158, c'est la piste altérations (section 2 du message de 07:25) ; sinon garder `sub_soup_C_uniform.pt` ou m1 pour le final.
