@@ -650,3 +650,17 @@ Code : `solution/unlearn_b.py` (= `unlearn.py` + `--target-file`, `--holdout`, `
 - Ajusté sur 6 points (soup_C, m3.8_s3.5, pol_D, pol_C, température 0,85 et 1,15) : **gm = 4,40 [4,30–4,55], gs = 4,75 [4,65–4,80], S = 0,383** ; RMS 0,0045. Ajusté sur les 4 points d'entraînement seuls, il prédit les deux points de température à 0,007 et 0,001 près. gs n'est identifié que par le point température 1,15 ; la répartition de S entre retain et KL par image n'est pas identifiée.
 - Plafond de la famille à moyenne / écart-type parfaits et accord 0,92 : **≈ 0,38**. Le niveau de CE seul ne mène pas à 0,40.
 - Supposé : perte due aux copies altérées ≤ 0,03 (borne avec l'écart de l'altération `combo`) ; `fa1_g1`, `p1`, `m2` n'indiquent pas d'effet.
+
+### 9.3 Le terme moyenne/écart-type est en « V » : creux localisé (09:20 → 10:15) — mesuré
+| fichier (`candidates/`) | CE propre | vue combo / vue légère | partielles (acc) | accord images générées | public |
+|---|---|---|---|---|---|
+| `sub_pol_D_a20_s0` | 4,51 ± 4,48 | 3,60 ± 3,92 / — | 1,87 (0,59) | 0,920 | **0,3600** |
+| `sub_pol_Ds_s1` | 4,47 ± 4,69 | 3,58 ± 4,00 / — | 1,69 (0,62) | 0,916 | 0,3602 |
+| `sub_pol_Da_combo_s1` | 4,32 ± 4,96 | 3,85 ± 4,20 / — | 1,36 (0,67) | 0,907 | 0,3581 |
+| `sub_pol_Dr_a60_s0` (α 60) | 4,18 ± 4,94 | 3,39 ± 4,10 / — | 1,27 (0,73) | 0,924 | 0,3384 |
+| `sub_pol_Y2_a20_s0` | 4,32 ± 4,37 | 4,31 ± 4,51 / 4,11 ± 4,49 | 1,78 (0,57) | 0,929 | **0,3658** |
+
+- Les points 3,11 ± 4,94 (0,3166), 4,51 ± 4,48 (0,3600) et 5,63 ± 4,39 (0,3209) dessinent un V : creux vers une CE moyenne de 4,2–4,5 et un écart-type de 4,4–4,7. C'est le seul levier qui a payé (+0,04) ; il n'était pas visible avant car `w-stat` fixait toute la famille à 3,1 ± 4,9.
+- Les copies altérées comptent : imposer les statistiques séparément sur vues propres et vues altérées (`--split-stat`, deux tampons) ramène l'écart entre vues de 0,9 à ~0,1 et donne le meilleur score (Y2). Calage mesuré de `--split-stat` : la moyenne atterrit ~0,3–0,4 sous la cible, l'écart-type ~0,2 au-dessus.
+- α plus fort ne rapporte rien : α 60 perd 0,022 malgré le meilleur accord avec `orig`.
+- Le fit CE seul et celui de la voie C (température) convergent ; le plafond de la famille estimé par ces fits (0,37–0,38) reste une supposition.
