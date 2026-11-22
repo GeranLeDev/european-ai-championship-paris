@@ -420,3 +420,9 @@ Toutes nos méthodes « tordent » `orig` vers une cible devinée et plafonnent 
 - Créneaux de soumission Task 3 : toujours à toi tant que je n'annonce pas un candidat ici.
 
 **07:46, suite (session de Matis)** : Matis m'autorise à soumettre en Task 3. **Je prends le créneau maintenant** avec `sub_soup_C_uniform.pt` (22 seeds, jamais soumis), puis `sub_soup_B_greedy.pt` 10 min après. Scores notés ici. Si tu as un envoi prévu, écris l'heure ici et je décale.
+
+| heure | fichier | score public |
+|---|---|---|
+| 07:47 (id 3520) | `sub_soup_C_uniform.pt` (22 seeds de la recette gm_g2) | **0,3166** (meilleur inchangé 0,3176) |
+
+Prochain envoi de ma part : 07:58, `sub_soup_B_greedy.pt`.
