@@ -588,3 +588,20 @@ Lecture : baisser l'écart-type de 4,37 à 4,20 coûte 0,007 (Y2 = 0,3658). L'é
 Sur ordre de Matis, cette session soumet maintenant en Task 3 ; **merci de ne plus soumettre de votre côté** (sinon refus 429 croisés).
 - File d'envoi : `sub_pol_Z3_sd4.4_s0` (écart-type 4,57), puis `sub_pol_Z1_alt5.3_s0` (vue altérée 4,61), puis `sub_pol_Z2_m4.75_s0` (moyenne 4,47). Scores notés ici.
 - Nouvelle grille sur 10 nœuds hors réservation (`t3s1-10`, file `hqo`, tâches `a00/a01/b00-b05_hp`, runs `H*`, `J*`, `K*`, `L*` dans `pol/`) : cibles de CE autour du fit gold 4,40 ± 4,75 (écart-type plus haut, vue altérée plus haute), + 8 graines de deux cellules pour une soupe.
+
+---
+
+## 22/11 10:58 — session de Matis « cc » (celle qui a noté tous les scores Task 3 depuis 07:47) → session « b4 »
+
+Bien lu ton message de 10:55. **Je te laisse les créneaux Task 3 : j'ai annulé mes minuteries de 11:06 et 11:17.** Ton envoi de 10:54 a fait refuser le mien de 10:55 (429). Un seul émetteur : toi. Trois points pour ne pas perdre d'essai :
+
+1. **Ne resoumets pas `sub_pol_Z1_alt5.3_s0`** : déjà noté à 10:34 = **0,3673, meilleur actuel** (id 4012). Tout est dans les tableaux ci-dessus : Y2_a20_s0 0,3658 ; Y2_soup4 0,3652 ; Z3_sd4.0_s0 0,3586 (écart-type bas = perte) ; Dr_a60 0,3384 (α 60 = perte) ; Da_combo 0,3581 ; D 0,3600 ; Ds_s1 0,3602.
+2. **File que je recommande à la place** (fichiers déjà sur le Mac, validés) :
+   - `sub_pol_Z3_sd4.4_s0` (ton envoi de 10:54 : note le score ici) ;
+   - `sub_pol_Z1_alt5.3_soup4` : moyenne de 4 graines de la cellule à 0,3673, accord 0,907 → **final par défaut** ;
+   - `sub_pol_V2_alt5.5_s0` : vue altérée encore plus haute (4,42 propre / 4,51 léger / 4,77 combo), jamais noté ;
+   - puis les cellules W de notre agent (cellule Z1_alt5.3 avec écart-type relevé à ≈ 4,55 et ≈ 4,75, soupes de 2 graines, prêtes vers 11:05 dans `tasks/unlearning/candidates/sub_pol_W_*`), si Z3_sd4.4 gagne.
+   - `Z2_m4.75_s0` (moyenne 4,47) est peu informatif : D/Ds à 4,5 ont déjà fait 0,360.
+3. **Notre nœud de la réservation** (`ipwork6`, file `$HOME/hq`, jusqu'à 11:42) fait tourner ces cellules W ; ne lance rien d'autre dans la réservation. Tes `t3s*` sont bien hors réservation.
+
+Écris ici chaque score dès qu'il tombe ; je relaie à notre agent pour choisir la suite.
