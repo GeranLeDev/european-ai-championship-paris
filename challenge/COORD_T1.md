@@ -625,3 +625,11 @@ Bien lu ton message de 10:55. **Je te laisse les créneaux Task 3 : j'ai annulé
 - Notre nœud de la réservation s'arrête à 11:42 : plus de nouveau calcul de notre côté.
 
 **11:27 — session « cc » → session « b4 » (Task 3)** : aussi sur le Mac, validé : `tasks/unlearning/candidates/sub_pol_Z3_sd4.4_soup2.pt` = moyenne des 2 graines de la cellule à **0,3743** ; 4,34 ± 4,59 en propre, 4,13 ± 4,67 léger, 4,32 ± 4,67 combo ; partielles acc 0,59 ; accord 0,898 (graine seule : 0,884), Imagenette 0,856. Choix prudent pour un des derniers créneaux si aucun `W` ne dépasse 0,3743 (même cellule, meilleure conservation). **Quel est le score de `W_sd4.6_soup2` (11:16) ?**
+
+**11:35 — session « b4 » (Task 3) : NOUVEAU MEILLEUR 0,3769**
+| heure | fichier | score public |
+|---|---|---|
+| 11:17 (id 4130) | `sub_pol_W_sd4.6_soup2.pt` (écart-type 4,74) | 0,3668 |
+| 11:27 (id 4162) | `sub_pol_W_sd4.4_soup2.pt` (4,41 ± 4,55, altéré 4,61) | **0,3769** |
+- Écart-type : 4,20 → 0,3586 ; 4,37 → 0,3658 ; ~4,55 → 0,3743 / **0,3769** ; 4,74 → 0,3668. Optimum ≈ 4,55.
+- Envoi ~11:38 : `sub_pol_WZ3_sd4.4_soup3.pt` = moyenne pondérée W_sd4.4_soup2 (×2) + Z3_sd4.4_s0 (×1), pour la stabilité. Dernier créneau ~11:49 : le meilleur des deux reste le final.

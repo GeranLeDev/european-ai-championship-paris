@@ -5,7 +5,7 @@
 |---|---|---|---|
 | T1 Localisation de watermark | **0,82** | **1er (ex æquo)** | leaders 0,82 |
 | T2 Model equality | **1,00** | **max (ex æquo)** | 0,40 à 05:25 → 1,00 à 09:58 |
-| T3 Unlearning ViT-B/16 | **0,3743** | ~8-10e | leaders 0,47-0,48 |
+| T3 Unlearning ViT-B/16 | **0,3769** | ~8-10e | leaders 0,47-0,48 |
 | **Général** | **≈ 0,91-0,92** | **5e** (top 6 = pitch) | 1er Murmell 0,99 |
 
 Le général = moyenne des 3 tâches, chacune remise à l'échelle 0 (pire équipe) → 1 (meilleure). Classement final sur les 70 % cachés.
@@ -30,13 +30,13 @@ Le général = moyenne des 3 tâches, chacune remise à l'échelle 0 (pire équi
   5. **Plain vs fp8 vs LoRA 0,3** (indiscernables autrement) : accord au quiz avec l'API watermark de la même famille (mêmes poids, même température) ; quiz groupé de 224 items pour la famille A.
   6. **Leaderboard utilisé comme mesure** : chaque soumission ne changeait qu'une décision, avec le score attendu de chaque issue calculé d'avance (0,40 → 0,70 → 0,85 → 1,00).
 
-## 4. Task 3 — Unlearning (0,3743)
+## 4. Task 3 — Unlearning (0,3769)
 - **Problème** : faire « oublier » 3 500 images à un ViT-B/16 (100 classes) pour ressembler à **gold = moyenne de modèles réentraînés sans ces images**. Score = forget (niveau et dispersion de la loss + KL par image vs gold) × retain (accuracy et KL vs orig sur un contrôle caché ; < 70 % ⇒ 0). Pas de retain set fourni, pas de labels.
 - **Méthode** :
   1. Distillation ciblée (« td ») : cible = mélange de prédictions type « jamais vu » (mixcls), plus un **terme qui impose la moyenne et l'écart-type de la loss** sur le forget set.
   2. **Retain par images générées de même style** (SD-Turbo / SDXL-Lightning, ~6 500 images) au lieu d'Imagenette : accord avec orig 0,77 → 0,93.
   3. **Statistiques imposées séparément sur images propres et copies altérées** (rotations, flou, bruit, couleur — l'indice officiel).
-  4. **Calibration sur le leaderboard** avec un petit modèle du score ajusté sur ~10 points publics : gold ≈ loss 4,3 ± 4,6 ; **une dispersion plus grande paie** (0,3586 → 0,3658 → 0,3743).
+  4. **Calibration sur le leaderboard** avec un petit modèle du score ajusté sur ~10 points publics : gold ≈ loss 4,3 ± 4,6 ; **une dispersion plus grande paie** (0,3586 → 0,3658 → 0,3743 → 0,3769 ; trop haut = 0,3668).
   5. Soupes de graines (moyenne de poids) pour la stabilité sur les 70 % cachés.
 - **Ce qui a échoué (et pourquoi c'est instructif)** : réentraînement approché (reset de blocs + redistillation : 0,003-0,05 au banc), professeur hors pli (0,105), redirection vers classes sœurs (0,185), température globale (0,279). Leçon : gold oublie PEU les classes partielles ; il faut imiter sa distribution, pas maximiser l'oubli.
 
