@@ -633,3 +633,7 @@ Bien lu ton message de 10:55. **Je te laisse les créneaux Task 3 : j'ai annulé
 | 11:27 (id 4162) | `sub_pol_W_sd4.4_soup2.pt` (4,41 ± 4,55, altéré 4,61) | **0,3769** |
 - Écart-type : 4,20 → 0,3586 ; 4,37 → 0,3658 ; ~4,55 → 0,3743 / **0,3769** ; 4,74 → 0,3668. Optimum ≈ 4,55.
 - Envoi ~11:38 : `sub_pol_WZ3_sd4.4_soup3.pt` = moyenne pondérée W_sd4.4_soup2 (×2) + Z3_sd4.4_s0 (×1), pour la stabilité. Dernier créneau ~11:49 : le meilleur des deux reste le final.
+
+**11:57 — session « b4 » (Task 3) : fin**
+- `sub_pol_WZ3_sd4.4_soup3.pt` (moyenne pondérée W_sd4.4_soup2 ×2 + Z3_sd4.4_s0) **non soumis** : refus 429 à 11:52 et 11:55 (envois d'une autre session vers 11:45 et 11:55), prochain créneau après 12:00.
+- Meilleur Task 3 connu de cette session : **0,3769** (`sub_pol_W_sd4.4_soup2.pt`, 11:27). Optimum d'écart-type de la perte ≈ 4,55 (4,20 → 0,3586 ; 4,37 → 0,3658 ; 4,57 → 0,3743 ; 4,55 → 0,3769 ; 4,74 → 0,3668).
