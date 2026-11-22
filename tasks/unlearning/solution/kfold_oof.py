@@ -11,7 +11,7 @@ ap.add_argument("--steps", type=int, default=600); ap.add_argument("--lr", type=
 ap.add_argument("--folds", type=int, default=5); ap.add_argument("--views", type=int, default=4); ap.add_argument("--seed", type=int, default=0)
 ap.add_argument("--drop-capped", action="store_true"); ap.add_argument("--retain-file", default="retain_train_u8.npy,retain_ddb_u8.npy"); a = ap.parse_args()
 dev = pick_device(); set_device(dev); torch.manual_seed(a.seed)
-X = load_forget(); N = len(X); y = torch.load(CACHE / "orig_forget_logits.pt").argmax(1); FC = torch.tensor([0, 6, 7, 8, 29, 30, 31, 33, 38]); cap = torch.isin(y, FC)
+X = load_forget(); N = len(X); y = torch.load(CACHE / "orig_forget_logits.pt").argmax(1); import scoring; FC = torch.tensor(scoring.FULL_CLASSES); cap = torch.isin(y, FC)
 R = torch.cat([torch.from_numpy(np.load(CACHE / f)) for f in a.retain_file.split(",") if (CACHE / f).exists()])
 orig = load_orig(dev); orig.requires_grad_(False); t0 = time.time(); P = torch.zeros(N, 100); CE = torch.zeros(N, a.views); cnt = torch.zeros(N); Lc = torch.zeros(N, 100)
 ac = lambda: torch.autocast(device_type="cuda", dtype=torch.bfloat16, enabled=dev == "cuda")

@@ -67,9 +67,15 @@ def quant(x, q=24):   # coarse 8x8 block + colour quantisation (crude JPEG stand
     return (0.5 * y + 0.5 * F.interpolate(F.avg_pool2d(x, 2), scale_factor=2, mode="nearest")).clamp(-1, 1)
 
 
+def rot(x, deg=12):   # small rotations (official hint: hidden copies use crops, flips, small rotations, colour, blur, noise)
+    th = (torch.rand(x.shape[0], device=x.device) * 2 - 1) * deg * math.pi / 180; c, s = th.cos(), th.sin(); z = torch.zeros_like(c)
+    g = F.affine_grid(torch.stack([torch.stack([c, -s, z], 1), torch.stack([s, c, z], 1)], 1), x.shape, align_corners=False)
+    return F.grid_sample(x, g, mode='bilinear', padding_mode='reflection', align_corners=False)
+
+
 def wide(x):   # broad family of 'altered copies': each sample gets one of several alteration types
     out = x.clone(); k = torch.randint(0, 7, (x.shape[0],), device=x.device)
-    fns = [light, medium, rescale, lambda z: noise(z, 0.08), lambda z: blur(z, 1.0), quant, lambda z: color(flip(z), 0.4)]
+    fns = [light, medium, lambda z: rot(flip(z)), lambda z: noise(z, 0.08), lambda z: blur(z, 1.0), lambda z: rot(light(z), 8), lambda z: color(flip(z), 0.4)]
     for i, fn in enumerate(fns):
         m = k == i
         if m.any(): out[m] = fn(x[m])

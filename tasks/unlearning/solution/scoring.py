@@ -2,7 +2,8 @@
 gold proxy = dict(p2=[N,100] avg softmax T=2, ce=[N,K] per-'model' CE wrt label) ; labels y = orig pseudo-labels."""
 import torch, torch.nn.functional as F
 
-FULL_CLASSES = [0, 6, 7, 8, 29, 30, 31, 33, 38]   # classes with ~130 forget images (cap) -> maybe removed entirely
+import os
+FULL_CLASSES = [int(c) for c in os.environ["T3_FULL"].split(",")] if os.environ.get("T3_FULL") else [0, 6, 7, 8, 29, 30, 31, 33, 38]   # classes with ~130 forget images (cap) -> maybe removed entirely
 
 
 def kl_rows(p, logq):  # KL(p || q) per row, p probs, logq log-probs
