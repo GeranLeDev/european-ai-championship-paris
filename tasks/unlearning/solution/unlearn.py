@@ -43,6 +43,10 @@ ap.add_argument("--reinit-mlp", action="store_true", help="er: re-initialise onl
 ap.add_argument("--pop-stat", action="store_true", help="td: CE mean/std matched separately for capped-class images and the others")
 ap.add_argument("--pop-target", default="", help="td: explicit CE targets 'mean_cap,std_cap,mean_oth,std_oth' (implies --pop-stat) instead of the target's own statistics")
 ap.add_argument("--stat-target", default="", help="td: explicit global CE target 'mean,std' for the --w-stat term")
+ap.add_argument("--nb-k", type=int, default=0, help="td: capped-class rows of the target = 0.5 * soft top-k neighbour classes (cosine of orig head rows) + 0.5 * strong proxy")
+ap.add_argument("--partial-w", type=float, default=1.0, help="td: weight of the forget KL on partial-class images (capped-class images keep 1)")
+ap.add_argument("--w-cons", type=float, default=0.0, help="td: consistency KL(T=2) between forget views and a light-augmented copy")
+ap.add_argument("--reservoir", action="store_true", help="td: CE mean/std term computed over a running reservoir of all forget images instead of the batch")
 ap.add_argument("--save-last", action="store_true", help="keep the last evaluated checkpoint instead of the best under --select")
 ap.add_argument("--dump", action="store_true", help="dump eval logits of the best checkpoint to ../output/logits/<run>.pt")
 a = ap.parse_args()
@@ -85,6 +89,10 @@ if a.method == "er":
             for nm in ["norm2", "mlp", "ls2"]: getattr(sub.blocks[i], nm).load_state_dict(getattr(fresh.blocks[i], nm).state_dict())
         else: sub.blocks[i].load_state_dict(fresh.blocks[i].state_dict())
     sub.head.load_state_dict(fresh.head.state_dict()); del fresh
+if a.nb_k > 0:   # soft top-k neighbour target for the capped classes
+    Wn = F.normalize(orig.head.weight.detach().float().cpu(), dim=1); sim = Wn @ Wn.T; sim.fill_diagonal_(-1e9); tv, ti = sim.topk(a.nb_k, 1)
+    nbd = torch.zeros(100, 100).scatter_(1, ti, F.softmax(tv / 0.1, 1)); q = q.clone(); q[capm] = 0.5 * nbd[y[capm]] + 0.5 * H["strong"]["p2"][capm]
+buf = F.cross_entropy(logits_of(sub, X, dev), y, reduction="none") if a.reservoir else None
 sub.requires_grad_(False)
 train_mods = [sub.blocks[i] for i in range(12 - a.blocks, 12)] + [sub.norm, sub.head]
 if a.blocks >= 12:
@@ -168,10 +176,13 @@ for step in range(1, a.steps + 1):
         elif a.method == "er":
             loss = kl2(sub(xr).float(), F.softmax(tr / 2, 1))
         else:
-            Lall = sub(torch.cat([xf, xr])).float(); Lf, Lr = Lall[: len(fi)], Lall[len(fi):]
+            xin = [xf, xr] + ([augs.light(xf)] if a.w_cons > 0 else [])
+            Lall = sub(torch.cat(xin)).float(); Lf, Lr = Lall[: len(fi)], Lall[len(fi): len(fi) + len(xr)]
             loss_r = kl2(Lr, F.softmax(tr / 2, 1))
             if a.method == "td":
-                loss_f = kl2(Lf, q[fi].to(dev))
+                qf = q[fi].to(dev); rows = (qf * (qf.clamp_min(1e-12).log() - F.log_softmax(Lf / 2, 1))).sum(1)
+                loss_f = (rows * torch.where(capm[fi].to(dev), 1.0, a.partial_w)).mean() if a.partial_w != 1 else rows.mean()
+                if a.w_cons > 0: loss_f = loss_f + a.w_cons * kl2(Lall[len(fi) + len(xr):], F.softmax(Lf.detach() / 2, 1))
                 if a.w_ce > 0:
                     loss_f = loss_f + a.w_ce * ((F.cross_entropy(Lf, y[fi].to(dev), reduction="none") - ce_t_mean[fi].to(dev)) ** 2).mean()
                 if a.w_stat > 0:
@@ -180,6 +191,9 @@ for step in range(1, a.steps + 1):
                         bm = capm[fi].to(dev)
                         for msk, (pm, psd) in zip([bm, ~bm], pop):
                             if msk.sum() > 2: loss_f = loss_f + a.w_stat * ((cef[msk].mean() - pm) ** 2 + (cef[msk].std() - psd) ** 2)
+                    elif a.reservoir:   # statistics over all forget images: stale buffer, live values for the batch (gradient rescaled by N/B)
+                        allc = buf.to(dev).clone(); allc[fi.to(dev)] = cef; buf[fi] = cef.detach().cpu()
+                        loss_f = loss_f + a.w_stat * (N / len(fi)) * ((allc.mean() - g_mean) ** 2 + (allc.std() - g_std) ** 2)
                     else:
                         loss_f = loss_f + a.w_stat * ((cef.mean() - g_mean) ** 2 + (cef.std() - g_std) ** 2)
             else:  # ga

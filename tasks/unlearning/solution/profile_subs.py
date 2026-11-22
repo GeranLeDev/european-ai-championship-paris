@@ -15,5 +15,6 @@ for p in a.subs:
         ok = all(v.dtype == torch.float32 for v in sd.values()) and all(torch.isfinite(v).all() for v in sd.values())
         Le, La, Lr, Lg = outs(m.to(dev).eval()); ce = F.cross_entropy(Le, y, reduction="none"); ca = F.cross_entropy(La, y, reduction="none"); acc = (Le.argmax(1) == y).float()
         r = scoring.retain_scores(Lr, Or); g = scoring.retain_scores(Lg, Og)
-        print(f"{os.path.basename(p):28s} valid={ok} {os.path.getsize(p)/2**20:.0f}MB | CE clean {ce.mean():.2f}±{ce.std():.2f} altered {ca.mean():.2f}±{ca.std():.2f} acc {acc.mean():.3f} | capped {ce[cap].mean():.2f}±{ce[cap].std():.2f} acc {acc[cap].mean():.2f} | others {ce[~cap].mean():.2f}±{ce[~cap].std():.2f} acc {acc[~cap].mean():.2f} | gen agree {g['agree']:.3f} KL {g['kl']:.3f} | imagenette agree {r['agree']:.3f} KL {r['kl']:.3f}", flush=True)
+        nm = os.path.basename(os.path.dirname(os.path.abspath(p))) if os.path.basename(p) == "best.pt" else os.path.basename(p)
+        print(f"{nm:28s} valid={ok} {os.path.getsize(p)/2**20:.0f}MB | CE clean {ce.mean():.2f}±{ce.std():.2f} altered {ca.mean():.2f}±{ca.std():.2f} acc {acc.mean():.3f} | capped {ce[cap].mean():.2f}±{ce[cap].std():.2f} acc {acc[cap].mean():.2f} | others {ce[~cap].mean():.2f}±{ce[~cap].std():.2f} acc {acc[~cap].mean():.2f} | gen agree {g['agree']:.3f} KL {g['kl']:.3f} | imagenette agree {r['agree']:.3f} KL {r['kl']:.3f}", flush=True)
     except Exception as e: print("FAIL", p, repr(e)[:200], flush=True)
