@@ -313,3 +313,41 @@ Les deux 0,0 : accord sur images générées 0,37–0,51. Passent la barre : 0,7
 - **Demande** : peux-tu me laisser UN créneau, ou le soumettre toi-même ? Réponds ici avec l'heure. Je ne soumets pas tant que tu n'as pas répondu.
 - **Pour le choix final** : soupe uniforme de 6 runs de la recette gm_g2 (`/p/project1/training2666/geran1/t3runs/sub_soup_A_uniform.pt`, retain meilleur que chaque run seul), proposée à égalité avec ton `m1` (0,3158) pour réduire la variance sur les 70 % cachés.
 - **Task 2** : toujours sans réponse de ton côté sur qui la pilote ; Matis prépare de son côté une analyse externe des réponses.
+
+---
+
+## 22/11 07:25 — session de Matis → session Modal d'Amil (Task 3) : TOUT À REPRENDRE, à lancer sur Modal
+
+Matis te confie la suite de la Task 3. Tout est poussé sur `main` et `develop`. Ce que tu as à faire, dans l'ordre :
+
+**1. Soumettre le candidat non testé (fichier prêt, pas d'entraînement).**
+- Fichiers dans la release GitHub **`t3-candidates-0722`** du dépôt (328 Mo chacun) :
+  ```bash
+  gh release download t3-candidates-0722 --repo GeranLeDev/european-ai-championship-paris --dir t3_from_matis
+  ```
+  - `sub_fa1_g1.pt` : **à soumettre en premier** (jamais soumis). Départ `gm_g2` + 3000 pas, mixcls, α 10, w-stat 0,1, `--faug combo --p-aug 0.75` (recadrage 0,6-1 + flip + rotation ±12° + couleur + flou + bruit, comme l'indice officiel). Meilleur retain mesuré chez nous (accord 0,938 avec `orig` sur images générées tenues à part) et meilleur score de validation interne. Notre proxy ne voit pas les rotations, donc seul le leaderboard peut trancher.
+  - `sub_soup_A_uniform.pt` : moyenne uniforme de 6 runs de la recette gm_g2 (gm_g2, gm_g0, 4 seeds). Même score attendu que gm_g2 (~0,31-0,33), retain meilleur ; **candidat pour le choix FINAL**, avec ton `m1`, pour réduire la variance sur les 70 % cachés.
+  - `sub_gm_g2.pt` : 0,3128 public. Sert de **point de départ** (`--init`) pour les runs ci-dessous.
+- Je ne soumets plus rien en Task 3 : tous les créneaux sont à toi.
+
+**2. Si `sub_fa1_g1` fait mieux que 0,3158 : pousser les altérations sur Modal.**
+- Code : `git pull`, puis `tasks/unlearning/solution/` (`augs.py` et `unlearn.py` ont 2 nouvelles familles `--faug combo` et `--faug wide2`).
+- Commande de base (celle de fa1, avec ton retain généré à la place du nôtre) :
+  ```bash
+  cd tasks/unlearning/solution
+  C="--method td --lr 5e-5 --blocks 12 --bs-f 64 --bs-r 64 --eval-every 500 --n-eval 3500 --n-eval-r 1000 \
+     --retain-file retain_train_u8.npy,retain_t2i_u8.npy --alpha 10 --also mixcls --target mixcls --select mixcls --w-stat 0.1"
+  python -u unlearn.py --device cuda --amp $C --init t3_from_matis/sub_gm_g2.pt --faug combo --p-aug 0.75 --steps 3000 --seed 0 --out runs/fa_combo_s0
+  python make_submission.py runs/fa_combo_s0/best.pt sub_fa_combo_s0.pt
+  ```
+  (si ton `retain_t2i_u8.npy` n'a pas de split de validation, ajoute `--retain-val retain_val_u8.npy`, la valeur par défaut).
+- Variantes à lancer en parallèle (10 GPU) : `--faug combo` p 0,6 / 0,75 / 0,9 ; `--faug wide2` p 0,75 ; 4 seeds de la meilleure ; puis une soupe uniforme (`soup.py`) des seeds.
+- Résultats proxy chez nous (prédits, fit 16 points, RMS 0,02) : combo p0,75 0,327 ; wide p0,75 0,337 ; wide2 p0,75 0,328 ; combo p0,9 0,316. Ils sont dans le bruit du fit : seul le leaderboard compte.
+
+**3. Si `sub_fa1_g1` ne fait pas mieux** : les altérations ne sont pas le levier ; garder `m1` (0,3158) ou la soupe pour le final.
+
+**Ce qui ne marche pas (mesuré en public, ne pas refaire)** : distillation vers un professeur hors pli sans les 9 classes (0,105) ; 9 classes redirigées vers une classe sœur fixe (0,185) ; α entre 6 et 30 sans effet (0,313) ; cibles « split » et statistiques par population (proxy 0,00-0,27).
+
+**Honnêtement** : aucun de nos candidats n'est prédit nettement au-dessus de 0,32 ; `fa1_g1` est le seul pari dont le gain serait invisible pour notre proxy. Le saut vers 0,40+ viendra plutôt de ton monde d'essai à vrai gold (orig' + 4 gold') : écris ici ce qu'il dit du comportement de gold sur les 9 classes et sur les partielles.
+
+Merci de répondre ici avec chaque soumission et son score.
