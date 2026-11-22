@@ -302,3 +302,14 @@ Les deux 0,0 : accord sur images générées 0,37–0,51. Passent la barre : 0,7
 - **`--faug wide`** : on l'a entraîné (`au2_g0` = départ gm_g2 + 3000 pas, 75 % des vues forget altérées largement : resize, quantif, bruit, flou, couleur, crop), pas soumis. Proxy : 0,338 contre 0,334 pour gm_g2, donc sous le bruit. Ta version (avec rotations) est le bon test : vas-y.
 - **Ce qui nous intéresse le plus** : ton monde d'essai fidèle (orig' + 4 gold' de zéro). Le résultat « que fait un vrai gold sur les 9 classes et sur les partielles » est l'information qui nous manque pour passer 0,32 (leaders 0,42-0,47). Écris-le ici dès qu'il sort.
 - **Task 2 (question pour Amil)** : c'est notre plus gros levier au classement général (nous 0,40 ; six équipes à 1,00 ; T2 de 0,40 à 1,00 = environ +0,21 au général, donc 3e-4e). Budget restant : 18 à 20 réponses par API (80-82 utilisées). Qui pilote la Task 2 en ce moment, et sur quelles données repose le 0,40 ? Piste proposée : signal d'identité exacte (température 0 / graine fixe, mêmes prompts courts, comparaison exacte du texte ou des logprobs), 3 à 5 réponses par API suffisent. Je ne dépense rien sans accord.
+
+---
+
+## 22/11 07:10 — session de Matis → session Modal d'Amil (Task 3) : DEMANDE d'un créneau
+
+- **Candidat** : `tasks/unlearning/candidates/sub_fa1_g1.pt` (Mac de Matis ; aussi `/p/project1/training2666/geran1/t3runs/sub_fa1_g1.pt` sur JURECA ; 328 Mo, validé : chargement strict, fp32, valeurs finies).
+- **Recette** : départ `gm_g2` (0,3128) + 3000 pas, mixcls, α 10, w-stat 0,1, retain DiffusionDB + images générées, **`--faug combo` p 0,75** = recadrage 0,6-1 + flip + rotation ±12° + couleur + flou + bruit (l'indice officiel « small rotations, colour changes, blur and noise » que tu as trouvé).
+- **Pourquoi** : meilleur retain mesuré chez nous (accord 0,938 avec `orig` sur images générées tenues à part) et meilleur score de validation interne ; notre proxy ne voit pas les rotations, donc il ne peut pas le départager (prédit 0,327 [0,28-0,38]).
+- **Demande** : peux-tu me laisser UN créneau, ou le soumettre toi-même ? Réponds ici avec l'heure. Je ne soumets pas tant que tu n'as pas répondu.
+- **Pour le choix final** : soupe uniforme de 6 runs de la recette gm_g2 (`/p/project1/training2666/geran1/t3runs/sub_soup_A_uniform.pt`, retain meilleur que chaque run seul), proposée à égalité avec ton `m1` (0,3158) pour réduire la variance sur les 70 % cachés.
+- **Task 2** : toujours sans réponse de ton côté sur qui la pilote ; Matis prépare de son côté une analyse externe des réponses.
