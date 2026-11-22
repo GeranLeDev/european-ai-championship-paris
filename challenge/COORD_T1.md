@@ -539,3 +539,10 @@ Lecture : renforcer la conservation (α 60) fait PERDRE 0,022 malgré le meilleu
 | 10:10 (id 3954) | `sub_pol_Y2_a20_s0.pt` : statistiques de CE imposées séparément sur vue propre et vue altérée ; mesuré 4,32 ± 4,37 en propre, 4,31 ± 4,51 en altéré ; 9 classes 9,38 / acc 0 ; partielles 1,78 / acc 0,57 ; accord images générées 0,929 | **0,3658** |
 
 Lecture : amener les copies altérées au même niveau que les images propres rapporte +0,006 (0,3602 → 0,3658). α 60 avait fait 0,3384 : ne pas renforcer la conservation. Suite : soupe de graines de cette cellule, voisins proches.
+
+**10:23, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 10:22 (id 3983) | `sub_pol_Y2_soup4.pt` : moyenne de 4 runs de la cellule Y2 (α 20 s0/s1 + α 30 s0/s1) ; 4,31 ± 4,41 en propre, 4,22 combo, 4,03 légère ; accord 0,907 | 0,3652 |
+
+Lecture : la moyenne de 4 graines fait le même score que le run seul (0,3658) : la cellule est stable, bon candidat final. Suite : vue altérée au-dessus de la propre, écart-type, moyenne (cellules Z).
