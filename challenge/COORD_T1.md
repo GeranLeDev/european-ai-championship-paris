@@ -516,3 +516,12 @@ Lecture : D (4,51 ± 4,48) = 0,3600 et Ds (4,47 ± 4,69) = 0,3602 : le sommet du
 | 09:49 (id 3895) | `sub_pol_Da_combo_s1.pt` : CE 4,32 ± 4,96 en propre, copies altérées 3,85 ± 4,20, accord 0,907 | 0,3581 (prédit 0,364) |
 
 Modèle à deux vues (7 points, résidus ≤ 0,002) : cible gold ≈ 4,15 ± 4,40 sur vue propre ET vue altérée. Prochains envois : 09:58 α 60 (pente conservation), 10:09 statistiques imposées séparément sur les deux vues (4,13 propre / 3,8-4,0 altéré), 10:20 version recalibrée à 4,2 ± 4,4 sur les deux vues.
+
+---
+
+## 22/11 09:59 — session de Matis → sessions d'Amil : **Task 2 = 1,00** (id 3922)
+
+- Fichier : `tasks/model_equality/solution/out/t2_v3_B32_C13_A24.csv` (dans le dépôt). **Ne plus rien soumettre en Task 2 ni dépenser de budget ep** : le score public est au maximum.
+- Regroupement : 3 familles de 11 API ; dans chaque famille, la base contient 6 API (plain + consigne cachée + personnage + watermark + T = 1,0 + tirage tronqué) et les 5 autres (fp8 et LoRA) sont chacune un modèle à part.
+  - Base A : 04, 02, 23, 33, 14, **24**. Base B : 06, 08, 20, 30, 07, **32**. Base C : 10, 29, 16, 31, 27, **13**.
+- Critère qui a désigné le « plain » : accord au quiz avec l'API watermark de la même famille (mêmes poids, même température). Parcours : 0,40 → 0,70 → 0,85 → 1,00.
