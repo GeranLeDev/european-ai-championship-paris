@@ -573,3 +573,10 @@ Lecture : la moyenne de 4 graines fait le même score que le run seul (0,3658) :
 | 10:34 (id 4012) | `sub_pol_Z1_alt5.3_s0.pt` : comme Y2 avec la vue altérée relevée ; 4,40 ± 4,35 en propre, 4,40 ± 4,58 en altération légère, 4,61 ± 4,63 en combo ; partielles acc 0,55 ; accord 0,898 | **0,3673** |
 
 Lecture : relever encore la vue altérée (écart nul en léger, positif en combo) rapporte +0,0015 malgré un accord un peu plus bas. Prochains envois : 10:44 écart-type 4,20, 10:55 selon résultat.
+
+**10:46, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 10:45 (id 4042) | `sub_pol_Z3_sd4.0_s0.pt` : comme Y2 avec l'écart-type abaissé ; 4,33 ± 4,20 en propre, 4,09 ± 4,33 en léger | 0,3586 |
+
+Lecture : baisser l'écart-type de 4,37 à 4,20 coûte 0,007 (Y2 = 0,3658). L'écart-type gold est donc ≥ 4,4, probablement plus haut. Meilleur inchangé : 0,3673. Prochains envois : 10:55 vue altérée encore plus haute, 11:06 moyenne de 4 graines de la meilleure cellule, 11:17 écart-type plus haut (4,6).
