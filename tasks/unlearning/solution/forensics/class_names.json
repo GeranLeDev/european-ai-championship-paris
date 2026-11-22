@@ -1,0 +1,24 @@
+{
+ "_doc": "Forget-set forensics: names of the 45 classes present (orig argmax pseudo-labels), from CLIP ViT-B/32 laion2b zero-shot (clip_names.py) + visual inspection of contact sheets. conf: high/medium/low. Groups come from head-weight cosine clustering (head_structure.py); absent-class guesses are weak hints from orig responses on COCO val2017 (name_absent.py).",
+ "present": {
+  "0": ["fox figurine", "high"], "1": ["owl figurine", "high"], "2": ["rabbit / hare figurine", "high"], "3": ["heron / crane bird figurine", "high"], "4": ["turtle / tortoise figurine", "high"],
+  "5": ["hanging / wall lantern (incl. paper lantern)", "medium"], "6": ["oil / candle lantern on a table", "medium"], "7": ["hanging hurricane lantern", "medium"], "8": ["stone / garden post lantern", "medium"],
+  "12": ["glass teapot", "high"], "15": ["mushroom / toadstool", "high"], "19": ["agave", "medium"], "21": ["aloe vera (potted)", "medium"],
+  "23": ["suspension / rope bridge", "high"], "25": ["truss bridge", "medium"], "28": ["lighthouse", "high"],
+  "29": ["sailboat", "high"], "30": ["rowboat / kayak", "medium"], "31": ["canoe", "medium"], "32": ["fishing boat / trawler", "high"], "33": ["rowboat / dinghy", "medium"],
+  "35": ["wicker / rattan chair", "high"], "36": ["folding chair", "high"], "37": ["armchair", "high"], "38": ["rocking chair / office chair (mixed)", "low"],
+  "39": ["windmill (many wind turbines too)", "medium"], "40": ["wind turbine", "high"], "41": ["watermill / old mill", "medium"],
+  "42": ["knitted scarf", "medium"], "43": ["knitted blanket / throw", "medium"], "44": ["woven basket", "high"], "45": ["(embroidered) pillow / cushion", "high"],
+  "51": ["leather boots", "high"], "52": ["canvas sneakers", "high"], "53": ["clogs", "high"], "57": ["loaf of bread / baguette", "high"],
+  "69": ["hourglass", "high"], "72": ["kite", "high"], "81": ["totem pole", "high"], "83": ["pagoda", "high"], "85": ["beehive", "high"], "86": ["birdhouse", "high"],
+  "88": ["origami crane", "high"], "92": ["anchor", "high"], "93": ["sundial", "high"]
+ },
+ "groups_from_head_weights": {
+  "animal figurines": [0, 1, 2, 3, 4], "lanterns": [5, 6, 7, 8], "teapots / kettles": [9, 10, 11, 12], "mushrooms / forest floor": [13, 14, 15, 16, 17],
+  "succulents": [19, 20, 21], "bridges": [22, 23, 24, 25], "towers (lighthouse...)": [26, 27, 28], "boats": [29, 30, 31, 32, 33], "chairs": [34, 35, 36, 37, 38],
+  "mills": [39, 40, 41], "textiles / soft goods": [42, 43, 44, 45], "unknown group (flying / outdoor?)": [46, 47, 48, 49, 50], "footwear": [51, 52, 53, 54],
+  "bakery": [55, 56, 57, 58, 59], "singletons (one object each)": "60-99 (18 loosely tied to 20/66)"
+ },
+ "absent_weak_hints": {"55-59": "baked goods (pizza/pie, pretzel, donut/bagel, pastry)", "62,74,84": "clocks (cuckoo / wall clock)", "67,73,76": "kitchen / appliances / screens",
+  "79,80,90": "sky or snow scenes", "97": "bus / tram / train", "66,18,20": "leafy plants", "70": "cattle?", "94": "close to 8 (stone lantern) and 93 (sundial): garden stone object"}
+}
