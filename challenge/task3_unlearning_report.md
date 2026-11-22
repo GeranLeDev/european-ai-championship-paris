@@ -426,3 +426,21 @@ Pas de gain attendu ; λ > 1 dégrade le retain proxy. λ = 1,3 n'a d'intérêt 
 - Candidats (validés : chargement strict, float32, finis ; seul `head.bias` diffère ; logits réels conformes à 0,18 près) : `candidates/sub_lg0_bias4.pt` (référence 0,3045) et `candidates/sub_m1g2_bias4.pt` (référence 0,2736). Lecture : au-dessus de la référence → suppression totale, poursuivre avec δ = 8 ; nettement en dessous → hypothèse close.
 - Calibration affine exacte de `lg_g0` (température τ, biais des 9 classes, biais des 36 classes partielles) sous les 30 meilleures hypothèses : `lg_g0` est à un optimum local (meilleur : τ = 1,1, +0,006). Aucun gain gratuit dans le monde « suppression faible ».
 - Outils locaux ajoutés : `cache_mid_ckpt.py` (états CLS du dernier bloc pour n'importe quel checkpoint) et `tail_ft.py` (ré-entraînement CPU de la queue d'un run existant vers une nouvelle cible, exact vis-à-vis du modèle complet). Entraînement complet sur MPS mesuré : ~3 s/pas (bs 32+32), donc inutilisable.
+
+### 8.6 Résultat de la sonde et ajustement à 13 points (01:45–02:10)
+- **Mesuré** : `sub_lg0_bias4` = **0,2348** public (référence `lg_g0` 0,3045). La suppression totale des 9 classes chez gold est écartée (`dcap` 12–20 : RMS 0,016–0,025).
+- Le point était prédit 0,20–0,22 (LOO : 0,202–0,216). L'erreur du fit hors de la zone explorée est donc d'environ ±0,03.
+- Ajustement à 13 points : RMS 0,005, LOO RMSE 0,008–0,010. Une seule famille reste en tête : gold ≈ **0,5 medium + 0,5 xstrong, dcap ≈ 1, doth ≈ 0** (= cible `fitB`), s = 0,53–0,62, CE gold ≈ 3,3 ± 4,6. Gold ne traite presque pas les 9 classes à part ; il est bimodal sur toutes les images.
+- Transformations affines des logits de `lg_g0` (température, biais des 9 classes relevé de +1 à +4, biais des 36 classes partielles) : toutes prédites neutres ou négatives (biais +1 : 0,307 contre 0,313). Pas de candidat sans entraînement dans cette direction.
+- **Ré-entraînement local de la queue de `lg_g0`** (`tail_ft.py`, α=30, lr 1e-4, 2000 pas), prédiction sur les 30 meilleures hypothèses (retrancher ~0,008, biais du fit sur `lg_g0`) :
+
+| candidat (`candidates/`) | cible | CE (9 classes / autres) | retain proxy accord / KL | prédit [min, max] |
+|---|---|---|---|---|
+| `sub_lg_g0.pt` (référence, mesuré 0,3045) | mixcls | 3,10 ± 4,96 (8,59 / 0,35) | 0,861 / 0,047 | 0,313 [0,308–0,320] |
+| contrôle (queue → mixcls, non exporté) | mixcls | 3,18 ± 5,14 | 0,854 / 0,053 | 0,312 |
+| `sub_lg0_tailfitA.pt` | fitA | 2,71 ± 4,70 (6,97 / 0,56) | 0,847 / 0,059 | 0,328 [0,314–0,341] |
+| **`sub_lg0_tailfitB.pt`** | fitB | 2,92 ± 4,92 (7,73 / 0,51) | 0,848 / 0,058 | **0,335 [0,323–0,347]** |
+
+- Variantes plus longues de la queue vers `fitB` (6000 pas, lr 2e-4 à 3e-4, w-stat 0,3) : 0,339–0,346 prédits, mais retain proxy plus bas (accord 0,82–0,83) et plage plus large. La capacité de la queue sature vers 0,34 ; la version modèle complet (`fa_g1` sur JURECA) devrait faire mieux sur le retain.
+- **Lecture franche** : avec s ≈ 0,58, cette famille plafonne vers 0,35. Atteindre 0,40 demanderait une information par image sur gold que les scores publics ne donnent pas.
+- À faire dès le retour du SSH : rapatrier les logits `fa_g0..g3` (tâche `06_t3_fit`), les prédire avec `predict12.py`, exporter le meilleur ; supprimer `output/runs/zz_smoke` s'il existe ; tâche suivante = `fitB` en modèle complet sur plus de pas, avec et sans `--retain both`.
