@@ -664,3 +664,18 @@ Code : `solution/unlearn_b.py` (= `unlearn.py` + `--target-file`, `--holdout`, `
 - Les copies altérées comptent : imposer les statistiques séparément sur vues propres et vues altérées (`--split-stat`, deux tampons) ramène l'écart entre vues de 0,9 à ~0,1 et donne le meilleur score (Y2). Calage mesuré de `--split-stat` : la moyenne atterrit ~0,3–0,4 sous la cible, l'écart-type ~0,2 au-dessus.
 - α plus fort ne rapporte rien : α 60 perd 0,022 malgré le meilleur accord avec `orig`.
 - Le fit CE seul et celui de la voie C (température) convergent ; le plafond de la famille estimé par ces fits (0,37–0,38) reste une supposition.
+
+### 9.4 Réglage fin sur les deux vues (10:15 → 11:10) — mesuré
+Recette finale : départ `soup_C`, cible mixcls, α 20, retain DiffusionDB + images générées, 3000 pas, `--reservoir --split-stat --faug light --p-aug 0.5 --w-stat 0.3`, cibles `--stat-target` (vues propres) et `--stat-target-alt` (vues altérées). Profil mesuré par `profile_subs.py` sur les 3 500 images : vue propre, vue « combo » (recadrage + flip + rotation + couleur + flou + bruit), vue « légère ».
+
+| fichier (`candidates/`) | cibles (propre ; altérée) | CE propre | combo / légère | partielles (acc) | accord générées / Imagenette | public |
+|---|---|---|---|---|---|---|
+| `sub_pol_Y2_a20_s0` | 4,6 ± 4,2 ; 4,9 ± 4,2 | 4,32 ± 4,37 | 4,31 ± 4,51 / 4,11 ± 4,49 | 0,57 | 0,929 / 0,852 | 0,3658 |
+| `sub_pol_Y2_soup4` (4 runs) | idem | 4,31 ± 4,41 | 4,22 ± 4,49 / 4,03 ± 4,48 | 0,58 | 0,907 / 0,860 | 0,3652 |
+| `sub_pol_Z1_alt5.3_s0` | 4,6 ± 4,2 ; 5,3 ± 4,2 | 4,40 ± 4,35 | 4,61 ± 4,63 / 4,40 ± 4,58 | 0,55 | 0,898 / 0,846 | **0,3673** |
+| `sub_pol_Z3_sd4.0_s0` | 4,6 ± 4,0 ; 4,9 ± 4,0 | 4,33 ± 4,20 | 4,30 ± 4,38 / 4,09 ± 4,33 | 0,54 | 0,902 / 0,852 | 0,3586 |
+
+- Relever la vue altérée au niveau de la vue propre (ou un peu au-dessus) : +0,0015. Baisser l'écart-type de 4,37 à 4,20 : −0,007. Une soupe de 4 runs fait le même score que le run seul.
+- Candidats finals préparés et validés (strict, fp32, finis) : `sub_pol_Z1_alt5.3_soup4` (4 graines de la meilleure cellule : 4,39 ± 4,34 / 4,61 ± 4,62 / 4,38 ± 4,56 ; accord 0,907 / 0,858), `sub_pol_V2_alt5.5_s0` (vue altérée encore plus haute), `sub_pol_Z3_sd4.4_s0` (écart-type 4,57), cellules W (écart-type relevé sur la cellule Z1).
+- Bilan de la matinée : 0,3176 → 0,3673 (+0,05), entièrement par le niveau de CE (moyenne, écart-type) sur vues propres et altérées. Ce qui n'a rien donné : ré-entraînement approché (banc), α plus fort, allocation de l'oubli entre les 9 classes et les classes partielles au-delà de ce que fixe le niveau, cibles qui retirent la masse de la vraie classe (voie B, 0,2818).
+- Limites : chaque cellule est une sonde publique (30 % des données) ; les écarts < 0,003 entre cellules voisines sont du bruit possible sur les 70 % cachés, d'où la préférence pour une soupe de graines comme fichier final. Le banc à vrai gold n'a pas servi à régler le niveau (son gold' n'a pas le niveau de CE du vrai gold).
