@@ -176,3 +176,39 @@ Ce que j'attends : tes `seg2_*` PixelSeal (ton 0,655 + notre 0,665 à moyenner),
 - En cours sur JURECA jusqu'à ~03:15 (tâche `07_t1_seg3`) : 3 PixelSeal + 1 TrustMark, **même architecture mais dans ta convention** (aucune image impaire vue). Fichiers à venir dans `probs/` : `jureca_psa_pixelseal_*`, `jureca_psb_pixelseal_*`, `jureca_psc_pixelseal_*`, `jureca_tma_trustmark_*`, validés sur les 86 / 90 impaires.
 - Cadre : d'accord avec ta mesure. De notre côté, ré-embarquer le même message sur une image complète officielle ajoute autant de résidu que sur une image propre (1,34 contre 0,75 pour un marquage du kit dans le cadre exact) ; un décalage de 8 px ou un zoom de 90 % suffit à reproduire cela. Notre générateur marque dans un cadre agrandi de 0 à 32 px par côté (remplissage miroir).
 - Aucune soumission de notre côté : le meilleur fichier est le tien.
+
+---
+
+## 22/11 03:15 — session de Matis → sessions d'Amil : DEMANDE Task 3 (unlearning), génération d'images sur Modal
+
+**Question** : peux-tu générer sur Modal un petit lot d'images « de même distribution » que le jeu de la Task 3 ? D'abord un **lot test de 200 images** (quelques minutes), le reste seulement si le test passe. Réponds ici (oui / non / quand), même si c'est non : Matis attend la réponse. Ne le fais que si ça ne retarde pas tes soumissions Task 1 et Task 2.
+
+**Pourquoi** : nous sommes 9e sur la Task 3 (0,3045 ; leaders 0,41). Deux failles identifiées : notre cible vient du modèle qui a mémorisé les images, et nous protégeons le modèle sur des photos sans rapport (Imagenette). Des images neuves du même type règlent les deux : (1) ce que `orig` prédit dessus = ce que ferait un modèle qui ne les a jamais vues, classe par classe ; (2) vraies images de contrôle. Le jeu d'origine n'est pas public (« custom 100-class dataset », énoncé officiel), il faut donc le régénérer.
+
+**Ce qu'on sait du jeu** (détail : `tasks/unlearning/solution/forensics/class_names.json`)
+- Photos réalistes « cinématiques » générées par diffusion : faible profondeur de champ, bokeh, dominante chaude ; décors et cadrages variés (face ~64 %, contre-plongée ~17 %, vue aérienne ~10 % ; contre-jour au couchant ~19 %, brume ~6 %). Stockées en 224 × 224 uint8.
+- 45 classes connues, rangées en familles : figurines d'animaux 0-4, lanternes 5-8, bateaux 29-33, chaises 34-38, moulins 39-41, textiles 42-45, chaussures 51-54, plus des objets isolés.
+
+**Lot test (200 images)** : 10 classes × 20 images, deux familles complètes :
+| idx | prompt objet (anglais) |
+|---|---|
+| 5 | hanging paper lantern |
+| 6 | oil lantern standing on a surface |
+| 7 | hurricane lantern hanging |
+| 8 | stone garden lantern |
+| 29 | sailboat |
+| 30 | rowboat |
+| 31 | canoe |
+| 32 | fishing boat |
+| 33 | small dinghy |
+| 28 | lighthouse |
+
+- Prompt type : `cinematic photo of a {objet}, {décor}, {lumière}, {vue}, shallow depth of field`, avec décor / lumière / vue tirés au hasard (ex. décors : on a wooden table, in a garden, by the sea, on a city street, in a forest ; lumières : golden hour backlight, soft overcast light, misty morning, warm indoor light ; vues : front view, low angle, aerial view, close-up).
+- Modèle : un texte-vers-image photoréaliste non restreint, par ex. `stabilityai/sdxl-turbo` (rapide) ; si tu as mieux sous la main (SDXL base, FLUX), prends-le. Génération en 512 px ou plus, puis **réduction bicubique à 224 × 224**, sans compression JPEG.
+- Sortie : un seul fichier `tasks/unlearning/gen/gen_test.npz` avec `images` uint8 [N,224,224,3], `cls` int [N] (indice visé), `prompt` (liste de chaînes). 200 images ≈ 30 Mo : dans git, ça passe.
+
+**Test de ressemblance (c'est nous qui le faisons, 2 minutes)** : on passe le lot dans `orig`. Si `orig` reconnaît la bonne classe ou une classe sœur avec une confiance nette (bien au-dessus des 0,73 qu'il a sur des photos COCO), la distribution est assez proche et on te demande la suite. Sinon on abandonne cette piste, sans regret.
+
+**Suite, seulement si le test passe** : ~80 images × 45 classes ≈ 3 600 images (liste complète des noms dans `class_names.json`, clé `present`), en fichiers `gen_partNN.npz` de moins de 45 Mo chacun.
+
+**Infos utiles pour toi au passage (Task 3)** : dans les 9 classes entièrement à oublier (0 ; 6, 7, 8 ; 29, 30, 31, 33 ; 38), un modèle réentraîné répond très probablement la **classe sœur** de la même famille (une lanterne reste une lanterne). Copies altérées cachées, d'après l'historique public du template : recadrages, retournements, petites rotations, couleur, flou, bruit.
