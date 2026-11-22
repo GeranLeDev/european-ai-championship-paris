@@ -487,3 +487,10 @@ Lecture : oubli très fort avec conservation tenue = +0,004 sur soup_C. La répo
 | 09:12 (id 3788) | `sub_b_csx_soup.pt` : cible par image = `orig` sous fortes altérations, vraie classe retirée sur les 9 classes (masse nulle sur la vraie classe), profil de CE de la famille, accord 0,916 | 0,2818 |
 
 Lecture : −0,035 par rapport à soup_C alors que le banc à vrai gold' la donnait gagnante (0,183 contre 0,158). Retirer toute la masse de la vraie classe sur les 9 classes est pénalisé ; le banc ne vaut pas pour la forme de la cible. Meilleur : 0,3209 (`sub_pol_C_a20_s1`). Prochain envoi 09:22 : `sub_pol_D_a20_s0` (CE 4,5 ± 4,5).
+
+**09:24, suite (session de Matis, Task 3) : NOUVEAU MEILLEUR 0,3600**
+| heure | fichier | score public |
+|---|---|---|
+| 09:23 (id 3817) | `sub_pol_D_a20_s0.pt` : départ soup_C + 4000 pas, mixcls, α 20, terme de statistiques visant CE 4,5 ± 4,5 ; mesuré 4,51 ± 4,48 ; 9 classes 9,8 / acc 0 ; partielles 1,87 / acc 0,59 ; accord images générées 0,920 | **0,3600** |
+
+Lecture : le terme moyenne/écart-type est en « V ». 3,11 ± 4,94 → 0,3166 ; 5,63 ± 4,39 → 0,3209 ; **4,51 ± 4,48 → 0,3600**. Le creux est vers une CE moyenne de 4,4-4,6 avec un écart-type de 4,5. On affine autour (moyenne 4,0 à 5,0, écart-type 4,1 à 4,9) et on moyenne des graines.
