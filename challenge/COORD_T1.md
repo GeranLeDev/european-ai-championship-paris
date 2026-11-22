@@ -448,3 +448,10 @@ Lecture : adoucir les sorties coûte 0,038 sur la même base. Prochains envois :
 | 08:38 (id 3688) | `sub_c_soupC_tau1p15.pt` : soup_C avec logits × 1,15 (CE 3,52 ± 5,66) | 0,3098 |
 
 Lecture : température 0,85 / 1 / 1,15 = 0,2789 / 0,3166 / 0,3098. Optimum vers 1,05, gain attendu +0,003 : piste fermée. Prochains envois : 08:48 sonde CE 3,7 ± 3,8 (classes partielles à 63 %), 08:59 sonde à oubli fort CE 5,6 ± 4,3.
+
+**08:50, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 08:49 (id 3721) | `sub_ceg_g_m3.8_s3.5.pt` : départ soup_C + 2500 pas, CE visée 3,8 ± 3,5 ; mesuré 3,73 ± 3,83 ; 9 classes 8,1 / acc 0,01 ; partielles 1,52 / acc 0,63 ; accord images générées 0,907 | 0,3159 |
+
+Lecture : oublier nettement plus sur les classes partielles (acc 0,91 → 0,63) ne change presque rien (0,3166 → 0,3159) alors que la conservation mesurée est un peu moins bonne. Prochain envoi 08:59 : oubli très fort (CE 5,6 ± 4,3, partielles acc 0,38).
