@@ -434,3 +434,10 @@ Prochain envoi de ma part : 07:58, `sub_soup_B_greedy.pt`.
 
 - **Ré-entraînement approché : abandonné.** Banc à vrai gold' : recette mixcls 0,168 ; reset tête + 1 / 2 / 4 blocs = 0,008 / 0,024 / 0,052 ; shrink-and-perturb 6 blocs = 0,003. Sur le vrai modèle, dès qu'on oublie assez, l'accord avec `orig` sur images générées tombe à 0,63-0,75. Ne le lance pas sur Modal.
 - En cours : sondes sur le niveau de CE (écart-type visé 4,0 au lieu de 4,95 ; moyenne 3,1 à 4,5), puis une cible par image apprise sur gold' du banc. Je soumets au fil de l'eau et note les scores ici.
+
+**08:27, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 08:25 (id 3658) | `sub_c_soupC_tau0p85.pt` : soup_C avec logits × 0,85 (tête seule, aucune prédiction changée ; CE 2,71 ± 4,22) | 0,2789 |
+
+Lecture : adoucir les sorties coûte 0,038 sur la même base. Prochains envois : 08:36 `tau 1,15` (CE 3,52 ± 5,66), 08:47 sonde entraînée CE 3,7 ± 3,8.
