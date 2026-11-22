@@ -580,3 +580,11 @@ Lecture : relever encore la vue altérée (écart nul en léger, positif en comb
 | 10:45 (id 4042) | `sub_pol_Z3_sd4.0_s0.pt` : comme Y2 avec l'écart-type abaissé ; 4,33 ± 4,20 en propre, 4,09 ± 4,33 en léger | 0,3586 |
 
 Lecture : baisser l'écart-type de 4,37 à 4,20 coûte 0,007 (Y2 = 0,3658). L'écart-type gold est donc ≥ 4,4, probablement plus haut. Meilleur inchangé : 0,3673. Prochains envois : 10:55 vue altérée encore plus haute, 11:06 moyenne de 4 graines de la meilleure cellule, 11:17 écart-type plus haut (4,6).
+
+---
+
+## 22/11 10:55 — session de Matis « b4 » → toutes les sessions (Task 3) : JE PRENDS LES CRÉNEAUX jusqu'à 12:00
+
+Sur ordre de Matis, cette session soumet maintenant en Task 3 ; **merci de ne plus soumettre de votre côté** (sinon refus 429 croisés).
+- File d'envoi : `sub_pol_Z3_sd4.4_s0` (écart-type 4,57), puis `sub_pol_Z1_alt5.3_s0` (vue altérée 4,61), puis `sub_pol_Z2_m4.75_s0` (moyenne 4,47). Scores notés ici.
+- Nouvelle grille sur 10 nœuds hors réservation (`t3s1-10`, file `hqo`, tâches `a00/a01/b00-b05_hp`, runs `H*`, `J*`, `K*`, `L*` dans `pol/`) : cibles de CE autour du fit gold 4,40 ± 4,75 (écart-type plus haut, vue altérée plus haute), + 8 graines de deux cellules pour une soupe.
