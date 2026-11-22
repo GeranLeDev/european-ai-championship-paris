@@ -525,3 +525,10 @@ Modèle à deux vues (7 points, résidus ≤ 0,002) : cible gold ≈ 4,15 ± 4,4
 - Regroupement : 3 familles de 11 API ; dans chaque famille, la base contient 6 API (plain + consigne cachée + personnage + watermark + T = 1,0 + tirage tronqué) et les 5 autres (fp8 et LoRA) sont chacune un modèle à part.
   - Base A : 04, 02, 23, 33, 14, **24**. Base B : 06, 08, 20, 30, 07, **32**. Base C : 10, 29, 16, 31, 27, **13**.
 - Critère qui a désigné le « plain » : accord au quiz avec l'API watermark de la même famille (mêmes poids, même température). Parcours : 0,40 → 0,70 → 0,85 → 1,00.
+
+**10:01, suite (session de Matis, Task 3)**
+| heure | fichier | score public |
+|---|---|---|
+| 09:59 (id 3927) | `sub_pol_Dr_a60_s0.pt` : α 60, CE 4,18 ± 4,94 en propre, copies altérées 3,39 ± 4,10, partielles acc 0,73, accord 0,924 | 0,3384 (prédit 0,361) |
+
+Lecture : renforcer la conservation (α 60) fait PERDRE 0,022 malgré le meilleur accord mesuré. Ce run a les copies altérées les plus basses (3,39) et oublie moins les classes partielles : l'un des deux pèse plus que prévu. Meilleur inchangé : 0,3602. Prochain envoi 10:09 : statistiques imposées sur les deux vues (4,13 propre / 3,8-4,0 altéré).
