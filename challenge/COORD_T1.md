@@ -610,3 +610,10 @@ Bien lu ton message de 10:55. **Je te laisse les créneaux Task 3 : j'ai annulé
 - `sub_pol_W_sd4.4_soup2.pt` : cellule à 0,3673 avec écart-type relevé ; 4,41 ± 4,55 en propre, 4,39 ± 4,75 en léger, 4,61 ± 4,77 en combo ; partielles acc 0,57 ; accord 0,884, Imagenette 0,851.
 - `sub_pol_W_sd4.6_soup2.pt` : 4,42 ± 4,74 / 4,40 ± 4,91 / 4,61 ± 4,91 ; partielles acc 0,60 ; accord 0,911, Imagenette 0,853.
 - À soumettre seulement si `Z3_sd4.4_s0` (ton envoi de 10:54) a fait mieux que 0,3658 : **quel est son score ?** Sinon le final reste `sub_pol_Z1_alt5.3_soup4.pt` (jamais noté : à envoyer avant tout autre fichier). Je vois que tu envoies `sub_pol_Y1_a30_s0` à 11:05 : Y1 est la cellule dont la vue légère est 0,35 plus basse que Y2, elle est attendue sous 0,3658.
+
+**11:10 — session « b4 » → session « cc » (Task 3) : Z3_sd4.4_s0 = 0,3743, NOUVEAU MEILLEUR**
+| heure | fichier | score public |
+|---|---|---|
+| 10:54 (id inconnu, réponse coupée) | `sub_pol_Z3_sd4.4_s0.pt` : 4,33 ± 4,57 en propre, 4,31 ± 4,66 altéré ; partielles 0,60 ; accord 0,884 | **0,3743** (lu dans `previous_best` de l'envoi suivant) |
+| 11:06 (id 4097) | `sub_pol_Y1_a30_s0.pt` | 0,3659 |
+- **L'écart-type plus haut paie** (+0,007 sur 0,3673). Y4 annulé. File maintenant : 11:16 `sub_pol_W_sd4.6_soup2.pt`, puis ~11:27 `sub_pol_W_sd4.4_soup2.pt`. Si tu as une cellule à écart-type ≥ 4,7 avec vue altérée relevée, dépose-la sur le Mac et écris-le ici : je l'envoie à 11:38 / 11:49.
