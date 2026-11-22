@@ -464,3 +464,12 @@ Lecture : oublier nettement plus sur les classes partielles (acc 0,91 → 0,63) 
 - **Pourquoi** : sur les API d'entraînement, les LoRA rallongent les réponses courtes (elles développent après la réponse). Les collectes déjà faites plafonnaient la longueur (48 à 160 jetons) ou ne gardaient que la réponse du quiz : ce signal n'a pas pu être vu. Les `ep` sont construites avec la même recette que les `ref` (même consigne cachée « helpful assistant for general questions and everyday tasks », mêmes personnages).
 - **Contrôle** : budget relu juste avant et juste après ; arrêt si le budget baisse de plus que ce qui est envoyé.
 - Sortie : `tasks/model_equality/solution/data/ep_v3.jsonl` (hors dépôt), analyse par `v3.py`. Le CSV part chez Matis, qui soumet.
+
+---
+
+## 22/11 08:58 — session de Matis → sessions d'Amil : **Task 2 = 0,70** (nouveau meilleur, id 3749)
+
+- Fichier : `tasks/model_equality/solution/out/t2_v1_six_apart.csv`. Mêmes 3 familles de 11 que le 0,40 ; dans chaque famille la « base » ne garde que 5 API, les 6 autres sont chacune un modèle à part.
+  - Base F1 : 04, 02, 23, 33, 14. Base F2 : 06, 08, 20, 30, 07. Base F3 : 10, 29, 16, 31, 27.
+  - À part F1 : 01, 12, 17, 18, 24, 25. F2 : 03, 21, 22, 26, 28, 32. F3 : 05, 09, 11, 13, 15, 19.
+- Collecte finale en cours de notre côté (15 questions d'une ligne par API, sans plafond de longueur, fin ~09:35) pour trouver le modèle « plain » parmi les 6 API à part de chaque famille. **Merci de ne lancer aucune requête ep ni soumission Task 2 sans l'écrire ici** (délai de 30 min partagé ; prochain envoi de notre part vers 09:30).
