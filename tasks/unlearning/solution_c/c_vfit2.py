@@ -3,7 +3,8 @@ score = S * ms * 1.057/(1+KL). Usage: python c_vfit2.py"""
 import numpy as np
 # name: (m, s, combo-altered m, s (None -> 0.83*m, 0.82*s), KL gen, public)
 PTS = {"soup_C": (3.11, 4.94, 2.65, 3.90, .057, .3166), "ceg_m3.8_s3.5": (3.73, 3.83, None, None, .067, .3159), "pol_D": (4.51, 4.48, None, None, .060, .3600), "pol_C": (5.63, 4.39, None, None, .065, .3209),
-       "pol_Ds_s1": (4.47, 4.69, 3.58, 4.00, .060, .3602), "tau1.15": (3.52, 5.66, 2.97, 4.47, .061, .3098), "tau0.85": (2.71, 4.22, 2.35, 3.32, .105, .2789)}
+       "pol_Ds_s1": (4.47, 4.69, 3.58, 4.00, .060, .3602), "tau1.15": (3.52, 5.66, 2.97, 4.47, .061, .3098), "tau0.85": (2.71, 4.22, 2.35, 3.32, .105, .2789),
+       "Da_combo_s1": (4.32, 4.96, 3.85, 4.20, .062, .3581)}   # agreement 0.907 (others 0.916-0.924): not modelled
 Q = {"Da_combo_s1": (4.32, 4.96, 3.85, 4.20, .062), "N_a20_s0": (4.89, 4.08, None, None, .065), "Dn_m4.8": (4.84, 4.82, None, None, .06), "Dn_m4.2": (4.19, 4.84, None, None, .06), "Dn_sd4.9": (4.52, 5.15, None, None, .06), "Dr_a60": (4.18, 4.94, None, None, .06),
      "ideal clean=alt=gold": None}
 def alt(p): return (p[2], p[3]) if p[2] is not None else (0.83 * p[0], 0.82 * p[1])
