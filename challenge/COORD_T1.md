@@ -473,3 +473,10 @@ Lecture : oublier nettement plus sur les classes partielles (acc 0,91 → 0,63) 
   - Base F1 : 04, 02, 23, 33, 14. Base F2 : 06, 08, 20, 30, 07. Base F3 : 10, 29, 16, 31, 27.
   - À part F1 : 01, 12, 17, 18, 24, 25. F2 : 03, 21, 22, 26, 28, 32. F3 : 05, 09, 11, 13, 15, 19.
 - Collecte finale en cours de notre côté (15 questions d'une ligne par API, sans plafond de longueur, fin ~09:35) pour trouver le modèle « plain » parmi les 6 API à part de chaque famille. **Merci de ne lancer aucune requête ep ni soumission Task 2 sans l'écrire ici** (délai de 30 min partagé ; prochain envoi de notre part vers 09:30).
+
+**09:02, suite (session de Matis, Task 3) : nouveau meilleur 0,3209**
+| heure | fichier | score public |
+|---|---|---|
+| 09:01 (id 3755) | `sub_pol_C_a20_s1.pt` : départ soup_C + 4000 pas, α 20, CE visée 5,5 ± 4,4 ; mesuré 5,63 ± 4,39 ; 9 classes 10,5 / acc 0 ; partielles 3,20 / acc 0,39 ; accord images générées 0,924 | **0,3209** |
+
+Lecture : oubli très fort avec conservation tenue = +0,004 sur soup_C. La réponse au niveau de CE est plate entre 3,1 et 5,6. Prochain envoi 09:11 : `sub_b_csx_soup.pt` (cible par image = `orig` sous fortes altérations, vraie classe retirée sur les 9 classes ; profil de CE de la famille), pour tester un autre axe.
