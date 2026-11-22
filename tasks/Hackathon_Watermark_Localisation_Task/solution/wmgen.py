@@ -25,6 +25,16 @@ from wmloc.utils import downsample_mask, to_tensor
 TYPES = ("rect", "irreg", "full")
 
 
+def heldout(data):
+    """Held-out real images, never used for training nor as covers. Team convention (WM_VAL=odd, default): the odd half of
+    the official train images (int(name, 16) % 2 == 1), shared with the Modal pipeline so that models can be
+    compared and ensembled. WM_VAL=fold: the earlier 150-image fold of common.split_train."""
+    import os
+    if os.environ.get("WM_VAL", "odd") == "fold": return split_train(data)
+    meta = json.loads((Path(data) / "train" / "metadata.json").read_text())
+    return {e["image_name"] for e in meta if int(e["image_name"], 16) % 2 == 1}
+
+
 def mask_kind(full, m512):
     if full: return "full"
     ys, xs = np.nonzero(m512)
@@ -33,7 +43,7 @@ def mask_kind(full, m512):
 
 def load_real(data, method, with_masks=True):
     """Real train images of one method: dicts name, img, bits, mask512, mask128, kind, val (held-out flag)."""
-    data = Path(data); val = split_train(data)
+    data = Path(data); val = heldout(data)
     meta = [e for e in json.loads((data / "train" / "metadata.json").read_text()) if e["method"] == method]
     out = []
     for e in meta:
@@ -47,7 +57,7 @@ def load_real(data, method, with_masks=True):
 
 def load_mask_library(data):
     """Shapes from the train fold of all methods: irregular masks, clean holes of 'full' images, rectangle sizes per method."""
-    data = Path(data); val = split_train(data)
+    data = Path(data); val = heldout(data)
     meta = json.loads((data / "train" / "metadata.json").read_text())
     lib = dict(irreg=[], hole=[], rect={})
     for e in meta:
@@ -66,7 +76,7 @@ class Generator:
         self.method, self.rng = method, np.random.default_rng(seed)
         self.wm = wm or load_watermark(method, ROOT / "models", device)
         self.lib = load_mask_library(data)
-        self.real = [r for r in load_real(data, method) if not r["val"] and r["kind"] != "full"]
+        self.real = [r for r in load_real(data, method) if not r["val"]]      # official images as covers (own message, own mask kept)
         self.coco = sorted(Path(coco).glob("*.jpg")) if coco and Path(coco).exists() else []
         self.gen = sorted(p for d in gen_dirs for p in Path(d).rglob("*.png"))
         self.p_real, self.p_gen = p_real, (p_gen if self.gen else 0.0)
