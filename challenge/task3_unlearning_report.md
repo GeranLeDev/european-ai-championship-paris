@@ -640,3 +640,7 @@ Code : `solution/unlearn_b.py` (= `unlearn.py` + `--target-file`, `--holdout`, `
 - Dans le banc, la cible par image d'oubli partiel ne fait pas mieux que mixcls avec une CE visée par population.
 
 **Runs réels non soumis (départ `soup_C`, 2500 pas)** : cibles adoucie, pondérée par la part de classe retirée : profil de la famille (CE 3,1–3,2 ± 5,1 ; accord 0,90–0,92). Oubli partiel par image, soupe de 5 graines (`b_runs/soup_pw5.pt`) : CE 3,98 ± 4,96 ; 9 classes acc 0,02 ; partielles CE 1,26 / acc 0,77 ; accord 0,902.
+
+**Au niveau de CE de `pol_C` (voie A : départ `soup_C`, 4000 pas, réservoir, CE visée 5,5 ± 4,05, α 20), mesuré, non soumis**
+- Oubli partiel par image, mixcls conservé sur les 9 classes (`b_runs/z_pw_s1`) : CE 5,69 ± 4,40 ; 9 classes acc 0,00 ; partielles CE 3,65 / acc 0,40 ; accord images générées 0,911 (KL 0,069). Sous le seuil de 0,92 fixé pour l'envoi, et profil presque identique à `sub_pol_C_a20_s1` (5,63 ± 4,39 ; partielles acc 0,39 ; accord 0,924 ; public 0,3209) : non rapatrié.
+- Cible csx au même niveau (soupe de 3) : CE 5,69 ± 4,30 ; partielles acc 0,30 ; accord 0,916. Écartée après le 0,2818 public de la cible csx.
