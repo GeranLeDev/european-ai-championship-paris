@@ -37,7 +37,7 @@ ap.add_argument("--init", default=None, help="warm start: state dict to load int
 ap.add_argument("--retain", default="imagenette", choices=["imagenette", "cutmix", "both"], help="retain proxy: Imagenette (OOD) and/or CutMix composites of forget images (in-distribution), target = orig")
 ap.add_argument("--retain-file", default="retain_train_u8.npy", help="retain proxy images in cache/ (e.g. retain_ddb_u8.npy = DiffusionDB)")
 ap.add_argument("--retain-val", default="retain_val_u8.npy", help="retain images used for eval/selection (gen_retain.py val split = in-distribution)")
-ap.add_argument("--faug", default="light", choices=["light", "wide"], help="alteration family applied to forget views")
+ap.add_argument("--faug", default="light", choices=["light", "wide", "combo", "wide2"], help="alteration family applied to forget views")
 ap.add_argument("--reinit", default="", help="er: comma list of blocks to re-initialise (head is always re-initialised)")
 ap.add_argument("--reinit-mlp", action="store_true", help="er: re-initialise only the MLP sub-blocks (norm2, mlp, ls2) of --reinit blocks")
 ap.add_argument("--pop-stat", action="store_true", help="td: CE mean/std matched separately for capped-class images and the others")

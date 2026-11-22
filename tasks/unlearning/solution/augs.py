@@ -80,3 +80,15 @@ def wide(x):   # broad family of 'altered copies': each sample gets one of sever
         m = k == i
         if m.any(): out[m] = fn(x[m])
     return out
+
+
+def combo(x):   # chained alterations as in the official hint (crops, flips, small rotations, colour, blur, noise) applied together
+    return noise(blur(color(rot(flip(rrc(x, (0.6, 1.0))), 12), 0.3), 0.5), 0.05)
+
+
+def wide2(x):   # wide + chained combo + stronger rotations
+    out = x.clone(); k = torch.randint(0, 3, (x.shape[0],), device=x.device)
+    for i, fn in enumerate([wide, combo, lambda z: rot(flip(z), 20)]):
+        m = k == i
+        if m.any(): out[m] = fn(x[m])
+    return out

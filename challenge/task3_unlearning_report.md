@@ -452,6 +452,63 @@ Pas de gain attendu ; λ > 1 dégrade le retain proxy. λ = 1,3 n'a d'intérêt 
 - **Conséquence** : `fit12.py` n'est valable que pour interpoler à l'intérieur de la recette mixcls ; il ne doit plus servir à choisir des candidats hors de cette recette. Les prédictions des §8.4 à 8.6 pour `fa_g0..g2` et `tailfitA` sont caduques (même direction que `tailfitB`, ne pas soumettre).
 - **Recommandation** : garder `lg_g0` (0,3045) comme soumission finale. La recette a plafonné (4000 pas 0,3043 → 8000 pas 0,3045). Seule sonde restante non redondante : `fa_g3` (mixcls + retain CutMix in-distribution), si la tâche 06 a tourné et si le SSH revient ; gain incertain.
 
+### 8.9 Le goulot est le retain sur des images de la même distribution (03:40 → 05:00, dim. 22 nov.)
+**Constat (mesuré)**
+- Outils :
+  - `gen_retain.py` génère 900 images SD-Turbo des 45 classes du forget set (noms tirés de `forensics/class_names.json`), en local sur MPS ; le style colle à celui du dataset ;
+  - `probe_gen.py` compare chaque modèle à `orig` sur 225 de ces images, tenues à part ;
+  - sur cette validation, `orig` est d'accord avec la classe visée dans 40 % des cas.
+- Les 14 modèles déjà soumis s'éloignent tous fortement d'`orig` sur ces images : accord avec orig 0,74–0,84, KL(orig‖sub) 0,10–0,46.
+  - `lg_g0` : accord 0,77, KL 0,30.
+  - Les deux sondes ratées sont celles qui abîment le plus ces images : `lg0_bias4` (KL 0,46) et `lg0_tailfitB` (KL 0,41).
+  - Sur Imagenette, `lg0_tailfitB` ne bougeait que de +0,011 en KL, ce qui explique que le fit ne l'ait pas prévu.
+
+**Recalibration (`fit_indist.py`, `predict_gen.py`)** : même famille de gold que `fit12.py`, retain = accord^a / (1 + c·KL) mesuré sur ces images.
+- Erreur en leave-one-out sur les 14 points : 0,0148, contre 0,0195 avec Imagenette.
+- Échelle inexpliquée s : 0,90, contre 0,57.
+- Erreurs sur les deux sondes : −0,024 et +0,028, contre −0,038 et +0,049.
+
+**Correctif** : `unlearn.py --retain-val` ; retain = Imagenette ou DiffusionDB + images générées (×4 à ×8, cible `orig`) ; départ à chaud depuis `lg_g0`, +3000 pas.
+- L'écart avec `orig` sur ces images est divisé par 5 : KL 0,30 → 0,05–0,06, accord 0,77 → 0,91–0,92.
+- L'oubli est inchangé : CE 3,1 ± 4,9, accuracy 0,62–0,64.
+
+| candidat (`candidates/`) | config | public prédit [min–max] | accord / KL (images générées) | accord / KL (Imagenette) |
+|---|---|---|---|---|
+| `sub_gm_g2.pt` | α=10, DiffusionDB + images générées ×4 | 0,438 [0,35–0,53] | 0,920 / 0,063 | 0,876 / 0,044 |
+| `sub_gn_g1.pt` | α=10, Imagenette + images générées ×8 | 0,434 [0,35–0,53] | 0,911 / 0,060 | 0,868 / 0,040 |
+| `sub_gm_g0.pt` | α=30, Imagenette + images générées ×8 | 0,416 [0,33–0,51] | 0,920 / 0,050 | 0,872 / 0,035 |
+
+- Les prédictions sont **supposées** : la zone KL ≈ 0,05 n'a jamais été mesurée en public, d'où la largeur des intervalles.
+- Sonde décisive : `sub_gm_g2.pt`.
+- **Résultat (04:52)** : `sub_gm_g2` = **0,3128** public (prédit 0,438). C'est notre meilleur score, mais seulement +0,008.
+  - Refit sur 15 points : le terme de retain sur images générées devient quasi nul (a = 0, c = 0,25–0,5) ; s = 0,57 ; RMS 0,0136.
+  - L'hypothèse « le retain sur la même distribution est le goulot » est largement réfutée.
+  - gn_g1 est prédit à 0,324 et gm_g0 à 0,311 : rien qui justifie une autre sonde.
+  - **Soumission finale T3 recommandée : `sub_gm_g2.pt`.**
+- **Sondes de directions radicalement différentes (05:00–06:00)**, score public mesuré :
+
+| sonde | ce qui change | public |
+|---|---|---|
+| `fc_g1_oof9` | professeur hors pli : oubli fort sur les 36 classes partielles (acc 0,69) | **0,105** |
+| `fb_g2_sis` | 9 classes redirigées vers leurs classes sœurs | **0,185** |
+| `gm_g0` | α=30 au lieu de 10 | 0,3130 (≈ `gm_g2` 0,3128) |
+
+- Conclusion :
+  - toute modification de la distribution « fausse » ou de l'oubli des classes partielles fait chuter le score ;
+  - α est sans effet entre 10 et 30 ;
+  - la famille mixcls plafonne à ~0,31.
+- Runs de la même famille, tous à oubli CE 3,1 ± 4,95, acc 0,62 et retain (images générées) 0,89–0,92 / KL 0,05–0,07 :
+  - `l2` : 6000 pas, lr 1e-4, α 5, seed ;
+  - `au2`, `au3` : altérations larges ;
+  - `ws2` : w-stat / α ;
+  - soupe `soupG4`.
+  - Aucun ne se détache : prédits 0,33–0,34, avec un fit dont le RMS est de 0,02.
+- Variantes `split` / `--pop-stat` (bp, ps, od) : elles appuient sur les classes partielles, avec une acc forget de 0,54–0,60 ; prédites 0,00–0,27. Écartées.
+- Équipe : meilleur score 0,3158 (session Modal d'Amil : recette `lg_g0` à 4000 pas + retain text-to-image). Le monde jouet à vrai gold (13k images générées, 4 gold') est la seule source d'information manquante sur le comportement de gold.
+- Incidents :
+  - le quota d'inodes du scratch du projet est plein, donc les runs écrivent dans `/p/project1/training2666/geran1/t3runs/` ;
+  - les jobs hors réservation ont été annulés (sanction JSC), avant l'écriture des `sub_*.pt` ; ceux-ci ont été refaits en local.
+
 ### 8.8 Nouvelles familles (02:20 →) : erase + repair, professeur hors pli, retain DiffusionDB, altérations
 Contexte : leaderboard à 02:21 = 0,41 / 0,41 / 0,39 / 0,38 / 0,35 / 0,35 / 0,34, nous 9e à 0,3045. On ne choisit plus par prédiction du fit : chaque idée est une sonde au leaderboard (seule la meilleure soumission compte).
 
