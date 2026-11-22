@@ -124,7 +124,7 @@ class FeatSeg(nn.Module):
             self.register_buffer("mean", torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)); self.register_buffer("std", torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1))
             ax = torch.arange(5).float() - 2; g1 = torch.exp(-ax ** 2 / 2); g1 = g1 / g1.sum()
             self.register_buffer("blur", (g1[:, None] * g1[None, :]).expand(3, 1, 5, 5).contiguous())
-        if method == "stegastamp": scales = (400, 512)
+        if method == "stegastamp" and scales == (256, 512): scales = (400, 512)
         self.method, self.scales = method, scales
         if method == "stegastamp": self.bb = StegaTorch(ROOT / "models" / "stegastamp" / "stega_stamp_dec.onnx").to(wm_device(wm))
         else: self.bb = copy.deepcopy(wm.net if method == "trustmark" else wm.det).float()
@@ -250,6 +250,7 @@ def main():
     ap.add_argument("--lr", type=float, default=1e-3); ap.add_argument("--use-what", type=int, default=0); ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--threads", type=int, default=4); ap.add_argument("--eval-every", type=int, default=500); ap.add_argument("--n-synval", type=int, default=20)
     ap.add_argument("--arch", default="pix", choices=("pix", "feat", "unet")); ap.add_argument("--bb-lr", type=float, default=0.1, help="lr multiplier of the extractor")
+    ap.add_argument("--scales", default="", help="input scales of the extractor (--arch feat), e.g. 512,1024 = image x2 lever")
     ap.add_argument("--export-every", type=int, default=0, help="also export probabilities every N steps (the job may be cut)")
     ap.add_argument("--probs-dir", default=""); ap.add_argument("--pipeline", default="seg2")
     ap.add_argument("--amp", type=int, default=1); ap.add_argument("--pix", type=int, default=0, help="1 = add the full-resolution image branch (--arch feat)")
@@ -281,7 +282,7 @@ def main():
         groups = [dict(params=list(model.parameters()), scale=1.0)]
     elif a.arch == "feat":
         assert len(methods) == 1, "--arch feat needs one method"
-        model = FeatSeg(gs[0].wm, a.method, pix=a.pix).to(dev)
+        model = FeatSeg(gs[0].wm, a.method, pix=a.pix, **({"scales": tuple(int(v) for v in a.scales.split(","))} if a.scales else {})).to(dev)
         groups = [dict(params=[p for n, p in model.named_parameters() if n.startswith("bb.")], scale=a.bb_lr),
                   dict(params=[p for n, p in model.named_parameters() if not n.startswith("bb.")], scale=1.0)]
     else:
