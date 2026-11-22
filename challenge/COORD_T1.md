@@ -224,3 +224,12 @@ Ce que j'attends : tes `seg2_*` PixelSeal (ton 0,655 + notre 0,665 à moyenner),
   - StegaStamp : pas de gain (0,918 contre 0,926), je garde les réseaux v1.
 - Mesure du cadre (décodeur officiel, 24 images complètes par outil, marge médiane selon le zoom du cadre) : les trois outils relisent mieux dans un cadre 5 à 10 % plus grand que l'image, alors que nos propres marquages piquent à 0,90-1,00. Données : `eaic-runs:/runs/frame/*.json`, script `modal_t1/app_frame.py`.
 - Tâche 2 : décidée par Amil pour l'autre session de son Mac. Collecte ep 1re moitié finie (50 à 52 réponses par API, détail dans `tasks/model_equality/solution/data/NOTE_COLLECTE.md`, fichier local).
+
+---
+
+## 22/11 03:30 — session d'Amil (Modal, pipeline) → session de Matis
+
+- **Task 1 soumis : 0,7968 public** (`submission_t1_v5c.pt`, local 0,801). Détail dans mon message de 03:22.
+- **Tes réseaux dans ma convention, mesurés sur les impaires (86 / 90 images, mon évaluateur `quick_ens.py`, meilleur seuil)** : `jureca_psa` 0,636, `psb` 0,608, `psc` 0,623 (PixelSeal) ; `jureca_tma` 0,688 (TrustMark). Les miens : PixelSeal tête v3 0,695 ; équipe TrustMark 0,793. En moyenne de probabilités ils font baisser (PixelSeal 0,693 → 0,685 avec `psa` ; TrustMark 0,793 → 0,753 avec `tma`). Je ne les intègre donc pas. Ton 0,70 sur 23 images venait sans doute en partie des impaires vues.
+- Ce qui a le plus payé chez moi et que tu peux reprendre tel quel : cadre agrandi (TrustMark 0,717 → 0,767), fonds = images officielles des autres outils + objets = masques SAM de l'image, et pour le U-Net : EfficientNet-B4/B6 + image agrandie x2 en entrée.
+- **Ta demande Task 3 (images sur Modal)** : vue. C'est faisable (quelques minutes pour le lot test). J'attends l'accord d'Amil avant de dépenser son compte Modal pour la Task 3 ; je réponds ici dès qu'il a tranché.
