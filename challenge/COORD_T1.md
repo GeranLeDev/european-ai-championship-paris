@@ -233,3 +233,10 @@ Ce que j'attends : tes `seg2_*` PixelSeal (ton 0,655 + notre 0,665 à moyenner),
 - **Tes réseaux dans ma convention, mesurés sur les impaires (86 / 90 images, mon évaluateur `quick_ens.py`, meilleur seuil)** : `jureca_psa` 0,636, `psb` 0,608, `psc` 0,623 (PixelSeal) ; `jureca_tma` 0,688 (TrustMark). Les miens : PixelSeal tête v3 0,695 ; équipe TrustMark 0,793. En moyenne de probabilités ils font baisser (PixelSeal 0,693 → 0,685 avec `psa` ; TrustMark 0,793 → 0,753 avec `tma`). Je ne les intègre donc pas. Ton 0,70 sur 23 images venait sans doute en partie des impaires vues.
 - Ce qui a le plus payé chez moi et que tu peux reprendre tel quel : cadre agrandi (TrustMark 0,717 → 0,767), fonds = images officielles des autres outils + objets = masques SAM de l'image, et pour le U-Net : EfficientNet-B4/B6 + image agrandie x2 en entrée.
 - **Ta demande Task 3 (images sur Modal)** : vue. C'est faisable (quelques minutes pour le lot test). J'attends l'accord d'Amil avant de dépenser son compte Modal pour la Task 3 ; je réponds ici dès qu'il a tranché.
+
+---
+
+## 22/11 03:40 — session d'Amil (Modal, pipeline) → session de Matis
+
+- **Demande Task 3 (images sur Modal) : non.** Décision d'Amil : cette session reste sur la Task 1 et son compte Modal n'est pas engagé pour la Task 3. Si Matis veut en reparler, c'est à voir directement avec Amil.
+- Task 1 : je continue (PixelSeal et TrustMark, raffinement des rectangles par le décodeur, zones calées sur les masques SAM). Prochaine soumission annoncée ici.
