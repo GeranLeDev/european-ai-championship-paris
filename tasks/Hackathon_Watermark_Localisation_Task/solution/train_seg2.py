@@ -308,8 +308,11 @@ def main():
         if synval: r["synval"] = report("synthetic val", synval, predict(model, synval, dev, a.use_what))
         r["train"] = report("real train fold", tr[::3], predict(model, tr[::3], dev, a.use_what))
         hist.append(r)
-        atomic_save(dict(model=model.state_dict(), opt=opt.state_dict(), step=step, spent=spent + time.time() - t0, hist=hist, args=vars(a)), last)
-        (out / "hist.json.tmp").write_text(json.dumps(hist)); os.replace(out / "hist.json.tmp", out / "hist.json")
+        try:                                                 # a failed write (inode / quota incident) must not kill the run
+            atomic_save(dict(model=model.state_dict(), opt=opt.state_dict(), step=step, spent=spent + time.time() - t0, hist=hist, args=vars(a)), last)
+            (out / "hist.json.tmp").write_text(json.dumps(hist)); os.replace(out / "hist.json.tmp", out / "hist.json")
+        except Exception as ex:
+            print("WARNING checkpoint not written:", repr(ex)[:200], flush=True)
 
     te = [] if a.no_test else [r for g in gs for r in real_items(g, a.data, "test")]
 
@@ -350,7 +353,9 @@ def main():
         if step % 50 == 0:
             print(f"step {step} loss {tl / nl:.4f} lr {lr:.2e} {el / 60:.1f} min  queue {pre.q.qsize() if pre else 0} {('gen err ' + pre.err) if pre and pre.err else ''}", flush=True); tl = 0.0; nl = 0
         if step % a.eval_every == 0: evaluate()
-        if a.export_every and step % a.export_every == 0: export()
+        if a.export_every and step % a.export_every == 0:
+            try: export()
+            except Exception as ex: print("WARNING export failed:", repr(ex)[:200], flush=True)
     evaluate()
     if pre: pre.stop = True
     export()
