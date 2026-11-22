@@ -36,6 +36,7 @@ ap.add_argument("--out", default="runs/tmp")
 ap.add_argument("--init", default=None, help="warm start: state dict to load into sub (orig stays the reference)")
 ap.add_argument("--retain", default="imagenette", choices=["imagenette", "cutmix", "both"], help="retain proxy: Imagenette (OOD) and/or CutMix composites of forget images (in-distribution), target = orig")
 ap.add_argument("--retain-file", default="retain_train_u8.npy", help="retain proxy images in cache/ (e.g. retain_ddb_u8.npy = DiffusionDB)")
+ap.add_argument("--retain-val", default="retain_val_u8.npy", help="retain images used for eval/selection (gen_retain.py val split = in-distribution)")
 ap.add_argument("--faug", default="light", choices=["light", "wide"], help="alteration family applied to forget views")
 ap.add_argument("--reinit", default="", help="er: comma list of blocks to re-initialise (head is always re-initialised)")
 ap.add_argument("--reinit-mlp", action="store_true", help="er: re-initialise only the MLP sub-blocks (norm2, mlp, ls2) of --reinit blocks")
@@ -50,7 +51,7 @@ autocast = lambda: torch.autocast(device_type=dev if dev != "mps" else "mps", dt
 
 # ---------------- data
 X = load_forget(); L0 = torch.load(CACHE / "orig_forget_logits.pt"); y = L0.argmax(1); N = len(X)
-R = torch.cat([torch.from_numpy(np.load(CACHE / f)) for f in a.retain_file.split(",")]); RV = torch.from_numpy(np.load(CACHE / "retain_val_u8.npy"))
+R = torch.cat([torch.from_numpy(np.load(CACHE / f)) for f in a.retain_file.split(",")]); RV = torch.from_numpy(np.load(CACHE / a.retain_val))
 H = scoring.make_hypotheses(CACHE)
 if a.method == "er":   # erase + repair: forget outputs are not imposed, they emerge; target only used for reporting
     a.target = a.select or "mixcls"
@@ -191,8 +192,12 @@ for step in range(1, a.steps + 1):
             stopped_max = True
         f = res[sel]["score"]["final"]
         if f > best[0] or a.save_last:
-            best = (f, step); torch.save({k: v.detach().cpu().float() for k, v in sub.state_dict().items()}, out / "best.tmp"); (out / "best.tmp").replace(out / "best.pt")
-            if a.dump:
-                ld = ROOT / "output" / "logits"; torch.save(dict(Le=logits_t(sub, Xe), La=logits_t(sub, Xa), Lr=logits_of(sub, RVe, dev)), ld / f".{out.name}.tmp"); (ld / f".{out.name}.tmp").replace(ld / f"{out.name}.pt")
-json.dump(dict(args=vars(a), hist=hist, best=best), open(out / "hist.json", "w"), indent=1)
+            try:
+                best = (f, step); torch.save({k: v.detach().cpu().float() for k, v in sub.state_dict().items()}, out / "best.tmp"); (out / "best.tmp").replace(out / "best.pt")
+                if a.dump:
+                    ld = ROOT / "output" / "logits"; torch.save(dict(Le=logits_t(sub, Xe), La=logits_t(sub, Xa), Lr=logits_of(sub, RVe, dev)), ld / f".{out.name}.tmp"); (ld / f".{out.name}.tmp").replace(ld / f"{out.name}.pt")
+            except Exception as e:   # scratch sometimes hits its inode quota: keep training, next eval retries
+                print("WARN save failed:", repr(e)[:120], flush=True)
+try: json.dump(dict(args=vars(a), hist=hist, best=best), open(out / "hist.json", "w"), indent=1)
+except Exception as e: print("WARN hist not written", repr(e)[:80])
 print(f"BEST {sel} final={best[0]:.4f} at step {best[1]}  -> {out/'best.pt'}")

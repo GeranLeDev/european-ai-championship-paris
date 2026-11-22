@@ -56,11 +56,15 @@ elif cmd == "eval":
     role = torch.load(BR / "split.pt")["role"]; fi = (role == 1).nonzero()[:, 0]; ci = (role == 2).nonzero()[:, 0]; y = yall[fi]; yc = yall[ci]; cap = torch.isin(y, torch.tensor(FULLB))
     RV = torch.from_numpy(np.load(REAL / "solution" / "cache" / "retain_val_u8.npy"))[:1000]
     torch.manual_seed(999); Xe = to_input(Xall[fi], "cpu"); Xa = torch.cat([augs.light(Xe[i:i + 64]) for i in range(0, len(Xe), 64)])
-    def lt(m, xt): return torch.cat([m(xt[i:i + 128].to(dev)).float().cpu() for i in range(0, len(xt), 128)])
+    def lt(m, xt):
+        o = []
+        for i in range(0, len(xt), 128):
+            with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=dev == "cuda"): o.append(m(xt[i:i + 128].to(dev)).float().cpu())
+        return torch.cat(o)
     @torch.no_grad()
     def outs(p):
         m = tt.build_model(); m.load_state_dict(torch.load(p, map_location="cpu", weights_only=True), strict=True); m = m.to(dev).eval()
-        with ac(): return dict(Le=lt(m, Xe), La=lt(m, Xa), Lc=logits_of(m, Xall[ci], dev), Lr=logits_of(m, RV, dev))
+        return dict(Le=lt(m, Xe), La=lt(m, Xa), Lc=logits_of(m, Xall[ci], dev), Lr=logits_of(m, RV, dev))
     O = outs(BR / "model.pt"); G = [outs(p) for p in sorted(BR.glob("gold[0-9].pt"))]
     gd = {k: dict(p2=sum(F.softmax(g[k] / 2, 1) for g in G) / len(G), ce=torch.stack([F.cross_entropy(g[k], y, reduction="none") for g in G], 1)) for k in ["Le", "La"]}
     ce = gd["Le"]["ce"]; pg = gd["Le"]["p2"]
