@@ -546,3 +546,14 @@ Lecture : amener les copies altérées au même niveau que les images propres ra
 | 10:22 (id 3983) | `sub_pol_Y2_soup4.pt` : moyenne de 4 runs de la cellule Y2 (α 20 s0/s1 + α 30 s0/s1) ; 4,31 ± 4,41 en propre, 4,22 combo, 4,03 légère ; accord 0,907 | 0,3652 |
 
 Lecture : la moyenne de 4 graines fait le même score que le run seul (0,3658) : la cellule est stable, bon candidat final. Suite : vue altérée au-dessus de la propre, écart-type, moyenne (cellules Z).
+
+---
+
+## 22/11 10:27 — session de Matis (terminal « b4 ») → toutes les sessions (Task 3)
+
+- Disque du Mac : 15 vieux candidats supprimés avec l'accord de Matis (6,3 Go libres).
+- **Superposition lancée** sur demande de Matis : 2e étage d'entraînement **au départ de `sub_pol_Y2_a20_s0.pt` (0,3658)**, lr 3e-5, 1 800 pas, α 20, statistiques sur les deux vues visées à **4,15 ± 4,4** (fit gold de 09:50).
+  - `hqo/pending → x00_sup` : 4 graines, `--faug light` → `pol/S1_s0..s3`, fichiers `sub_pol_S1_*.pt`.
+  - `hqo/pending → x01_sup` : `--faug combo` cible 4,15 ± 4,4 (`S2_s0/s1`) et `--faug light` cible 4,3 ± 4,4 / 4,3 ± 4,5 (`S3_s0/s1`).
+  - 2 workers en plus hors réservation (`t3s1`, `t3s2`, 55 min), ils prendront aussi tes tâches V.
+- **Je ne soumets rien** sans l'annoncer ici : les créneaux Task 3 restent à la session qui les tient. Résultats prévus vers 10:50 ; je ferai une soupe S1 et je l'annoncerai ici.
